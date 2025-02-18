@@ -1,0 +1,58 @@
+@import "~style";
+
+@keyframes remote-change {
+  0%   { transform: rotate(0deg)}
+  25%  { transform: rotate(90deg)}
+  50%  { transform: rotate(180deg)}
+  75%  { transform: rotate(270deg)}
+  100% { transform: rotate(360deg)}
+}
+
+.@{prefix}-loading {
+  &-show {
+    display: flex;
+  }
+  &-hidden {
+    display: none;
+    .@{prefix}-loading-bg {
+      display: none;
+    }
+  }
+  left: 0;
+  top: 0;
+  position: fixed;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  &-bg {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    left: 0;
+    top: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: @modal-color;
+    z-index: 1000;
+  }
+  &-content {
+    color: @background-color;
+    span {
+      margin-left: 10px;
+    }
+    i {
+      animation: remote-change 1s infinite linear;
+    }
+  }
+}
+.@{prefix}-normal-loading {
+  display: inline-block !important;
+  position: relative !important;
+  z-index: 1 !important;
+  & > div:first-child {
+    position: absolute;
+  }
+}

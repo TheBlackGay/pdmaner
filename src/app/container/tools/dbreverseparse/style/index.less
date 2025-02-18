@@ -1,0 +1,217 @@
+@import "~style";
+
+.@{prefix}-dbreverseparse-db {
+  height: 80vh;
+  & > div {
+    height: calc(100% - 48px);
+  }
+  &-opt {
+    padding: 10px;
+    text-align: center;
+  }
+}
+.@{prefix}-dbreverseparse-db-deal-data {
+  height: 100%;
+  &-special {
+    color: @warring-color;
+  }
+}
+.@{prefix}-dbreverseparse-db-select {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  &-item {
+    margin-top: 5px;
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    &-label {
+      text-align: right;
+      padding-right: 5px;
+      width: 50%;
+    }
+    &-component {
+      width: 50%;
+      &-message {
+        color: @success-color;
+        padding-left: 5px;
+      }
+    }
+  }
+}
+.@{prefix}-dbreverseparse-db-parse {
+  text-align: center;
+  i {
+    margin-right: 10px;
+    animation: remote-change 1s infinite linear;
+  }
+}
+.@{prefix}-dbreverseparse-progress {
+  padding: 10px 20px;
+  height: 80vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  &-header {
+    text-align: center;
+    padding: 5px;
+    font-weight: bold;
+    border-bottom: 1px solid @primary-border-color;
+  }
+  &-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    & > div:last-child {
+      flex-grow: 1;
+    }
+    &-item {
+      width: 100%;
+      margin-top: 20px;
+      &-success {
+        color: @success-color;
+        margin-right: 5px;
+      }
+      &-fail {
+        color: @danger-color;
+        margin-right: 5px;
+      }
+      &-button {
+        color: @primary-color;
+        cursor: pointer;
+      }
+      & > div:first-child {
+        font-weight: bold;
+        position: relative;
+        padding-left: 10px;
+        &:before {
+          content: " ";
+          width: 4px;
+          height: 100%;
+          position: absolute;
+          left: 0;
+          top: 0;
+          background: @primary-color;
+        }
+      }
+      & > div:last-child {
+        height: calc(100% - 25px);
+        margin-top: 10px;
+        padding: 10px 40px;
+        border: 1px solid @primary-border-color;
+        border-radius: 5px;
+        box-shadow: 0 0 6px 2px @primary-border-color;
+      }
+      &-step {
+        & > span:first-child {
+          margin-right: 30px;
+        }
+        & > span:last-child > span:first-child {
+          margin-right: 5px;
+        }
+        & > span:last-child > input {
+          margin: 0 10px;
+        }
+      }
+      &-progress {
+        &-bar {
+          width: auto !important;
+          flex-grow: 1;
+          & > span {
+            color: @font-color;
+            right: -50px;
+            bottom: -5px;
+          }
+          & > div {
+            &:after {
+              display: none;
+            }
+          }
+        }
+        & > div:first-child {
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+          align-items: center;
+          & > span:first-child {
+            margin-right: 30px;
+          }
+          & > span:last-child {
+            margin-left: 70px;
+          }
+        }
+        & > div:nth-child(2) {
+          margin-top: 5px;
+          text-align: center;
+        }
+        & > div:last-child {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 5px;
+          height: calc(100% - 52px);
+          & > div {
+            height: 100%;
+            & > div:last-child {
+              margin-top: 5px;
+              padding: 10px;
+              border-radius: 5px;
+              flex-grow: 1;
+              overflow: auto;
+              height: 100px;
+            }
+          }
+          & > div:first-child {
+            & > div:last-child {
+              & div::selection {
+                color: @background-color;
+                background: @primary-color
+              }
+              background: @main-font-color;
+              color: @success-color;
+            }
+          }
+          & > div:last-child {
+            & > div:last-child {
+              & div::selection {
+                color: @background-color;
+                background: @primary-color
+              }
+              background: @primary-border-color;
+              color: @danger-color;
+            }
+          }
+          & > div:first-child {
+            width: 66%;
+          }
+          & > div:last-child {
+            width: 33%;
+          }
+          & > div {
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            & > div:first-child {
+              display: flex;
+              flex-direction: row;
+              justify-content: space-between;
+              align-items: center;
+            }
+          }
+        }
+      }
+    }
+  }
+  &-footer {
+    margin-top: 15px;
+    text-align: center;
+  }
+}

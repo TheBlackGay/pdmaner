@@ -1,0 +1,14 @@
+{
+  "presets": [["@babel/env", {"targets": "> 0.25%, not dead"}], "@babel/preset-react"],
+  "plugins": [
+    ["@babel/plugin-proposal-decorators", { "legacy": true }],
+    ["@babel/plugin-proposal-class-properties"],
+    ["@babel/plugin-proposal-export-namespace-from"],
+    ["@babel/plugin-proposal-export-default-from"],
+    ["@babel/plugin-proposal-optional-chaining"],
+    ["babel-plugin-import", { "libraryName": "@douyinfe/semi-ui", "libraryDirectory": "lib", "style": true }]
+  ],
+  "ignore": [
+    "react-dom.development.js"
+  ]
+}

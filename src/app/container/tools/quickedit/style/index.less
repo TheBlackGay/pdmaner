@@ -1,0 +1,133 @@
+@import "~style";
+
+.@{prefix}-quick-edit {
+  max-height: 70vh;
+  overflow: auto;
+  margin-bottom: 10px;
+  padding: 0 10px 0 10px;
+  &-table {
+    height: calc(70vh - 26px);
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    &-header {
+      height: 26px;
+      line-height: 26px;
+      display: flex;
+      flex-direction: row;
+      & > span {
+        display: inline-block;
+        text-align: center;
+        cursor: pointer;
+      }
+      & > span:first-child {
+        width: 50px;
+      }
+      & > span:nth-child(2) {
+        width: calc(20% - 10px);
+        margin-left: 10px;
+        & > span {
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+          align-items: center;
+        }
+      }
+      & > span:nth-child(3) {
+        width: calc(20% - 10px);
+        margin-left: 10px;
+        & > span {
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+          align-items: center;
+        }
+      }
+      & > span:nth-child(4) {
+        width: calc(20% - 10px);
+        margin-left: 10px;
+      }
+      & > span:nth-child(5) {
+        width: calc(40% - 10px);
+      }
+    }
+    &-body {
+      flex-grow: 1;
+    }
+  }
+  &-tool {
+    border-bottom: 1px solid @primary-border-color;
+  }
+  &-sort {
+    margin-left: 5px;
+    position: relative;
+    display: inline-block;
+    &-picker {
+      opacity: 1 !important;
+    }
+    & > span {
+      cursor: pointer;
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      position: absolute;
+      opacity: 0.5;
+    }
+    & > span:first-child {
+      background-image: url("./img.png");
+      background-position: -3px -2px;
+      bottom: 0;
+      left: 0;
+    }
+    & > span:last-child {
+      background-image: url("./img.png");
+      background-position: -10.5px 9px;
+      left: 0;
+      top: 0;
+    }
+  }
+  .@{prefix}-multiple-select {
+    height: 25px;
+  }
+  .@{prefix}-form-item {
+    padding: 0;
+  }
+  &-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    &:hover {
+      background: @fourth-primary-color;
+      input, select {
+        background: transparent;
+      }
+    }
+    & > span {
+      display: inline-block;
+    }
+    & > span:first-child {
+      width: 50px;
+      text-align: center;
+      cursor: pointer;
+    }
+    & > span:nth-child(2) {
+      width: calc(20% - 10px);
+      margin-left: 10px;
+    }
+    & > span:nth-child(3) {
+      width: calc(20% - 10px);
+      margin-left: 10px;
+    }
+    & > span:nth-child(4) {
+      width: calc(20% - 10px);
+      margin-left: 10px;
+    }
+    & > span:nth-child(5) {
+      width: calc(40% - 10px);
+      .@{prefix}-form-item-component {
+        width: 100%;
+      }
+    }
+  }
+}

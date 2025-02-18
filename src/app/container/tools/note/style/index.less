@@ -1,0 +1,113 @@
+@import "~style";
+.note() {
+  & > div + div {
+    margin-top: 10px;
+  }
+  & > div:first-child {
+    position: relative;
+    &:before {
+      content: " ";
+      width: 2px;
+      position: absolute;
+      background: @primary-color;
+      height: 14px;
+      top: 4px;
+    }
+    & > span {
+      display: inline-block;
+      width: 100%;
+      text-align: left;
+      font-weight: bold;
+      margin-left: 5px;
+    }
+  }
+}
+
+.@{prefix}-note {
+  display: flex;
+  flex-direction: row;
+  padding: 5px;
+  max-height: 80vh;
+  overflow: auto;
+  &-tag-list {
+    width: 200px;
+    max-height: 50vh;
+    overflow-y: auto;
+    word-break: break-all;
+  }
+  &-left {
+    width: 60%;
+    padding-right: 20px;
+    textarea {
+      resize: none;
+      width: calc(100% - 80px);
+    }
+    & > div:nth-child(2) {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      & > span {
+        display: inline-block;
+        height: 51px;
+        line-height: 40px;
+      }
+    }
+    .note();
+    & > div:last-child {
+      height: 50vh;
+      overflow: auto;
+      & > div {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        & > span:first-child {
+          display: inline-block;
+          width: calc(100% - 100px);
+          word-break: break-all;
+        }
+        & > span > a:nth-child(2) {
+          display: inline-block;
+          width: 1px;
+          height: 12px;
+          background: @primary-border-color;
+        }
+        & > span > a + a {
+          margin-left: 5px;
+        }
+      }
+    }
+    &-opt {
+      height: 23px;
+      i {
+        padding: 5px;
+      }
+      .@{prefix}-button {
+        height: 23px;
+        line-height: 23px;
+        padding: 0;
+      }
+    }
+  }
+  &-right {
+    width: 40%;
+    & > div:first-child {
+      width: 100%;
+    }
+    & > div:last-child {
+      width: 220px;
+      height: 50px;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid @primary-border-color;
+    }
+    .note();
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}

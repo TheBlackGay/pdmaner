@@ -1,0 +1,44 @@
+@import "~style";
+
+.@{prefix}-history {
+  height: 80vh;
+  padding: 5px 10px;
+  overflow: auto;
+  &-empty {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+  &-log {
+    max-height: 80vh;
+    padding: 5px 10px;
+    overflow: auto;
+  }
+  &-item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid @primary-border-color;
+    padding: 10px 5px;
+    & > span:first-child {
+      & > span:first-child {
+        color: @primary-color;
+        margin-right: 5px;
+      }
+    }
+    & > span:last-child {
+      & > span {
+        cursor: pointer;
+        text-decoration: underline;
+        color: @primary-color;
+        margin-right: 5px;
+      }
+      & > span:last-child {
+        color: @danger-color;
+      }
+    }
+  }
+}

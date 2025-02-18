@@ -1,0 +1,154 @@
+// 主题配置
+:root {
+  // 布局尺寸
+  --toolbar-opt-height: 36px;
+  --toolbar-height: 64px;
+  --menu-width: 256px;
+  --menu-header: 40px;
+  --tab-item-header: 32px;
+  --top-tab-width: 120px;
+  --top-tab-header: 48px;
+  --top-tab-padding: 8px;
+  --left-tab-width: 56px;
+  --modal-width: 560px;
+  --drawer-width: 320px;
+  --modal-height: 360px;
+  --modal-min-width: 420px;
+  --modal-min-height: 120px;
+
+  // 字体
+  --header-font-size: 12px;
+  --left-tab-font-size: 12px;
+
+  // 滚动条
+  --scrollbar-width: 6px;
+  --scrollbar-color: #E2E8F0;
+
+  // 主题色 - 使用更现代的配色方案
+  --primary-color: #3B82F6;
+  --primary-light: #60A5FA;
+  --primary-lighter: #93C5FD;
+  --primary-lightest: #DBEAFE;
+  
+  // 扩展色彩系统
+  --accent-color: #8B5CF6;
+  --accent-light: #A78BFA;
+  --accent-lighter: #C4B5FD;
+  --accent-lightest: #EDE9FE;
+  
+  // 动画 - 优化过渡效果
+  --transition-all: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-transform: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-opacity: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-colors: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // 动画曲线
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  
+  // 阴影 - 优化层次感
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+
+  // 背景色
+  --bg-base: #ffffff;
+  --bg-secondary: #F8FAFC;
+  --bg-dark: #1E293B;
+  --bg-darker: #0F172A;
+  --bg-highlight: rgba(255,255,255,0.12);
+
+  // 文字颜色
+  --text-primary: #1E293B;
+  --text-secondary: #334155;
+  --text-tertiary: #475569;
+  --text-quaternary: #94A3B8;
+  --text-light: #F1F5F9;
+
+  // 边框颜色
+  --border-base: #E2E8F0;
+  --border-light: #F1F5F9;
+
+  // 功能色
+  --danger: #EF4444;
+  --success: #22C55E;
+  --warning: #F97316;
+  --warning-light: #FCD34D;
+  --note: #FEF9C3;
+  --modal-overlay: rgba(15,23,42,0.45);
+}
+
+// 暗色主题
+[data-theme='dark'] {
+  --bg-base: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-dark: #334155;
+  --bg-darker: #1E293B;
+  --bg-highlight: rgba(255,255,255,0.08);
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #E2E8F0;
+  --text-tertiary: #CBD5E1;
+  --text-quaternary: #94A3B8;
+  --text-light: #1E293B;
+
+  --border-base: #334155;
+  --border-light: #475569;
+
+  --scrollbar-color: #475569;
+}
+
+// 兼容旧变量
+@prefix: chiner;
+@toolbar-opt-height: 32px;
+@toolbar-height: 60px;
+@menu-width: 240px;
+@menu-header: 38px;
+@tab-item-header: 28px;
+@menu-select: var(--primary-color);
+@header-font-size: 12px;
+@scrollbar-width: 6px;
+@scrollbar-color: #E2E8F0;
+@top-tab-width: 100px;
+@top-tab-header: 45px;
+@top-tab-padding: 5px;
+@left-tab-width: 50px;
+@left-tab-font-size: var(--left-tab-font-size);
+@left-tab-bg-color: var(--bg-dark);
+@left-tab-bg-select-color: var(--bg-darker);
+@left-tab-bg-select-border-color: var(--primary-color);
+@primary-color: var(--primary-color);
+@second-primary-color: var(--primary-light);
+@third-primary-color: var(--primary-lighter);
+@fourth-primary-color: var(--primary-lightest);
+@search-bg-color: var(--bg-highlight);
+@primary-bg: var(--bg-dark);
+@primary-border-color: var(--border-base);
+@primary-border-color-simple: var(--border-light);
+@background-color-simple: var(--bg-darker);
+@background-color-black: var(--bg-darker);
+@background-color: var(--bg-base);
+@background-hl: var(--bg-dark);
+@font-color: var(--text-secondary);
+@main-font-color: var(--text-primary);
+@second-font-color: var(--text-tertiary);
+@third-font-color: var(--text-quaternary);
+@four-font-color: var(--text-light);
+@modal-color: var(--modal-overlay);
+@danger-color: var(--danger);
+@success-color: var(--success);
+@warring-color: var(--warning);
+@warring-color-under: var(--warning-light);
+@note-color: var(--note);
+@modal-width: var(--modal-width);
+@drawer-width: var(--drawer-width);
+@modal-height: var(--modal-height);
+@modal-min-width: var(--modal-min-width);
+@modal-min-height: var(--modal-min-height);
+@home-background: var(--bg-secondary);
+@tr-background: var(--bg-secondary);
+@code-background: var(--bg-dark);
