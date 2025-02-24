@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Layout, Menu, Button, Input, List } from 'antd'
+import { Layout, Menu, Button, Input, List, Space, Tooltip, Dropdown, Modal, Form, Select, message } from 'antd'
 import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom'
 import {
   LeftOutlined,
@@ -10,14 +10,20 @@ import {
   SearchOutlined,
   PlusOutlined,
   TableOutlined,
+  ImportOutlined,
+  FileTextOutlined,
+  UploadOutlined
 } from '@ant-design/icons'
-import { useProjectStore } from '@/stores/project'
-import { useTableStore } from '@/stores/table'
+import { useProjectStore } from '../../../stores/project'
+import { useTableStore } from '../../../stores/table'
+import { useFieldStore } from '../../../stores/field'
+import { useIndexStore } from '../../../stores/index'
+import { SQLParser } from '../../../utils/sqlParser'
 import CreateTableDialog from '@/renderer/components/CreateTableDialog'
 import styles from './style.module.css'
 import TableDetail from './TableDetail'
 
-const { Header } = Layout
+const { Header, Content } = Layout
 
 // 子菜单组件 - 模型
 const ModelSubMenu: React.FC = () => {
@@ -71,7 +77,11 @@ const ModelSubMenu: React.FC = () => {
 
 const ProjectLayout: React.FC = () => {
   const navigate = useNavigate()
+  const { id: projectId } = useParams<{ id: string }>()
   const { selectedProject } = useProjectStore()
+  const { tables, loading, fetchTables, createTable } = useTableStore()
+  const { createField } = useFieldStore()
+  const { createIndex } = useIndexStore()
   const [selectedMenu, setSelectedMenu] = useState('model')
   const [mainSiderWidth, setMainSiderWidth] = useState(200)
   const [subSiderWidth, setSubSiderWidth] = useState(300)
@@ -79,6 +89,8 @@ const ProjectLayout: React.FC = () => {
   const resizingSubRef = useRef(false)
   const startXRef = useRef(0)
   const startWidthRef = useRef(0)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [importForm] = Form.useForm()
 
   const handleMainSiderResizeStart = (e: React.MouseEvent) => {
     resizingMainRef.current = true
@@ -176,9 +188,73 @@ const ProjectLayout: React.FC = () => {
     }
   }
 
+  const handleSave = () => {
+    message.success('保存成功')
+  }
+
+  const handleUndo = () => {
+    message.info('撤销操作')
+  }
+
+  const handleImportSQL = async () => {
+    try {
+      const values = await importForm.validateFields()
+      const { dbType, sql } = values
+
+      const parser = new SQLParser(sql, dbType)
+      const tables = parser.parse()
+
+      if (tables.length === 0) {
+        message.error('没有找到有效的建表语句')
+        return
+      }
+
+      // 批量创建表
+      for (const { table, fields, indexes } of tables) {
+        try {
+          // 创建表
+          const newTable = await createTable(projectId!, table)
+          const tableId = newTable.id
+
+          // 创建字段
+          const fieldMap = new Map<string, string>() // 字段名到ID的映射
+          for (const field of fields) {
+            const newField = await createField(tableId, field)
+            fieldMap.set(field.name, newField.id)
+          }
+
+          // 创建索引
+          for (const index of indexes) {
+            const indexFields = index.fields.map(f => ({
+              ...f,
+              fieldId: fieldMap.get(f.fieldId) || f.fieldId
+            }))
+
+            await createIndex(tableId, {
+              ...index,
+              fields: indexFields
+            })
+          }
+        } catch (error) {
+          console.error(`处理表 ${table.name} 失败:`, error)
+          message.error(`处理表 ${table.name} 失败: ${(error as Error).message}`)
+        }
+      }
+
+      message.success(`成功导入 ${tables.length} 个表`)
+      setImportDialogOpen(false)
+      importForm.resetFields()
+
+      // 重新加载表列表
+      await fetchTables(projectId!)
+    } catch (error) {
+      console.error('导入失败:', error)
+      message.error('导入失败: ' + (error as Error).message)
+    }
+  }
+
   return (
     <Layout className={styles.projectLayout}>
-      {/* 顶部工具栏 */}
       <Header className={styles.header}>
         <div className={styles.headerLeft}>
           <Button 
@@ -189,10 +265,55 @@ const ProjectLayout: React.FC = () => {
           <span className={styles.projectName}>{selectedProject?.name}</span>
         </div>
         <div className={styles.headerCenter}>
-          <Button icon={<SaveOutlined />}>保存</Button>
-          <Button icon={<UndoOutlined />}>撤销</Button>
-          <Button icon={<RedoOutlined />}>重做</Button>
-          <Button icon={<SettingOutlined />}>设置</Button>
+          <Space>
+            <Tooltip title="保存 (⌘S)">
+              <Button
+                icon={<SaveOutlined />}
+                onClick={handleSave}
+              />
+            </Tooltip>
+            <Tooltip title="撤销 (⌘Z)">
+              <Button
+                icon={<UndoOutlined />}
+                onClick={handleUndo}
+              />
+            </Tooltip>
+            <Tooltip title="重做 (⌘⇧Z)">
+              <Button
+                icon={<RedoOutlined />}
+                onClick={() => message.info('重做功能开发中')}
+              />
+            </Tooltip>
+            <Tooltip title="导入">
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'importSQL',
+                      label: '导入建表语句',
+                      icon: <FileTextOutlined />,
+                      onClick: () => setImportDialogOpen(true)
+                    },
+                    {
+                      key: 'importExcel',
+                      label: '导入Excel',
+                      icon: <UploadOutlined />,
+                      onClick: () => message.info('Excel导入功能开发中')
+                    }
+                  ]
+                }}
+                placement="bottomRight"
+              >
+                <Button icon={<ImportOutlined />} />
+              </Dropdown>
+            </Tooltip>
+            <Tooltip title="设置">
+              <Button
+                icon={<SettingOutlined />}
+                onClick={() => message.info('设置功能开发中')}
+              />
+            </Tooltip>
+          </Space>
         </div>
         <div className={styles.headerRight}>
           <Input 
@@ -247,6 +368,59 @@ const ProjectLayout: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <Modal
+        title="导入建表语句"
+        open={importDialogOpen}
+        onCancel={() => {
+          setImportDialogOpen(false)
+          importForm.resetFields()
+        }}
+        onOk={handleImportSQL}
+        width={800}
+        destroyOnClose
+      >
+        <Form
+          form={importForm}
+          layout="vertical"
+        >
+          <Form.Item
+            name="dbType"
+            label="数据库类型"
+            initialValue="mysql"
+            rules={[{ required: true, message: '请选择数据库类型' }]}
+          >
+            <Select
+              options={[
+                { label: 'MySQL', value: 'mysql' },
+                { label: 'Doris', value: 'doris' }
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            name="sql"
+            label="建表语句"
+            rules={[{ required: true, message: '请输入建表语句' }]}
+            help="请输入完整的建表语句，包括字段定义、索引等"
+          >
+            <Input.TextArea
+              placeholder={`示例：
+CREATE TABLE user (
+  id INT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(50) NOT NULL COMMENT '用户名',
+  email VARCHAR(100) COMMENT '邮箱',
+  status TINYINT DEFAULT 1 COMMENT '状态',
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_email (email),
+  KEY idx_name (name)
+) COMMENT='用户表';`}
+              rows={15}
+              style={{ fontFamily: 'monospace' }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Layout>
   )
 }

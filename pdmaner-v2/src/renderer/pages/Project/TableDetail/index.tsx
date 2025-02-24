@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox, Dropdown, Badge, Tag } from 'antd'
+import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox, Dropdown, Badge, Tag, Modal, Form, Input, Select } from 'antd'
 import {
   PlusOutlined,
   EditOutlined,
@@ -23,7 +23,11 @@ import {
   VerticalAlignBottomOutlined,
   HolderOutlined,
   PlayCircleOutlined,
-  PauseCircleOutlined
+  PauseCircleOutlined,
+  SaveOutlined,
+  UndoOutlined,
+  RedoOutlined,
+  SettingOutlined
 } from '@ant-design/icons'
 import { useParams } from 'react-router-dom'
 import { useTableStore } from '@/stores/table'
@@ -48,6 +52,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { SQLParser } from '@/utils/sqlParser'
 
 const { TabPane } = Tabs
 const { Title, Paragraph } = Typography
@@ -243,6 +248,12 @@ const TableDetail: React.FC = () => {
       label: '生成SQL',
       icon: <FileTextOutlined />,
       onClick: () => message.info('SQL生成功能开发中')
+    },
+    {
+      key: 'import_sql',
+      label: '导入建表语句',
+      icon: <ImportOutlined />,
+      onClick: () => message.info('SQL导入功能开发中')
     }
   ] as const
 
@@ -394,24 +405,13 @@ const TableDetail: React.FC = () => {
     }
   }
 
-  const handleIndexSubmit = async (values: CreateIndexParams | UpdateIndexParams) => {
-    if (!selectedTable) return
-
-    try {
-      if (editingIndex) {
-        await updateIndex(editingIndex.id, values)
-        message.success('索引更新成功')
-      } else {
-        await createIndex(selectedTable.id, values)
-        message.success('索引创建成功')
-      }
-      await getTableWithFields(selectedTable.id)
-      setEditIndexDialogOpen(false)
-    } catch (error) {
-      console.error('提交索引失败:', error)
-      message.error(editingIndex ? '索引更新失败' : '索引创建失败')
-      throw error
+  const handleIndexSubmit = (index: Index) => {
+    if (editingIndex) {
+      updateIndex(index)
+    } else {
+      createIndex(index)
     }
+    setEditIndexDialogOpen(false)
   }
 
   const DraggableRow = ({ children, ...props }: any) => {
@@ -637,15 +637,15 @@ const TableDetail: React.FC = () => {
       render: (fields: any[]) => (
         <Space wrap>
           {fields.map((f, idx) => (
-            <Tag 
-              key={f.field.id} 
+            <Tag
+              key={f.field.id}
               color={idx === 0 ? 'blue' : 'default'}
               style={{ margin: '2px' }}
             >
               {f.field.name}
               {f.sort && (
-                <Tag 
-                  color={f.sort === 'ASC' ? 'green' : 'orange'} 
+                <Tag
+                  color={f.sort === 'ASC' ? 'green' : 'orange'}
                   style={{ marginLeft: 4, marginRight: 0 }}
                 >
                   {f.sort === 'ASC' ? '升序' : '降序'}
@@ -858,11 +858,6 @@ const TableDetail: React.FC = () => {
               >
                 字段模板
               </Button>
-              <Tooltip title="更多操作">
-                <Dropdown menu={{ items: moreActions }} placement="bottomRight">
-                  <Button icon={<MoreOutlined />} />
-                </Dropdown>
-              </Tooltip>
             </div>
           </div>
           <Table
@@ -940,6 +935,7 @@ const TableDetail: React.FC = () => {
 
   return (
     <div className={styles.container}>
+
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
