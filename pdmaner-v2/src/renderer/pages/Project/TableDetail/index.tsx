@@ -18,7 +18,10 @@ import {
   FileTextOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  VerticalAlignTopOutlined,
+  VerticalAlignBottomOutlined,
+  HolderOutlined
 } from '@ant-design/icons'
 import { useParams } from 'react-router-dom'
 import { useTableStore } from '@/stores/table'
@@ -26,6 +29,23 @@ import EditFieldDialog from '@/renderer/components/EditFieldDialog'
 import EditIndexDialog from '@/renderer/components/EditIndexDialog'
 import type { Field, Index } from '@/types/table'
 import styles from './style.module.css'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 const { TabPane } = Tabs
 const { Title, Paragraph } = Typography
@@ -52,6 +72,12 @@ const TableDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState('fields')
   const [selectedRows, setSelectedRows] = useState<string[]>([])
   const [expandedIndexes, setExpandedIndexes] = useState<string[]>([])
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   useEffect(() => {
     if (selectedTable) {
@@ -93,8 +119,62 @@ const TableDetail: React.FC = () => {
     }
   }
 
-  const handleMoveField = async (id: string, direction: 'up' | 'down') => {
-    message.info('字段排序功能开发中')
+  const handleMoveField = async (id: string, type: 'up' | 'down' | 'top' | 'bottom') => {
+    const fields = [...selectedTable.fields]
+    const index = fields.findIndex(f => f.id === id)
+    if (index === -1) return
+
+    const field = fields[index]
+    fields.splice(index, 1)
+
+    switch (type) {
+      case 'up':
+        if (index > 0) {
+          fields.splice(index - 1, 0, field)
+        }
+        break
+      case 'down':
+        if (index < fields.length) {
+          fields.splice(index + 1, 0, field)
+        }
+        break
+      case 'top':
+        fields.unshift(field)
+        break
+      case 'bottom':
+        fields.push(field)
+        break
+    }
+
+    try {
+      await updateTable(selectedTable.id, {
+        ...selectedTable,
+        fields
+      })
+      message.success('字段排序更新成功')
+    } catch (error) {
+      message.error('字段排序更新失败')
+    }
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = selectedTable?.fields.findIndex(f => f.id === active.id)
+    const newIndex = selectedTable?.fields.findIndex(f => f.id === over.id)
+
+    if (oldIndex !== undefined && newIndex !== undefined && selectedTable) {
+      const newFields = arrayMove(selectedTable.fields, oldIndex, newIndex)
+      updateTable(selectedTable.id, {
+        ...selectedTable,
+        fields: newFields
+      }).then(() => {
+        message.success('字段排序更新成功')
+      }).catch(() => {
+        message.error('字段排序更新失败')
+      })
+    }
   }
 
   const moreActions = [
@@ -223,6 +303,12 @@ const TableDetail: React.FC = () => {
   }
 
   const fieldColumns = [
+    {
+      title: '',
+      key: 'sort',
+      width: 30,
+      render: () => <HolderOutlined className={styles.dragHandle} />
+    },
     {
       title: '字段名',
       dataIndex: 'name',
@@ -387,6 +473,7 @@ const TableDetail: React.FC = () => {
               type="text"
               danger
               icon={<DeleteOutlined />}
+              className={styles.actionButton}
             />
           </Popconfirm>
         </Space>
@@ -394,12 +481,49 @@ const TableDetail: React.FC = () => {
     },
   ]
 
+  const DraggableRow = ({ children, ...props }: any) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({
+      id: props['data-row-key']
+    })
+
+    const style: React.CSSProperties = {
+      ...props.style,
+      transform: CSS.Transform.toString(transform),
+      transition,
+      ...(isDragging ? { 
+        position: 'relative',
+        zIndex: 9999,
+        background: '#fafafa',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)' 
+      } : {})
+    }
+
+    return (
+      <tr
+        {...props}
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+      >
+        {children}
+      </tr>
+    )
+  }
+
   const renderContent = () => {
     if (activeTab === 'fields') {
       return (
         <div className={styles.configContent}>
           <div className={styles.toolbar}>
-            <Space>
+            <div className={styles.toolbarLeft}>
               <Button 
                 type="primary" 
                 icon={<PlusOutlined />}
@@ -407,12 +531,36 @@ const TableDetail: React.FC = () => {
               >
                 添加字段
               </Button>
-              <Button 
-                icon={<DatabaseOutlined />}
-                onClick={() => message.info('字段模板功能开发中')}
-              >
-                字段模板
-              </Button>
+              <div className={styles.moveButtons}>
+                <Tooltip title="置顶">
+                  <Button 
+                    icon={<VerticalAlignTopOutlined />}
+                    disabled={selectedRows.length !== 1}
+                    onClick={() => handleMoveField(selectedRows[0], 'top')}
+                  />
+                </Tooltip>
+                <Tooltip title="上移">
+                  <Button 
+                    icon={<ArrowUpOutlined />}
+                    disabled={selectedRows.length !== 1}
+                    onClick={() => handleMoveField(selectedRows[0], 'up')}
+                  />
+                </Tooltip>
+                <Tooltip title="下移">
+                  <Button 
+                    icon={<ArrowDownOutlined />}
+                    disabled={selectedRows.length !== 1}
+                    onClick={() => handleMoveField(selectedRows[0], 'down')}
+                  />
+                </Tooltip>
+                <Tooltip title="置底">
+                  <Button 
+                    icon={<VerticalAlignBottomOutlined />}
+                    disabled={selectedRows.length !== 1}
+                    onClick={() => handleMoveField(selectedRows[0], 'bottom')}
+                  />
+                </Tooltip>
+              </div>
               {selectedRows.length > 0 && (
                 <Popconfirm
                   title={`确定要删除选中的 ${selectedRows.length} 个字段吗？`}
@@ -426,30 +574,53 @@ const TableDetail: React.FC = () => {
                   </Button>
                 </Popconfirm>
               )}
-            </Space>
-            <Space>
+            </div>
+            <div className={styles.toolbarRight}>
+              <Button 
+                icon={<DatabaseOutlined />}
+                onClick={() => message.info('字段模板功能开发中')}
+              >
+                字段模板
+              </Button>
               <Tooltip title="更多操作">
                 <Dropdown menu={{ items: moreActions }} placement="bottomRight">
                   <Button icon={<MoreOutlined />} />
                 </Dropdown>
               </Tooltip>
-            </Space>
+            </div>
           </div>
-          <Table
-            columns={fieldColumns}
-            dataSource={selectedTable.fields}
-            rowKey="id"
-            scroll={{ x: 'max-content' }}
-            pagination={false}
-            rowSelection={{
-              type: 'checkbox',
-              selectedRowKeys: selectedRows,
-              onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
-            }}
-            onRow={(record) => ({
-              onDoubleClick: () => handleEditField(record)
-            })}
-          />
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={selectedTable?.fields.map(f => f.id) || []}
+              strategy={verticalListSortingStrategy}
+            >
+              <Table
+                components={{
+                  body: {
+                    row: DraggableRow,
+                  },
+                }}
+                columns={fieldColumns}
+                dataSource={selectedTable?.fields}
+                rowKey="id"
+                scroll={{ x: 'max-content' }}
+                pagination={false}
+                rowSelection={{
+                  type: 'checkbox',
+                  selectedRowKeys: selectedRows,
+                  onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
+                }}
+                onRow={(record) => ({
+                  onDoubleClick: () => handleEditField(record),
+                  'data-row-key': record.id
+                })}
+              />
+            </SortableContext>
+          </DndContext>
         </div>
       )
     }
