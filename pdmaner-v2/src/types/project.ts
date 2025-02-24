@@ -9,11 +9,6 @@ export interface Project {
 export interface CreateProjectParams {
   name: string
   description?: string
-  template?: string
-  database: {
-    type: 'MySQL' | 'PostgreSQL' | 'Oracle' | 'SQLServer'
-    version?: string
-  }
 }
 
 export interface ProjectTemplate {

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Modal, Form, Input, Select, message } from 'antd'
+import { Modal, Form, Input, message } from 'antd'
 import type { CreateProjectParams } from '@/types/project'
 import { useProjectStore } from '@/stores/project'
 
@@ -7,13 +7,6 @@ interface Props {
   open: boolean
   onClose: () => void
 }
-
-const DATABASE_TYPES = [
-  { label: 'MySQL', value: 'MySQL' },
-  { label: 'PostgreSQL', value: 'PostgreSQL' },
-  { label: 'Oracle', value: 'Oracle' },
-  { label: 'SQL Server', value: 'SQLServer' },
-]
 
 const CreateProjectDialog: React.FC<Props> = ({ open, onClose }) => {
   const [form] = Form.useForm()
@@ -47,11 +40,6 @@ const CreateProjectDialog: React.FC<Props> = ({ open, onClose }) => {
       <Form
         form={form}
         layout="vertical"
-        initialValues={{
-          database: {
-            type: 'MySQL'
-          }
-        }}
       >
         <Form.Item
           name="name"
@@ -66,21 +54,6 @@ const CreateProjectDialog: React.FC<Props> = ({ open, onClose }) => {
             placeholder="请输入项目描述"
             rows={3}
           />
-        </Form.Item>
-
-        <Form.Item
-          name={['database', 'type']}
-          label="数据库类型"
-          rules={[{ required: true, message: '请选择数据库类型' }]}
-        >
-          <Select options={DATABASE_TYPES} />
-        </Form.Item>
-
-        <Form.Item
-          name={['database', 'version']}
-          label="数据库版本"
-        >
-          <Input placeholder="请输入数据库版本" />
         </Form.Item>
       </Form>
     </Modal>

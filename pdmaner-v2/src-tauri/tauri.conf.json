@@ -3,7 +3,7 @@
   "build": {
     "beforeDevCommand": "yarn dev",
     "beforeBuildCommand": "yarn build",
-    "devPath": "http://127.0.0.1:1420",
+    "devPath": "http://localhost:1420",
     "distDir": "../dist"
   },
   "package": {
@@ -13,9 +13,9 @@
   "tauri": {
     "allowlist": {
       "all": false,
-      "shell": {
-        "all": false,
-        "open": true
+      "fs": {
+        "all": true,
+        "scope": ["$APPDATA/**"]
       }
     },
     "bundle": {

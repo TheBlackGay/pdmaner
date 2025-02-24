@@ -1,24 +1,23 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Row, Col, Button, Empty, Spin } from 'antd'
-import {
-  PlusOutlined,
-  ClockCircleOutlined,
-  DatabaseOutlined,
-} from '@ant-design/icons'
+import { Card, Row, Col, Button, Empty, Spin, message } from 'antd'
+import { PlusOutlined, ClockCircleOutlined } from '@ant-design/icons'
+import { invoke } from '@tauri-apps/api/tauri'
 import { useProjectStore } from '@/stores/project'
+import CreateProjectDialog from '@/components/CreateProjectDialog'
 import styles from './style.module.css'
 
 const Home: React.FC = () => {
   const navigate = useNavigate()
   const { projects, loading, fetchProjects, selectProject } = useProjectStore()
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   useEffect(() => {
     fetchProjects()
   }, [fetchProjects])
 
   const handleCreateProject = () => {
-    // TODO: 打开创建项目对话框
+    setCreateDialogOpen(true)
   }
 
   const handleProjectClick = (project: any) => {
@@ -26,17 +25,36 @@ const Home: React.FC = () => {
     navigate(`/project/${project.id}`)
   }
 
+  const handleCreateSampleProjects = async () => {
+    try {
+      await invoke('create_sample_projects')
+      message.success('示例项目创建成功')
+      fetchProjects()
+    } catch (error) {
+      console.error('Failed to create sample projects:', error)
+      message.error('示例项目创建失败')
+    }
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h1>我的项目</h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleCreateProject}
-        >
-          新建项目
-        </Button>
+        <div>
+          <Button
+            onClick={handleCreateSampleProjects}
+            style={{ marginRight: 8 }}
+          >
+            创建示例项目
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreateProject}
+          >
+            新建项目
+          </Button>
+        </div>
       </div>
 
       <Spin spinning={loading}>
@@ -55,9 +73,6 @@ const Home: React.FC = () => {
                     <span>
                       <ClockCircleOutlined /> {new Date(project.updatedAt).toLocaleDateString()}
                     </span>
-                    <span>
-                      <DatabaseOutlined /> {project.database?.type || 'MySQL'}
-                    </span>
                   </div>
                 </Card>
               </Col>
@@ -74,6 +89,11 @@ const Home: React.FC = () => {
           </Empty>
         )}
       </Spin>
+
+      <CreateProjectDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+      />
     </div>
   )
 }

@@ -11,7 +11,7 @@ interface ProjectState {
   selectProject: (project: Project) => void
 }
 
-export const useProjectStore = create<ProjectState>((set, get) => ({
+export const useProjectStore = create<ProjectState>((set) => ({
   projects: [],
   loading: false,
   selectedProject: undefined,
@@ -23,6 +23,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ projects })
     } catch (error) {
       console.error('Failed to fetch projects:', error)
+      throw error
     } finally {
       set({ loading: false })
     }

@@ -1,8 +1,11 @@
 import { createBrowserRouter } from 'react-router-dom'
 import Layout from '../components/Layout'
 import Home from '../pages/Home'
-import TableManager from '../pages/TableManager'
-import ERDesigner from '../pages/ERDesigner'
+import ProjectLayout from '../pages/Project/Layout'
+import TableManager from '../pages/Project/TableManager'
+import ERDesigner from '../pages/Project/ERDesigner'
+import DatabaseManager from '../pages/Project/DatabaseManager'
+import CodeGenerator from '../pages/Project/CodeGenerator'
 
 export const router = createBrowserRouter([
   {
@@ -14,12 +17,26 @@ export const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: 'table',
-        element: <TableManager />,
-      },
-      {
-        path: 'er',
-        element: <ERDesigner />,
+        path: 'project/:id',
+        element: <ProjectLayout />,
+        children: [
+          {
+            path: 'table',
+            element: <TableManager />,
+          },
+          {
+            path: 'er',
+            element: <ERDesigner />,
+          },
+          {
+            path: 'database',
+            element: <DatabaseManager />,
+          },
+          {
+            path: 'code',
+            element: <CodeGenerator />,
+          },
+        ],
       },
     ],
   },

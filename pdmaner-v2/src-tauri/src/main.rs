@@ -34,6 +34,15 @@ async fn create_project(
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn create_sample_projects(state: State<'_, AppState>) -> Result<(), String> {
+    state
+        .db
+        .create_sample_projects()
+        .await
+        .map_err(|e| e.to_string())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = Database::new().await?;
@@ -43,7 +52,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tauri::Builder::default()
         .manage(app_state)
-        .invoke_handler(tauri::generate_handler![get_projects, create_project])
+        .invoke_handler(tauri::generate_handler![
+            get_projects,
+            create_project,
+            create_sample_projects
+        ])
         .setup(|app| {
             #[cfg(debug_assertions)]
             {
