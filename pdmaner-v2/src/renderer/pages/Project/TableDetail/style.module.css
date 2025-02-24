@@ -77,4 +77,56 @@
 
 .configContent :global(.ant-table) {
   height: 100%;
+}
+
+/* 索引列表样式 */
+.indexList {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.indexHeader {
+  display: grid;
+  grid-template-columns: 80px 80px 200px 100px 1fr 120px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  font-weight: 500;
+}
+
+.indexHeaderCell {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+}
+
+.indexItem {
+  display: grid;
+  grid-template-columns: 80px 80px 200px 100px 1fr 120px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.3s;
+}
+
+.indexItem:hover {
+  background-color: #fafafa;
+}
+
+.indexCell {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+}
+
+.indexCell :global(.anticon) {
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.indexCell :global(.anticon):hover {
+  color: #1890ff;
+}
+
+.indexCell :global(.anticon.expanded) {
+  transform: rotate(90deg);
 } 

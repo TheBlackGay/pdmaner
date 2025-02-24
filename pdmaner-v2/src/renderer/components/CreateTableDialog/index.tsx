@@ -12,13 +12,21 @@ interface Props {
 const CreateTableDialog: React.FC<Props> = ({ open, onClose }) => {
   const [form] = Form.useForm()
   const { id: projectId } = useParams<{ id: string }>()
-  const { createTable } = useTableStore()
+  const { createTable, tables } = useTableStore()
   const [loading, setLoading] = React.useState(false)
 
   const handleSubmit = async () => {
     if (!projectId) return
     try {
       const values = await form.validateFields()
+      
+      // 检查表名是否重复
+      const isNameExists = tables.some(t => t.name === values.name)
+      if (isNameExists) {
+        message.error('表名已存在')
+        return
+      }
+
       setLoading(true)
       await createTable(projectId, values as CreateTableParams)
       message.success('表创建成功')

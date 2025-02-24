@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse } from 'antd'
+import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined } from '@ant-design/icons'
 import { useParams } from 'react-router-dom'
 import { useTableStore } from '@/stores/table'
@@ -30,6 +30,7 @@ const TableDetail: React.FC = () => {
   const [editIndexDialogOpen, setEditIndexDialogOpen] = useState(false)
   const [editingField, setEditingField] = useState<Field>()
   const [editingIndex, setEditingIndex] = useState<Index>()
+  const [activeTab, setActiveTab] = useState('fields')
 
   useEffect(() => {
     if (selectedTable) {
@@ -271,10 +272,95 @@ const TableDetail: React.FC = () => {
     },
   ]
 
+  const renderContent = () => {
+    if (activeTab === 'fields') {
+      return (
+        <div className={styles.configContent}>
+          <div className={styles.toolbar}>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreateField}
+            >
+              添加字段
+            </Button>
+          </div>
+          <Table
+            columns={fieldColumns}
+            dataSource={selectedTable.fields}
+            rowKey="id"
+            scroll={{ x: 'max-content' }}
+            pagination={false}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className={styles.configContent}>
+        <div className={styles.toolbar}>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />}
+            onClick={handleCreateIndex}
+          >
+            添加索引
+          </Button>
+        </div>
+        <div className={styles.indexList}>
+          <div className={styles.indexHeader}>
+            <div className={styles.indexHeaderCell}>序号</div>
+            <div className={styles.indexHeaderCell}>展开</div>
+            <div className={styles.indexHeaderCell}>索引名</div>
+            <div className={styles.indexHeaderCell}>是否唯一</div>
+            <div className={styles.indexHeaderCell}>描述</div>
+            <div className={styles.indexHeaderCell}>操作</div>
+          </div>
+          {(selectedTable.indexes || []).map((index, idx) => (
+            <div key={index.id} className={styles.indexItem}>
+              <div className={styles.indexCell}>{idx + 1}</div>
+              <div className={styles.indexCell}>
+                <CaretRightOutlined />
+              </div>
+              <div className={styles.indexCell}>{index.name}</div>
+              <div className={styles.indexCell}>
+                <Checkbox checked={index.type === 'UNIQUE'} disabled />
+              </div>
+              <div className={styles.indexCell}>{index.comment || '-'}</div>
+              <div className={styles.indexCell}>
+                <Space>
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEditIndex(index)}
+                  />
+                  <Popconfirm
+                    title="确定要删除这个索引吗？"
+                    onConfirm={() => handleDeleteIndex(index.id)}
+                  >
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                    />
+                  </Popconfirm>
+                </Space>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.container}>
       {/* Tab栏 */}
-      <Tabs defaultActiveKey="fields" className={styles.tabs}>
+      <Tabs 
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        className={styles.tabs}
+      >
         <TabPane tab="字段" key="fields" />
         <TabPane tab="索引" key="indexes" />
       </Tabs>
@@ -298,24 +384,7 @@ const TableDetail: React.FC = () => {
       </Collapse>
 
       {/* 字段/索引配置区域 */}
-      <div className={styles.configContent}>
-        <div className={styles.toolbar}>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={handleCreateField}
-          >
-            添加字段
-          </Button>
-        </div>
-        <Table
-          columns={fieldColumns}
-          dataSource={selectedTable.fields}
-          rowKey="id"
-          scroll={{ x: 'max-content' }}
-          pagination={false}
-        />
-      </div>
+      {renderContent()}
 
       <EditFieldDialog
         open={editFieldDialogOpen}
