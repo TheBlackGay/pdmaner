@@ -6,9 +6,9 @@
 
 .header {
   background: #fff;
-  padding: 0 24px;
-  height: 64px;
-  line-height: 64px;
+  padding: 0 1px;
+  height: 32px;
+  line-height: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -19,7 +19,7 @@
 .headerLeft {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 .projectName {
@@ -47,7 +47,7 @@
 }
 
 .mainSider {
-  width: 200px;
+  width: 10px;
   background: #fff;
   border-right: 1px solid #f0f0f0;
   flex: none;
@@ -64,7 +64,7 @@
 }
 
 .subSider {
-  width: 300px;
+  width: 10px;
   background: #fff;
   border-right: 1px solid #f0f0f0;
   flex: none;
@@ -96,7 +96,7 @@
 .content {
   flex: 1;
   overflow: auto;
-  padding: 24px;
+  padding: 1px;
 }
 
 /* 子菜单样式 */
@@ -238,4 +238,4 @@
 
 .container :global(.ant-space) {
   gap: 8px !important;
-} 
+}
