@@ -11,6 +11,60 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
+.fieldSelector :global(.ant-select) {
+  width: 100%;
+}
+
+.fieldSelector :global(.ant-select-selector) {
+  background: #fff !important;
+  border-radius: 6px !important;
+}
+
+.fieldSelector :global(.ant-select-selection-placeholder) {
+  color: #bfbfbf;
+}
+
+.fieldSelector :global(.ant-select-selection-item) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f5f5 !important;
+  border: none !important;
+  border-radius: 4px !important;
+  margin: 2px !important;
+  padding: 2px 8px !important;
+}
+
+.fieldSelector :global(.ant-select-selection-item-content) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 0 !important;
+}
+
+.fieldSelector :global(.ant-select-selection-item-remove) {
+  color: #999;
+  margin-left: 4px !important;
+}
+
+.fieldSelector :global(.ant-select-selection-item-remove:hover) {
+  color: #ff4d4f;
+}
+
+.fieldSelector :global(.ant-select-item) {
+  padding: 8px 12px !important;
+}
+
+.fieldSelector :global(.ant-select-item-option-content) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fieldSelector :global(.ant-select-item-option-selected) {
+  background-color: #e6f4ff !important;
+}
+
 .fieldSelector :global(.ant-table-wrapper) {
   padding: 0 16px 16px;
 }
@@ -47,18 +101,6 @@
 
 .fieldSelector :global(.ant-table-tbody > tr > td .ant-btn .anticon) {
   font-size: 14px;
-}
-
-.fieldSelector :global(.ant-select-selection-item) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.fieldSelector :global(.ant-select-item-option-content) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .fieldSelector :global(.ant-tag) {

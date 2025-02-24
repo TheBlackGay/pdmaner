@@ -175,7 +175,7 @@ const TableDetail: React.FC = () => {
           ...f,
           orderIndex: idx
         }))
-      })
+      } as any)
 
       message.success('字段排序更新成功')
       // 重新获取最新数据
@@ -559,6 +559,53 @@ const TableDetail: React.FC = () => {
     },
   ]
 
+  const handleMoveIndex = async (id: string, type: 'up' | 'down' | 'top' | 'bottom') => {
+    if (!selectedTable || !id) return
+
+    const indexes = [...(selectedTable.indexes || [])]
+    const index = indexes.findIndex(f => f.id === id)
+    if (index === -1) return
+
+    const indexItem = indexes[index]
+    indexes.splice(index, 1)
+
+    let newIndex: number
+    switch (type) {
+      case 'up':
+        newIndex = Math.max(0, index - 1)
+        break
+      case 'down':
+        newIndex = Math.min(indexes.length, index + 1)
+        break
+      case 'top':
+        newIndex = 0
+        break
+      case 'bottom':
+        newIndex = indexes.length
+        break
+      default:
+        return
+    }
+
+    indexes.splice(newIndex, 0, indexItem)
+
+    try {
+      await updateTable(selectedTable.id, {
+        ...selectedTable,
+        indexes: indexes.map((idx, i) => ({
+          ...idx,
+          orderIndex: i
+        }))
+      } as any)
+
+      message.success('索引排序更新成功')
+      await getTableWithFields(selectedTable.id)
+    } catch (error) {
+      console.error('索引排序更新失败:', error)
+      message.error('索引排序更新失败')
+    }
+  }
+
   const indexColumns = [
     {
       title: '序号',
@@ -575,25 +622,12 @@ const TableDetail: React.FC = () => {
       ellipsis: true,
       render: (text: string, record: Index) => (
         <Space>
-          {record.type === 'UNIQUE' && <Badge status="processing" />}
+          <Tag color={record.type === 'UNIQUE' ? 'blue' : 'default'}>
+            {record.type === 'UNIQUE' ? '唯一' : '普通'}
+          </Tag>
           <span style={{ fontWeight: 500 }}>{text}</span>
         </Space>
       )
-    },
-    {
-      title: '类型',
-      dataIndex: 'type',
-      key: 'type',
-      width: 120,
-      render: (type: string) => {
-        const typeMap = {
-          'NORMAL': { text: '普通索引', color: 'default' },
-          'UNIQUE': { text: '唯一索引', color: 'blue' },
-          'FULLTEXT': { text: '全文索引', color: 'orange' }
-        }
-        const config = typeMap[type as keyof typeof typeMap] || { text: type, color: 'default' }
-        return <Tag color={config.color}>{config.text}</Tag>
-      }
     },
     {
       title: '字段',
@@ -609,7 +643,14 @@ const TableDetail: React.FC = () => {
               style={{ margin: '2px' }}
             >
               {f.field.name}
-              {f.sort && <small style={{ marginLeft: 4, opacity: 0.7 }}>{f.sort}</small>}
+              {f.sort && (
+                <Tag 
+                  color={f.sort === 'ASC' ? 'green' : 'orange'} 
+                  style={{ marginLeft: 4, marginRight: 0 }}
+                >
+                  {f.sort === 'ASC' ? '升序' : '降序'}
+                </Tag>
+              )}
             </Tag>
           ))}
         </Space>
@@ -625,7 +666,7 @@ const TableDetail: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 180,
       fixed: 'right' as const,
       render: (_: any, record: Index) => (
         <Space>
@@ -646,6 +687,32 @@ const TableDetail: React.FC = () => {
               className={styles.actionButton}
             />
           </Popconfirm>
+          <div className={styles.moveButtons}>
+            <Tooltip title="置顶">
+              <Button
+                icon={<VerticalAlignTopOutlined />}
+                onClick={() => handleMoveIndex(record.id, 'top')}
+              />
+            </Tooltip>
+            <Tooltip title="上移">
+              <Button
+                icon={<ArrowUpOutlined />}
+                onClick={() => handleMoveIndex(record.id, 'up')}
+              />
+            </Tooltip>
+            <Tooltip title="下移">
+              <Button
+                icon={<ArrowDownOutlined />}
+                onClick={() => handleMoveIndex(record.id, 'down')}
+              />
+            </Tooltip>
+            <Tooltip title="置底">
+              <Button
+                icon={<VerticalAlignBottomOutlined />}
+                onClick={() => handleMoveIndex(record.id, 'bottom')}
+              />
+            </Tooltip>
+          </div>
         </Space>
       ),
     },

@@ -52,9 +52,12 @@ const EditIndexDialog: React.FC<Props> = ({
     }
   }, [open, index, form])
 
-  const handleAddField = (fieldId: string) => {
-    if (!fieldId || selectedFields.some(f => f.fieldId === fieldId)) return
-    setSelectedFields(prev => [...prev, { fieldId, sort: 'ASC' }])
+  const handleAddField = (fieldIds: string[]) => {
+    if (!fieldIds.length) return
+    const newFields = fieldIds
+      .filter(id => !selectedFields.some(f => f.fieldId === id))
+      .map(id => ({ fieldId: id, sort: 'ASC' }))
+    setSelectedFields(prev => [...prev, ...newFields])
   }
 
   const handleRemoveField = (fieldId: string) => {
@@ -149,29 +152,11 @@ const EditIndexDialog: React.FC<Props> = ({
       dataIndex: 'sort',
       key: 'sort',
       width: 120,
+      align: 'center' as const,
       render: (_: any, record: any) => (
-        <Select
-          value={record.sort}
-          onChange={(value) => handleSortChange(record.fieldId, value)}
-          options={[
-            { label: '升序', value: 'ASC' },
-            { label: '降序', value: 'DESC' }
-          ]}
-          style={{ width: '100%' }}
-        />
-      )
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 80,
-      render: (_: any, record: any) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleRemoveField(record.fieldId)}
-        />
+        <Tag color={record.sort === 'ASC' ? 'green' : 'orange'}>
+          {record.sort === 'ASC' ? '升序' : '降序'}
+        </Tag>
       )
     }
   ]
@@ -221,8 +206,7 @@ const EditIndexDialog: React.FC<Props> = ({
           <Select
             options={[
               { label: '普通索引', value: 'NORMAL' },
-              { label: '唯一索引', value: 'UNIQUE' },
-              { label: '全文索引', value: 'FULLTEXT' }
+              { label: '唯一索引', value: 'UNIQUE' }
             ]}
           />
         </Form.Item>
@@ -256,7 +240,8 @@ const EditIndexDialog: React.FC<Props> = ({
           <div className={styles.fieldSelector}>
             <div className={styles.fieldSelectorHeader}>
               <Select
-                placeholder="请选择要添加的字段"
+                mode="multiple"
+                placeholder="请选择要添加的字段（可多选）"
                 value={undefined}
                 onChange={handleAddField}
                 options={availableFields.map(field => ({
@@ -273,6 +258,9 @@ const EditIndexDialog: React.FC<Props> = ({
                 style={{ width: '100%' }}
                 optionLabelProp="label"
                 notFoundContent="没有可选的字段"
+                maxTagCount="responsive"
+                allowClear
+                onClear={() => {}}
               />
             </div>
             <Table
