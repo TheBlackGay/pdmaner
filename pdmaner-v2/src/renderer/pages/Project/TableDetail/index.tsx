@@ -145,7 +145,7 @@ const TableDetail: React.FC = () => {
     const field = fields[index]
     fields.splice(index, 1)
 
-    let newIndex = index
+    let newIndex: number
     switch (type) {
       case 'up':
         newIndex = Math.max(0, index - 1)
@@ -159,25 +159,27 @@ const TableDetail: React.FC = () => {
       case 'bottom':
         newIndex = fields.length
         break
+      default:
+        return
     }
 
     fields.splice(newIndex, 0, field)
 
     try {
-      // 更新表数据
+      // 更新表数据，确保包含所有必要的字段信息
       await updateTable(selectedTable.id, {
-        name: selectedTable.name,
-        comment: selectedTable.comment,
+        ...selectedTable,
         fields: fields.map((f, idx) => ({
           ...f,
           orderIndex: idx
         }))
-      } as any)
+      })
 
       message.success('字段排序更新成功')
       // 重新获取最新数据
       await getTableWithFields(selectedTable.id)
     } catch (error) {
+      console.error('字段排序更新失败:', error)
       message.error('字段排序更新失败')
     }
   }
@@ -353,14 +355,50 @@ const TableDetail: React.FC = () => {
     }
   }
 
+  const DraggableRow = ({ children, ...props }: any) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({
+      id: props['data-row-key']
+    })
+
+    const style: React.CSSProperties = {
+      ...props.style,
+      transform: CSS.Transform.toString(transform),
+      transition,
+      ...(isDragging ? {
+        position: 'relative',
+        zIndex: 9999,
+        background: '#fafafa',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+      } : {})
+    }
+
+    return (
+      <tr
+        {...props}
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+      >
+        {children}
+      </tr>
+    )
+  }
+
   const fieldColumns = [
     {
       title: '',
       dataIndex: 'selection',
       key: 'selection',
       width: 48,
-      fixed: 'left' as const,
-      align: 'center'
+      align: 'center' as const
     },
     {
       title: '字段名',
@@ -522,44 +560,6 @@ const TableDetail: React.FC = () => {
     },
   ]
 
-  const DraggableRow = ({ children, ...props }: any) => {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      transition,
-      isDragging,
-    } = useSortable({
-      id: props['data-row-key']
-    })
-
-    const style: React.CSSProperties = {
-      ...props.style,
-      transform: CSS.Transform.toString(transform),
-      transition,
-      ...(isDragging ? {
-        position: 'relative',
-        zIndex: 9999,
-        background: '#fafafa',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-      } : {})
-    }
-
-    return (
-      <tr
-        {...props}
-        ref={setNodeRef}
-        style={style}
-      >
-        <td {...attributes} {...listeners}>
-          <HolderOutlined className={styles.dragHandle} />
-        </td>
-        {React.Children.map(children, (child) => child)}
-      </tr>
-    )
-  }
-
   const renderContent = () => {
     if (activeTab === 'fields') {
       return (
@@ -631,33 +631,22 @@ const TableDetail: React.FC = () => {
               </Tooltip>
             </div>
           </div>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={selectedTable?.fields.map(f => f.id) || []}
-              strategy={verticalListSortingStrategy}
-            >
-              <Table
-                columns={fieldColumns}
-                dataSource={selectedTable?.fields}
-                rowKey="id"
-                scroll={{ x: 'max-content' }}
-                pagination={false}
-                rowSelection={{
-                  type: 'checkbox',
-                  selectedRowKeys: selectedRows,
-                  onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
-                }}
-                onRow={(record) => ({
-                  onDoubleClick: () => handleEditField(record),
-                  'data-row-key': record.id
-                })}
-              />
-            </SortableContext>
-          </DndContext>
+          <Table
+            columns={fieldColumns}
+            dataSource={selectedTable?.fields}
+            rowKey="id"
+            scroll={{ x: 'max-content' }}
+            pagination={false}
+            rowSelection={{
+              type: 'checkbox',
+              selectedRowKeys: selectedRows,
+              onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
+            }}
+            onRow={(record) => ({
+              onDoubleClick: () => handleEditField(record),
+              'data-row-key': record.id
+            })}
+          />
         </div>
       )
     }
