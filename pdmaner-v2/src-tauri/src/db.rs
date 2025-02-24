@@ -19,6 +19,48 @@ pub struct CreateTableParams {
     comment: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateFieldParams {
+    name: String,
+    comment: Option<String>,
+    #[serde(rename = "typeName")]
+    type_name: String,
+    length: Option<i32>,
+    precision: Option<i32>,
+    scale: Option<i32>,
+    nullable: bool,
+    #[serde(rename = "primaryKey")]
+    primary_key: bool,
+    #[serde(rename = "autoIncrement")]
+    auto_increment: bool,
+    #[serde(rename = "defaultValue")]
+    default_value: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateTableParams {
+    name: String,
+    comment: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateFieldParams {
+    name: String,
+    comment: Option<String>,
+    #[serde(rename = "typeName")]
+    type_name: String,
+    length: Option<i32>,
+    precision: Option<i32>,
+    scale: Option<i32>,
+    nullable: bool,
+    #[serde(rename = "primaryKey")]
+    primary_key: bool,
+    #[serde(rename = "autoIncrement")]
+    auto_increment: bool,
+    #[serde(rename = "defaultValue")]
+    default_value: Option<String>,
+}
+
 pub struct Database {
     pool: Arc<Pool<Sqlite>>,
 }
@@ -74,6 +116,29 @@ impl Database {
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (project_id) REFERENCES projects (id)
+            );"
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS fields (
+                id TEXT PRIMARY KEY,
+                table_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                comment TEXT,
+                type_name TEXT NOT NULL,
+                length INTEGER,
+                precision INTEGER,
+                scale INTEGER,
+                nullable BOOLEAN NOT NULL DEFAULT 1,
+                primary_key BOOLEAN NOT NULL DEFAULT 0,
+                auto_increment BOOLEAN NOT NULL DEFAULT 0,
+                default_value TEXT,
+                order_index INTEGER NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (table_id) REFERENCES tables (id)
             );"
         )
         .execute(&pool)
@@ -221,5 +286,230 @@ impl Database {
             "updatedAt": now,
             "fields": Vec::<String>::new(), // 暂时返回空字段列表
         }))
+    }
+
+    pub async fn get_table_with_fields(&self, table_id: &str) -> Result<serde_json::Value> {
+        let table = sqlx::query(
+            "SELECT 
+                id, name, comment, 
+                created_at, updated_at
+            FROM tables
+            WHERE id = ?"
+        )
+        .bind(table_id)
+        .fetch_one(&*self.pool)
+        .await?;
+
+        let fields = sqlx::query(
+            "SELECT 
+                id, name, comment, type_name,
+                length, precision, scale,
+                nullable, primary_key, auto_increment,
+                default_value, order_index,
+                created_at, updated_at
+            FROM fields
+            WHERE table_id = ?
+            ORDER BY order_index ASC"
+        )
+        .bind(table_id)
+        .fetch_all(&*self.pool)
+        .await?;
+
+        let mut field_list = Vec::new();
+        for field in fields {
+            field_list.push(serde_json::json!({
+                "id": field.get::<String, _>("id"),
+                "name": field.get::<String, _>("name"),
+                "comment": field.get::<Option<String>, _>("comment"),
+                "typeName": field.get::<String, _>("type_name"),
+                "length": field.get::<Option<i32>, _>("length"),
+                "precision": field.get::<Option<i32>, _>("precision"),
+                "scale": field.get::<Option<i32>, _>("scale"),
+                "nullable": field.get::<bool, _>("nullable"),
+                "primaryKey": field.get::<bool, _>("primary_key"),
+                "autoIncrement": field.get::<bool, _>("auto_increment"),
+                "defaultValue": field.get::<Option<String>, _>("default_value"),
+                "orderIndex": field.get::<i32, _>("order_index"),
+                "createdAt": field.get::<String, _>("created_at"),
+                "updatedAt": field.get::<String, _>("updated_at"),
+            }));
+        }
+
+        Ok(serde_json::json!({
+            "id": table.get::<String, _>("id"),
+            "name": table.get::<String, _>("name"),
+            "comment": table.get::<Option<String>, _>("comment"),
+            "createdAt": table.get::<String, _>("created_at"),
+            "updatedAt": table.get::<String, _>("updated_at"),
+            "fields": field_list,
+        }))
+    }
+
+    pub async fn create_field(&self, table_id: &str, params: CreateFieldParams) -> Result<serde_json::Value> {
+        let id = Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // 获取当前最大的 order_index
+        let max_order = sqlx::query(
+            "SELECT COALESCE(MAX(order_index), -1) as max_order
+            FROM fields
+            WHERE table_id = ?"
+        )
+        .bind(table_id)
+        .fetch_one(&*self.pool)
+        .await?;
+
+        let order_index = max_order.get::<i32, _>("max_order") + 1;
+
+        sqlx::query(
+            "INSERT INTO fields (
+                id, table_id, name, comment,
+                type_name, length, precision, scale,
+                nullable, primary_key, auto_increment,
+                default_value, order_index,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&id)
+        .bind(table_id)
+        .bind(&params.name)
+        .bind(&params.comment)
+        .bind(&params.type_name)
+        .bind(params.length)
+        .bind(params.precision)
+        .bind(params.scale)
+        .bind(params.nullable)
+        .bind(params.primary_key)
+        .bind(params.auto_increment)
+        .bind(&params.default_value)
+        .bind(order_index)
+        .bind(&now)
+        .bind(&now)
+        .execute(&*self.pool)
+        .await?;
+
+        Ok(serde_json::json!({
+            "id": id,
+            "name": params.name,
+            "comment": params.comment,
+            "typeName": params.type_name,
+            "length": params.length,
+            "precision": params.precision,
+            "scale": params.scale,
+            "nullable": params.nullable,
+            "primaryKey": params.primary_key,
+            "autoIncrement": params.auto_increment,
+            "defaultValue": params.default_value,
+            "orderIndex": order_index,
+            "createdAt": now,
+            "updatedAt": now,
+        }))
+    }
+
+    pub async fn update_table(&self, table_id: &str, params: UpdateTableParams) -> Result<serde_json::Value> {
+        let now = chrono::Utc::now().to_rfc3339();
+
+        sqlx::query(
+            "UPDATE tables 
+            SET name = ?, comment = ?, updated_at = ?
+            WHERE id = ?"
+        )
+        .bind(&params.name)
+        .bind(&params.comment)
+        .bind(&now)
+        .bind(table_id)
+        .execute(&*self.pool)
+        .await?;
+
+        Ok(serde_json::json!({
+            "id": table_id,
+            "name": params.name,
+            "comment": params.comment,
+            "updatedAt": now,
+        }))
+    }
+
+    pub async fn update_field(&self, field_id: &str, params: UpdateFieldParams) -> Result<serde_json::Value> {
+        let now = chrono::Utc::now().to_rfc3339();
+
+        sqlx::query(
+            "UPDATE fields 
+            SET name = ?, comment = ?, type_name = ?,
+                length = ?, precision = ?, scale = ?,
+                nullable = ?, primary_key = ?, auto_increment = ?,
+                default_value = ?, updated_at = ?
+            WHERE id = ?"
+        )
+        .bind(&params.name)
+        .bind(&params.comment)
+        .bind(&params.type_name)
+        .bind(params.length)
+        .bind(params.precision)
+        .bind(params.scale)
+        .bind(params.nullable)
+        .bind(params.primary_key)
+        .bind(params.auto_increment)
+        .bind(&params.default_value)
+        .bind(&now)
+        .bind(field_id)
+        .execute(&*self.pool)
+        .await?;
+
+        Ok(serde_json::json!({
+            "id": field_id,
+            "name": params.name,
+            "comment": params.comment,
+            "typeName": params.type_name,
+            "length": params.length,
+            "precision": params.precision,
+            "scale": params.scale,
+            "nullable": params.nullable,
+            "primaryKey": params.primary_key,
+            "autoIncrement": params.auto_increment,
+            "defaultValue": params.default_value,
+            "updatedAt": now,
+        }))
+    }
+
+    pub async fn delete_table(&self, table_id: &str) -> Result<()> {
+        // 先删除表的所有字段
+        sqlx::query("DELETE FROM fields WHERE table_id = ?")
+            .bind(table_id)
+            .execute(&*self.pool)
+            .await?;
+
+        // 再删除表
+        sqlx::query("DELETE FROM tables WHERE id = ?")
+            .bind(table_id)
+            .execute(&*self.pool)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_field(&self, field_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM fields WHERE id = ?")
+            .bind(field_id)
+            .execute(&*self.pool)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn reorder_fields(&self, table_id: &str, field_ids: Vec<String>) -> Result<()> {
+        for (index, field_id) in field_ids.iter().enumerate() {
+            sqlx::query(
+                "UPDATE fields 
+                SET order_index = ?
+                WHERE id = ? AND table_id = ?"
+            )
+            .bind(index as i32)
+            .bind(field_id)
+            .bind(table_id)
+            .execute(&*self.pool)
+            .await?;
+        }
+
+        Ok(())
     }
 } 
