@@ -110,16 +110,22 @@ const TableDetail: React.FC = () => {
   }
 
   const handleBatchDelete = async () => {
+    if (!selectedTable || selectedRows.length === 0) return
+
     try {
       await Promise.all(selectedRows.map(id => deleteField(id)))
       message.success('批量删除成功')
       setSelectedRows([])
+      // 重新获取最新数据
+      await getTableWithFields(selectedTable.id)
     } catch (error) {
       message.error('批量删除失败')
     }
   }
 
   const handleMoveField = async (id: string, type: 'up' | 'down' | 'top' | 'bottom') => {
+    if (!selectedTable) return
+
     const fields = [...selectedTable.fields]
     const index = fields.findIndex(f => f.id === id)
     if (index === -1) return
@@ -131,11 +137,15 @@ const TableDetail: React.FC = () => {
       case 'up':
         if (index > 0) {
           fields.splice(index - 1, 0, field)
+        } else {
+          fields.splice(index, 0, field)
         }
         break
       case 'down':
         if (index < fields.length) {
           fields.splice(index + 1, 0, field)
+        } else {
+          fields.splice(fields.length, 0, field)
         }
         break
       case 'top':
@@ -148,32 +158,63 @@ const TableDetail: React.FC = () => {
 
     try {
       await updateTable(selectedTable.id, {
-        ...selectedTable,
-        fields
+        name: selectedTable.name,
+        comment: selectedTable.comment,
+        fields: fields.map(f => ({
+          id: f.id,
+          name: f.name,
+          comment: f.comment,
+          typeName: f.typeName,
+          length: f.length,
+          precision: f.precision,
+          scale: f.scale,
+          nullable: f.nullable,
+          primaryKey: f.primaryKey,
+          autoIncrement: f.autoIncrement,
+          defaultValue: f.defaultValue
+        }))
       })
       message.success('字段排序更新成功')
+      // 重新获取最新数据
+      await getTableWithFields(selectedTable.id)
     } catch (error) {
       message.error('字段排序更新失败')
     }
   }
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
-    if (!over || active.id === over.id) return
+    if (!over || active.id === over.id || !selectedTable) return
 
-    const oldIndex = selectedTable?.fields.findIndex(f => f.id === active.id)
-    const newIndex = selectedTable?.fields.findIndex(f => f.id === over.id)
+    const oldIndex = selectedTable.fields.findIndex(f => f.id === active.id)
+    const newIndex = selectedTable.fields.findIndex(f => f.id === over.id)
 
-    if (oldIndex !== undefined && newIndex !== undefined && selectedTable) {
+    if (oldIndex !== -1 && newIndex !== -1) {
       const newFields = arrayMove(selectedTable.fields, oldIndex, newIndex)
-      updateTable(selectedTable.id, {
-        ...selectedTable,
-        fields: newFields
-      }).then(() => {
+      try {
+        await updateTable(selectedTable.id, {
+          name: selectedTable.name,
+          comment: selectedTable.comment,
+          fields: newFields.map(f => ({
+            id: f.id,
+            name: f.name,
+            comment: f.comment,
+            typeName: f.typeName,
+            length: f.length,
+            precision: f.precision,
+            scale: f.scale,
+            nullable: f.nullable,
+            primaryKey: f.primaryKey,
+            autoIncrement: f.autoIncrement,
+            defaultValue: f.defaultValue
+          }))
+        })
         message.success('字段排序更新成功')
-      }).catch(() => {
+        // 重新获取最新数据
+        await getTableWithFields(selectedTable.id)
+      } catch (error) {
         message.error('字段排序更新失败')
-      })
+      }
     }
   }
 
@@ -197,7 +238,8 @@ const TableDetail: React.FC = () => {
       onClick: () => message.info('Excel导出功能开发中')
     },
     {
-      type: 'divider'
+      key: 'divider',
+      type: 'divider' as const
     },
     {
       key: 'sql',
@@ -205,7 +247,7 @@ const TableDetail: React.FC = () => {
       icon: <FileTextOutlined />,
       onClick: () => message.info('SQL生成功能开发中')
     }
-  ]
+  ] as const
 
   if (!selectedTable) {
     return (
@@ -306,15 +348,21 @@ const TableDetail: React.FC = () => {
     {
       title: '',
       key: 'sort',
-      width: 30,
-      render: () => <HolderOutlined className={styles.dragHandle} />
+      width: 48,
+      render: () => <HolderOutlined className={styles.dragHandle} />,
+      fixed: 'left' as const
+    },
+    {
+      title: '',
+      key: 'selection',
+      width: 48,
+      fixed: 'left' as const
     },
     {
       title: '字段名',
       dataIndex: 'name',
       key: 'name',
       width: 200,
-      fixed: 'left',
       render: (text: string, record: Field) => (
         <Space>
           {record.primaryKey && <Badge status="processing" />}
@@ -383,22 +431,10 @@ const TableDetail: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 180,
+      width: 120,
       fixed: 'right',
       render: (_: any, record: Field) => (
         <Space>
-          <Button
-            type="text"
-            icon={<ArrowUpOutlined />}
-            className={styles.actionButton}
-            onClick={() => handleMoveField(record.id, 'up')}
-          />
-          <Button
-            type="text"
-            icon={<ArrowDownOutlined />}
-            className={styles.actionButton}
-            onClick={() => handleMoveField(record.id, 'down')}
-          />
           <Button
             type="text"
             icon={<EditOutlined />}
@@ -505,15 +541,25 @@ const TableDetail: React.FC = () => {
       } : {})
     }
 
+    // 只将拖拽监听器应用到第一个单元格
+    const childrenWithProps = React.Children.map(children, (child: any, index) => {
+      if (index === 0) {
+        return React.cloneElement(child, {
+          ...child.props,
+          ...attributes,
+          ...listeners
+        })
+      }
+      return child
+    })
+
     return (
       <tr
         {...props}
         ref={setNodeRef}
         style={style}
-        {...attributes}
-        {...listeners}
       >
-        {children}
+        {childrenWithProps}
       </tr>
     )
   }

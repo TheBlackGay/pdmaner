@@ -187,29 +187,35 @@
 .dragHandle {
   cursor: move;
   color: #999;
-  transition: color 0.3s;
+  transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
+  width: 100%;
+  padding: 0 12px;
 }
 
 .dragHandle:hover {
   color: #1890ff;
+  background-color: #f0f7ff;
 }
 
-/* 移除旧的拖拽样式 */
-.configContent :global(.ant-table-tbody > tr.drop-over-downward td),
-.configContent :global(.ant-table-tbody > tr.drop-over-upward td) {
-  border: none;
-}
-
-/* 添加新的拖拽样式 */
+/* 拖动时的样式 */
 .configContent :global(.ant-table-tbody > tr[data-dragging="true"]) {
   background: #fafafa;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  z-index: 9999;
-  position: relative;
+  cursor: move;
+}
+
+.configContent :global(.ant-table-tbody > tr[data-dragging="true"] td) {
+  background: #fafafa !important;
+}
+
+/* 选择框样式 */
+.configContent :global(.ant-table-selection-column) {
+  padding-right: 0 !important;
+  width: 48px !important;
 }
 
 /* 索引列表样式 */
