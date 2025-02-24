@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined } from '@ant-design/icons'
+import { useParams } from 'react-router-dom'
 import { useTableStore } from '@/stores/table'
 import EditFieldDialog from '@/renderer/components/EditFieldDialog'
 import EditIndexDialog from '@/renderer/components/EditIndexDialog'
@@ -9,20 +10,32 @@ import styles from './style.module.css'
 
 const { TabPane } = Tabs
 const { Title, Paragraph } = Typography
+const { Panel } = Collapse
 
 const TableDetail: React.FC = () => {
-  const { selectedTable, updateTable, createField, updateField, deleteField, createIndex, updateIndex, deleteIndex } = useTableStore()
+  const { id: projectId } = useParams<{ id: string }>()
+  const { 
+    selectedTable, 
+    tables,
+    updateTable, 
+    createField, 
+    updateField, 
+    deleteField, 
+    createIndex, 
+    updateIndex, 
+    deleteIndex,
+    getTableWithFields
+  } = useTableStore()
   const [editFieldDialogOpen, setEditFieldDialogOpen] = useState(false)
   const [editIndexDialogOpen, setEditIndexDialogOpen] = useState(false)
   const [editingField, setEditingField] = useState<Field>()
   const [editingIndex, setEditingIndex] = useState<Index>()
 
   useEffect(() => {
-    setEditFieldDialogOpen(false)
-    setEditIndexDialogOpen(false)
-    setEditingField(undefined)
-    setEditingIndex(undefined)
-  }, [selectedTable])
+    if (selectedTable) {
+      getTableWithFields(selectedTable.id)
+    }
+  }, [selectedTable?.id, getTableWithFields])
 
   if (!selectedTable) {
     return (
@@ -35,7 +48,11 @@ const TableDetail: React.FC = () => {
   const handleTableNameChange = async (name: string) => {
     try {
       // 检查表名是否重复
-      // TODO: 实现检查表名重复的逻辑
+      const isNameExists = tables.some(t => t.id !== selectedTable.id && t.name === name)
+      if (isNameExists) {
+        message.error('表名已存在')
+        return
+      }
       await updateTable(selectedTable.id, { name, comment: selectedTable.comment })
       message.success('表名更新成功')
     } catch (error) {
@@ -256,56 +273,49 @@ const TableDetail: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <Title level={4} editable={{ onChange: handleTableNameChange }} className={styles.tableTitle}>
-          {selectedTable.name}
-        </Title>
-        <Paragraph editable={{ onChange: handleTableCommentChange }} className={styles.tableComment}>
-          {selectedTable.comment || '添加表注释...'}
-        </Paragraph>
-      </div>
-
-      <Tabs defaultActiveKey="fields">
-        <TabPane tab="字段" key="fields">
-          <div className={styles.toolbar}>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={handleCreateField}
-            >
-              添加字段
-            </Button>
-          </div>
-          <Table
-            columns={fieldColumns}
-            dataSource={selectedTable.fields}
-            rowKey="id"
-            scroll={{ x: 'max-content' }}
-            pagination={false}
-          />
-        </TabPane>
-        <TabPane tab="索引" key="indexes">
-          <div className={styles.toolbar}>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={handleCreateIndex}
-            >
-              添加索引
-            </Button>
-          </div>
-          <Table
-            columns={indexColumns}
-            dataSource={selectedTable.indexes}
-            rowKey="id"
-            scroll={{ x: 'max-content' }}
-            pagination={false}
-          />
-        </TabPane>
-        <TabPane tab="约束" key="constraints">
-          约束管理
-        </TabPane>
+      {/* Tab栏 */}
+      <Tabs defaultActiveKey="fields" className={styles.tabs}>
+        <TabPane tab="字段" key="fields" />
+        <TabPane tab="索引" key="indexes" />
       </Tabs>
+
+      {/* 表配置区域 */}
+      <Collapse
+        defaultActiveKey={['tableConfig']}
+        expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
+        className={styles.tableConfig}
+      >
+        <Panel header="表配置" key="tableConfig">
+          <div className={styles.header}>
+            <Title level={4} editable={{ onChange: handleTableNameChange }} className={styles.tableTitle}>
+              {selectedTable.name}
+            </Title>
+            <Paragraph editable={{ onChange: handleTableCommentChange }} className={styles.tableComment}>
+              {selectedTable.comment || '添加表注释...'}
+            </Paragraph>
+          </div>
+        </Panel>
+      </Collapse>
+
+      {/* 字段/索引配置区域 */}
+      <div className={styles.configContent}>
+        <div className={styles.toolbar}>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />}
+            onClick={handleCreateField}
+          >
+            添加字段
+          </Button>
+        </div>
+        <Table
+          columns={fieldColumns}
+          dataSource={selectedTable.fields}
+          rowKey="id"
+          scroll={{ x: 'max-content' }}
+          pagination={false}
+        />
+      </div>
 
       <EditFieldDialog
         open={editFieldDialogOpen}

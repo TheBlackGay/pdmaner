@@ -2,6 +2,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 
 .empty {
@@ -13,38 +14,31 @@
   font-size: 14px;
 }
 
-.header {
-  padding: 0 0 16px;
+/* Tab栏样式 */
+.tabs {
+  margin: 0;
+  padding: 0 16px;
+  background: #fff;
   border-bottom: 1px solid #f0f0f0;
-  margin-bottom: 16px;
 }
 
-.header h2 {
-  margin: 0 0 8px;
-  font-size: 18px;
+.tabs :global(.ant-tabs-nav) {
+  margin: 0;
+}
+
+/* 表配置区域样式 */
+.tableConfig {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+.tableConfig :global(.ant-collapse-header) {
   font-weight: 500;
 }
 
-.comment {
-  color: #666;
-  font-size: 14px;
-}
-
-.toolbar {
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: flex-start;
-  gap: 8px;
-}
-
-/* 表格样式 */
-:global(.ant-table-wrapper) {
-  flex: 1;
-  overflow: auto;
-}
-
-:global(.ant-table) {
-  height: 100%;
+.header {
+  padding: 8px 0;
 }
 
 .tableTitle {
@@ -54,4 +48,33 @@
 .tableComment {
   margin: 8px 0 0 0 !important;
   color: #666;
+}
+
+/* 配置内容区域样式 */
+.configContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.toolbar {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+/* 表格样式 */
+.configContent :global(.ant-table-wrapper) {
+  flex: 1;
+  overflow: auto;
+}
+
+.configContent :global(.ant-table) {
+  height: 100%;
 } 
