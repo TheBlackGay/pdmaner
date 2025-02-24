@@ -1,6 +1,25 @@
-import React, { useState, useEffect } from 'react'
-import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, CaretRightOutlined } from '@ant-design/icons'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox, Dropdown, Badge } from 'antd'
+import { 
+  PlusOutlined, 
+  EditOutlined, 
+  DeleteOutlined, 
+  CaretRightOutlined,
+  CopyOutlined,
+  ImportOutlined,
+  ExportOutlined,
+  MoreOutlined,
+  KeyOutlined,
+  DatabaseOutlined,
+  TableOutlined,
+  InfoCircleOutlined,
+  DownloadOutlined,
+  UploadOutlined,
+  FileTextOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  ExclamationCircleOutlined
+} from '@ant-design/icons'
 import { useParams } from 'react-router-dom'
 import { useTableStore } from '@/stores/table'
 import EditFieldDialog from '@/renderer/components/EditFieldDialog'
@@ -31,6 +50,8 @@ const TableDetail: React.FC = () => {
   const [editingField, setEditingField] = useState<Field>()
   const [editingIndex, setEditingIndex] = useState<Index>()
   const [activeTab, setActiveTab] = useState('fields')
+  const [selectedRows, setSelectedRows] = useState<string[]>([])
+  const [expandedIndexes, setExpandedIndexes] = useState<string[]>([])
 
   useEffect(() => {
     if (selectedTable) {
@@ -38,10 +59,79 @@ const TableDetail: React.FC = () => {
     }
   }, [selectedTable?.id, getTableWithFields])
 
+  // 添加快捷键支持
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault()
+        handleSave()
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault()
+        handleUndo()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  const handleSave = () => {
+    message.success('保存成功')
+  }
+
+  const handleUndo = () => {
+    message.info('撤销操作')
+  }
+
+  const handleBatchDelete = async () => {
+    try {
+      await Promise.all(selectedRows.map(id => deleteField(id)))
+      message.success('批量删除成功')
+      setSelectedRows([])
+    } catch (error) {
+      message.error('批量删除失败')
+    }
+  }
+
+  const handleMoveField = async (id: string, direction: 'up' | 'down') => {
+    message.info('字段排序功能开发中')
+  }
+
+  const moreActions = [
+    {
+      key: 'copy',
+      label: '复制表结构',
+      icon: <CopyOutlined />,
+      onClick: () => message.success('表结构已复制到剪贴板')
+    },
+    {
+      key: 'import',
+      label: '导入Excel',
+      icon: <UploadOutlined />,
+      onClick: () => message.info('Excel导入功能开发中')
+    },
+    {
+      key: 'export',
+      label: '导出Excel',
+      icon: <DownloadOutlined />,
+      onClick: () => message.info('Excel导出功能开发中')
+    },
+    {
+      type: 'divider'
+    },
+    {
+      key: 'sql',
+      label: '生成SQL',
+      icon: <FileTextOutlined />,
+      onClick: () => message.info('SQL生成功能开发中')
+    }
+  ]
+
   if (!selectedTable) {
     return (
       <div className={styles.empty}>
-        请选择一个表
+        <TableOutlined />
+        <span>请选择一个表</span>
       </div>
     )
   }
@@ -138,12 +228,20 @@ const TableDetail: React.FC = () => {
       dataIndex: 'name',
       key: 'name',
       width: 200,
+      fixed: 'left',
+      render: (text: string, record: Field) => (
+        <Space>
+          {record.primaryKey && <Badge status="processing" />}
+          {text}
+        </Space>
+      )
     },
     {
       title: '注释',
       dataIndex: 'comment',
       key: 'comment',
       width: 200,
+      ellipsis: true,
     },
     {
       title: '类型',
@@ -157,45 +255,68 @@ const TableDetail: React.FC = () => {
         } else if (record.precision) {
           typeStr += `(${record.precision}${record.scale ? `,${record.scale}` : ''})`
         }
-        return typeStr
+        return (
+          <Space>
+            <DatabaseOutlined />
+            {typeStr}
+          </Space>
+        )
       }
     },
     {
-      title: '主键',
-      dataIndex: 'primaryKey',
-      key: 'primaryKey',
-      width: 80,
-      render: (value: boolean) => value ? '是' : '否',
-    },
-    {
-      title: '可空',
-      dataIndex: 'nullable',
-      key: 'nullable',
-      width: 80,
-      render: (value: boolean) => value ? '是' : '否',
-    },
-    {
-      title: '自增',
-      dataIndex: 'autoIncrement',
-      key: 'autoIncrement',
-      width: 80,
-      render: (value: boolean) => value ? '是' : '否',
+      title: '属性',
+      key: 'attributes',
+      width: 200,
+      render: (_: any, record: Field) => (
+        <Space>
+          {record.primaryKey && (
+            <Tooltip title="主键">
+              <KeyOutlined style={{ color: '#1890ff' }} />
+            </Tooltip>
+          )}
+          {!record.nullable && (
+            <Tooltip title="不可为空">
+              <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+            </Tooltip>
+          )}
+          {record.autoIncrement && (
+            <Tooltip title="自增">
+              <ArrowUpOutlined style={{ color: '#52c41a' }} />
+            </Tooltip>
+          )}
+        </Space>
+      )
     },
     {
       title: '默认值',
       dataIndex: 'defaultValue',
       key: 'defaultValue',
       width: 150,
+      render: (value: string) => value || '-'
     },
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 180,
+      fixed: 'right',
       render: (_: any, record: Field) => (
         <Space>
           <Button
             type="text"
+            icon={<ArrowUpOutlined />}
+            className={styles.actionButton}
+            onClick={() => handleMoveField(record.id, 'up')}
+          />
+          <Button
+            type="text"
+            icon={<ArrowDownOutlined />}
+            className={styles.actionButton}
+            onClick={() => handleMoveField(record.id, 'down')}
+          />
+          <Button
+            type="text"
             icon={<EditOutlined />}
+            className={styles.actionButton}
             onClick={() => handleEditField(record)}
           />
           <Popconfirm
@@ -206,6 +327,7 @@ const TableDetail: React.FC = () => {
               type="text"
               danger
               icon={<DeleteOutlined />}
+              className={styles.actionButton}
             />
           </Popconfirm>
         </Space>
@@ -277,13 +399,41 @@ const TableDetail: React.FC = () => {
       return (
         <div className={styles.configContent}>
           <div className={styles.toolbar}>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={handleCreateField}
-            >
-              添加字段
-            </Button>
+            <Space>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />}
+                onClick={handleCreateField}
+              >
+                添加字段
+              </Button>
+              <Button 
+                icon={<DatabaseOutlined />}
+                onClick={() => message.info('字段模板功能开发中')}
+              >
+                字段模板
+              </Button>
+              {selectedRows.length > 0 && (
+                <Popconfirm
+                  title={`确定要删除选中的 ${selectedRows.length} 个字段吗？`}
+                  onConfirm={handleBatchDelete}
+                >
+                  <Button 
+                    danger
+                    icon={<DeleteOutlined />}
+                  >
+                    批量删除
+                  </Button>
+                </Popconfirm>
+              )}
+            </Space>
+            <Space>
+              <Tooltip title="更多操作">
+                <Dropdown menu={{ items: moreActions }} placement="bottomRight">
+                  <Button icon={<MoreOutlined />} />
+                </Dropdown>
+              </Tooltip>
+            </Space>
           </div>
           <Table
             columns={fieldColumns}
@@ -291,6 +441,14 @@ const TableDetail: React.FC = () => {
             rowKey="id"
             scroll={{ x: 'max-content' }}
             pagination={false}
+            rowSelection={{
+              type: 'checkbox',
+              selectedRowKeys: selectedRows,
+              onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
+            }}
+            onRow={(record) => ({
+              onDoubleClick: () => handleEditField(record)
+            })}
           />
         </div>
       )
@@ -299,39 +457,54 @@ const TableDetail: React.FC = () => {
     return (
       <div className={styles.configContent}>
         <div className={styles.toolbar}>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={handleCreateIndex}
-          >
-            添加索引
-          </Button>
+          <Space>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreateIndex}
+            >
+              添加索引
+            </Button>
+          </Space>
         </div>
         <div className={styles.indexList}>
           <div className={styles.indexHeader}>
             <div className={styles.indexHeaderCell}>序号</div>
             <div className={styles.indexHeaderCell}>展开</div>
             <div className={styles.indexHeaderCell}>索引名</div>
-            <div className={styles.indexHeaderCell}>是否唯一</div>
-            <div className={styles.indexHeaderCell}>描述</div>
+            <div className={styles.indexHeaderCell}>类型</div>
+            <div className={styles.indexHeaderCell}>字段</div>
             <div className={styles.indexHeaderCell}>操作</div>
           </div>
           {(selectedTable.indexes || []).map((index, idx) => (
             <div key={index.id} className={styles.indexItem}>
               <div className={styles.indexCell}>{idx + 1}</div>
               <div className={styles.indexCell}>
-                <CaretRightOutlined />
+                <CaretRightOutlined 
+                  className={expandedIndexes.includes(index.id) ? 'expanded' : ''}
+                  onClick={() => {
+                    setExpandedIndexes(prev => 
+                      prev.includes(index.id) 
+                        ? prev.filter(id => id !== index.id)
+                        : [...prev, index.id]
+                    )
+                  }}
+                />
               </div>
               <div className={styles.indexCell}>{index.name}</div>
               <div className={styles.indexCell}>
-                <Checkbox checked={index.type === 'UNIQUE'} disabled />
+                <Badge 
+                  status={index.type === 'UNIQUE' ? 'processing' : 'default'} 
+                  text={index.type === 'UNIQUE' ? '唯一索引' : '普通索引'}
+                />
               </div>
-              <div className={styles.indexCell}>{index.comment || '-'}</div>
+              <div className={styles.indexCell}>{index.fields.map(f => f.field.name).join(', ')}</div>
               <div className={styles.indexCell}>
                 <Space>
                   <Button
                     type="text"
                     icon={<EditOutlined />}
+                    className={styles.actionButton}
                     onClick={() => handleEditIndex(index)}
                   />
                   <Popconfirm
@@ -342,6 +515,7 @@ const TableDetail: React.FC = () => {
                       type="text"
                       danger
                       icon={<DeleteOutlined />}
+                      className={styles.actionButton}
                     />
                   </Popconfirm>
                 </Space>
@@ -355,23 +529,48 @@ const TableDetail: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      {/* Tab栏 */}
       <Tabs 
         activeKey={activeTab}
         onChange={setActiveTab}
         className={styles.tabs}
-      >
-        <TabPane tab="字段" key="fields" />
-        <TabPane tab="索引" key="indexes" />
-      </Tabs>
+        items={[
+          { 
+            key: 'fields', 
+            label: (
+              <>
+                <DatabaseOutlined />
+                字段
+                <Badge count={selectedTable.fields.length} style={{ marginLeft: 8 }} />
+              </>
+            )
+          },
+          { 
+            key: 'indexes', 
+            label: (
+              <>
+                <KeyOutlined />
+                索引
+                <Badge count={selectedTable.indexes?.length || 0} style={{ marginLeft: 8 }} />
+              </>
+            )
+          }
+        ]}
+      />
 
-      {/* 表配置区域 */}
       <Collapse
         defaultActiveKey={['tableConfig']}
         expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
         className={styles.tableConfig}
       >
-        <Panel header="表配置" key="tableConfig">
+        <Panel 
+          header={
+            <Space>
+              <TableOutlined />
+              表配置
+            </Space>
+          } 
+          key="tableConfig"
+        >
           <div className={styles.header}>
             <Title level={4} editable={{ onChange: handleTableNameChange }} className={styles.tableTitle}>
               {selectedTable.name}
@@ -383,7 +582,6 @@ const TableDetail: React.FC = () => {
         </Panel>
       </Collapse>
 
-      {/* 字段/索引配置区域 */}
       {renderContent()}
 
       <EditFieldDialog

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react'
-import { Modal, Form, Input, Select, InputNumber, Switch, message } from 'antd'
+import { Modal, Form, Input, Select, InputNumber, Switch, message, Space, Tooltip } from 'antd'
 import type { Field, CreateFieldParams, UpdateFieldParams, DataType } from '@/types/table'
 import { DATA_TYPES } from '@/types/table'
+import { QuestionCircleOutlined, DatabaseOutlined } from '@ant-design/icons'
 
 interface Props {
   open: boolean
@@ -81,20 +82,37 @@ const EditFieldDialog: React.FC<Props> = ({
       onOk={handleSubmit}
       confirmLoading={loading}
       width={600}
+      maskClosable={false}
+      keyboard={false}
+      destroyOnClose
     >
       <Form
         form={form}
         layout="vertical"
+        requiredMark="optional"
+        validateTrigger={['onChange', 'onBlur']}
       >
         <Form.Item
           name="name"
-          label="字段名"
+          label={
+            <Space>
+              字段名
+              <Tooltip title="字段名必须以字母开头，只能包含字母、数字和下划线">
+                <QuestionCircleOutlined />
+              </Tooltip>
+            </Space>
+          }
           rules={[
             { required: true, message: '请输入字段名' },
             { pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/, message: '字段名必须以字母开头，只能包含字母、数字和下划线' }
           ]}
+          validateFirst
         >
-          <Input placeholder="请输入字段名" />
+          <Input 
+            placeholder="请输入字段名" 
+            autoFocus
+            allowClear
+          />
         </Form.Item>
 
         <Form.Item
@@ -104,6 +122,9 @@ const EditFieldDialog: React.FC<Props> = ({
           <Input.TextArea
             placeholder="请输入注释"
             rows={2}
+            showCount
+            maxLength={200}
+            allowClear
           />
         </Form.Item>
 
@@ -117,70 +138,162 @@ const EditFieldDialog: React.FC<Props> = ({
             onChange={handleTypeChange}
             options={DATA_TYPES.map(type => ({
               label: type.name,
-              value: type.name
+              value: type.name,
+              icon: <DatabaseOutlined />
             }))}
+            showSearch
+            optionFilterProp="label"
           />
         </Form.Item>
 
         {selectedType?.hasLength && (
           <Form.Item
             name="length"
-            label="长度"
-            rules={[{ required: true, message: '请输入长度' }]}
+            label={
+              <Space>
+                长度
+                <Tooltip title="字段长度必须大于0">
+                  <QuestionCircleOutlined />
+                </Tooltip>
+              </Space>
+            }
+            rules={[
+              { required: true, message: '请输入长度' },
+              { type: 'number', min: 1, message: '长度必须大于0' }
+            ]}
           >
-            <InputNumber min={1} />
+            <InputNumber 
+              min={1} 
+              keyboard={false}
+              style={{ width: '100%' }}
+            />
           </Form.Item>
         )}
 
         {selectedType?.hasPrecision && (
           <Form.Item
             name="precision"
-            label="精度"
-            rules={[{ required: true, message: '请输入精度' }]}
+            label={
+              <Space>
+                精度
+                <Tooltip title="精度必须大于0">
+                  <QuestionCircleOutlined />
+                </Tooltip>
+              </Space>
+            }
+            rules={[
+              { required: true, message: '请输入精度' },
+              { type: 'number', min: 1, message: '精度必须大于0' }
+            ]}
           >
-            <InputNumber min={1} />
+            <InputNumber 
+              min={1} 
+              keyboard={false}
+              style={{ width: '100%' }}
+            />
           </Form.Item>
         )}
 
         {selectedType?.hasScale && (
           <Form.Item
             name="scale"
-            label="小数位"
-            rules={[{ required: true, message: '请输入小数位' }]}
+            label={
+              <Space>
+                小数位
+                <Tooltip title="小数位必须大于等于0">
+                  <QuestionCircleOutlined />
+                </Tooltip>
+              </Space>
+            }
+            rules={[
+              { required: true, message: '请输入小数位' },
+              { type: 'number', min: 0, message: '小数位必须大于等于0' }
+            ]}
           >
-            <InputNumber min={0} />
+            <InputNumber 
+              min={0} 
+              keyboard={false}
+              style={{ width: '100%' }}
+            />
           </Form.Item>
         )}
 
-        <Form.Item
-          name="nullable"
-          valuePropName="checked"
-          initialValue={true}
-        >
-          <Switch checkedChildren="可空" unCheckedChildren="不可空" />
-        </Form.Item>
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+          <Form.Item
+            name="nullable"
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Switch 
+              checkedChildren="可空" 
+              unCheckedChildren="不可空"
+              onChange={(checked) => {
+                if (!checked) {
+                  form.setFieldsValue({ defaultValue: undefined })
+                }
+              }}
+            />
+          </Form.Item>
 
-        <Form.Item
-          name="primaryKey"
-          valuePropName="checked"
-          initialValue={false}
-        >
-          <Switch checkedChildren="主键" unCheckedChildren="非主键" />
-        </Form.Item>
+          <Form.Item
+            name="primaryKey"
+            valuePropName="checked"
+            initialValue={false}
+          >
+            <Switch 
+              checkedChildren="主键" 
+              unCheckedChildren="非主键"
+              onChange={(checked) => {
+                if (checked) {
+                  form.setFieldsValue({ 
+                    nullable: false,
+                    autoIncrement: false 
+                  })
+                }
+              }}
+            />
+          </Form.Item>
 
-        <Form.Item
-          name="autoIncrement"
-          valuePropName="checked"
-          initialValue={false}
-        >
-          <Switch checkedChildren="自增" unCheckedChildren="非自增" />
-        </Form.Item>
+          <Form.Item
+            name="autoIncrement"
+            valuePropName="checked"
+            initialValue={false}
+          >
+            <Switch 
+              checkedChildren="自增" 
+              unCheckedChildren="非自增"
+              onChange={(checked) => {
+                if (checked) {
+                  form.setFieldsValue({ 
+                    primaryKey: true,
+                    nullable: false 
+                  })
+                }
+              }}
+            />
+          </Form.Item>
+        </div>
 
         <Form.Item
           name="defaultValue"
           label="默认值"
+          dependencies={['nullable']}
+          rules={[
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!getFieldValue('nullable') && !value) {
+                  return Promise.reject('非空字段必须设置默认值')
+                }
+                return Promise.resolve()
+              }
+            })
+          ]}
         >
-          <Input placeholder="请输入默认值" />
+          <Input 
+            placeholder="请输入默认值"
+            allowClear
+            disabled={form.getFieldValue('autoIncrement')}
+          />
         </Form.Item>
       </Form>
     </Modal>

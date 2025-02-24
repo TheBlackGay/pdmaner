@@ -3,51 +3,92 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: #f7f9fc;
+  padding: 16px;
 }
 
 .empty {
   height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   color: #999;
   font-size: 14px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.empty :global(.anticon) {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #d9d9d9;
 }
 
 /* Tab栏样式 */
 .tabs {
   margin: 0;
-  padding: 0 16px;
+  padding: 0 24px;
   background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .tabs :global(.ant-tabs-nav) {
   margin: 0;
 }
 
+.tabs :global(.ant-tabs-tab) {
+  padding: 12px 0;
+}
+
+.tabs :global(.ant-tabs-tab-btn) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabs :global(.anticon) {
+  font-size: 16px;
+}
+
 /* 表配置区域样式 */
 .tableConfig {
   background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border: none;
 }
 
 .tableConfig :global(.ant-collapse-header) {
   font-weight: 500;
+  padding: 16px 24px !important;
+}
+
+.tableConfig :global(.ant-collapse-content-box) {
+  padding: 0 !important;
 }
 
 .header {
-  padding: 8px 0;
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .tableTitle {
-  margin: 0 !important;
+  color: #1a1a1a;
+  font-size: 20px;
+  margin-bottom: 8px !important;
+}
+
+.tableTitle :global(.ant-typography-edit-content) {
+  margin-top: 4px !important;
 }
 
 .tableComment {
-  margin: 8px 0 0 0 !important;
   color: #666;
+  font-size: 14px;
+  margin: 0 !important;
 }
 
 /* 配置内容区域样式 */
@@ -56,27 +97,80 @@
   display: flex;
   flex-direction: column;
   background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border: none;
   overflow: hidden;
 }
 
 .toolbar {
-  padding: 16px;
+  padding: 16px 24px;
+  background: #fff;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar :global(.ant-btn) {
+  border-radius: 6px;
+  height: 36px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.toolbar :global(.anticon) {
+  font-size: 16px;
 }
 
 /* 表格样式 */
 .configContent :global(.ant-table-wrapper) {
   flex: 1;
   overflow: auto;
+  padding: 0 24px 24px;
 }
 
 .configContent :global(.ant-table) {
   height: 100%;
+}
+
+.configContent :global(.ant-table-thead > tr > th) {
+  background: #f7f9fc;
+  font-weight: 600;
+  padding: 16px 12px;
+}
+
+.configContent :global(.ant-table-tbody > tr > td) {
+  padding: 12px;
+  transition: all 0.3s;
+}
+
+.configContent :global(.ant-table-tbody > tr:hover > td) {
+  background: #f0f7ff !important;
+}
+
+.configContent :global(.ant-table-tbody > tr.ant-table-row-selected > td) {
+  background: #e6f4ff;
+}
+
+.configContent :global(.ant-table-row-expand-icon-cell) {
+  width: 48px;
+}
+
+/* 操作按钮样式 */
+.actionButton {
+  padding: 4px !important;
+  height: 28px !important;
+  width: 28px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionButton :global(.anticon) {
+  font-size: 14px;
 }
 
 /* 索引列表样式 */
@@ -85,31 +179,34 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
+  padding: 0 24px 24px;
 }
 
 .indexHeader {
   display: grid;
   grid-template-columns: 80px 80px 200px 100px 1fr 120px;
-  background: #fafafa;
+  background: #f7f9fc;
   border-bottom: 1px solid #f0f0f0;
   font-weight: 500;
+  border-radius: 6px 6px 0 0;
 }
 
 .indexHeaderCell {
   padding: 12px 16px;
   display: flex;
   align-items: center;
+  color: #1a1a1a;
 }
 
 .indexItem {
   display: grid;
   grid-template-columns: 80px 80px 200px 100px 1fr 120px;
   border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
 }
 
 .indexItem:hover {
-  background-color: #fafafa;
+  background-color: #f0f7ff;
 }
 
 .indexCell {
@@ -120,11 +217,13 @@
 
 .indexCell :global(.anticon) {
   cursor: pointer;
-  transition: transform 0.3s;
+  transition: all 0.3s;
+  font-size: 14px;
 }
 
 .indexCell :global(.anticon):hover {
   color: #1890ff;
+  transform: scale(1.1);
 }
 
 .indexCell :global(.anticon.expanded) {
