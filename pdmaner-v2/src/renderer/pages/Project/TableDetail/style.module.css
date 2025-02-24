@@ -104,7 +104,7 @@
 }
 
 .toolbar {
-  padding: 12px 24px;
+  padding: 16px 24px;
   background: #fff;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
@@ -299,4 +299,59 @@
 
 .indexCell :global(.anticon.expanded) {
   transform: rotate(90deg);
+}
+
+/* 索引展开内容样式 */
+.expandedContent {
+  padding: 16px 24px;
+  background: #fafafa;
+  border-radius: 8px;
+  margin: 0 24px;
+}
+
+.expandedContent :global(.ant-table) {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.expandedContent :global(.ant-table-thead > tr > th) {
+  background: #f7f9fc;
+  font-weight: 600;
+  padding: 12px;
+  height: 40px;
+}
+
+.expandedContent :global(.ant-table-tbody > tr > td) {
+  padding: 8px 12px;
+  height: 32px;
+  transition: all 0.3s;
+}
+
+.expandedContent :global(.ant-table-tbody > tr:hover > td) {
+  background: #f0f7ff !important;
+}
+
+/* 索引表格样式优化 */
+.configContent :global(.ant-table-row-expand-icon) {
+  margin-top: 0;
+}
+
+.configContent :global(.ant-table-row-expand-icon-cell) {
+  width: 48px;
+}
+
+.configContent :global(.ant-tag) {
+  margin: 0;
+  font-size: 12px;
+  line-height: 20px;
+  padding: 0 8px;
+}
+
+.configContent :global(.ant-tag small) {
+  font-size: 11px;
+}
+
+.configContent :global(.ant-space-wrap) {
+  gap: 4px !important;
 }

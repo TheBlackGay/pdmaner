@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
-import { Modal, Form, Input, Select, Space, Tooltip, Button, Switch, Table, message } from 'antd'
+import { Modal, Form, Input, Select, Space, Tooltip, Button, Table, message, Tag } from 'antd'
 import type { Field, Index, CreateIndexParams, UpdateIndexParams } from '@/types/table'
-import { QuestionCircleOutlined, DeleteOutlined } from '@ant-design/icons'
+import { QuestionCircleOutlined, DeleteOutlined, PlusOutlined, DatabaseOutlined } from '@ant-design/icons'
 import styles from './style.module.css'
 
 interface Props {
@@ -36,8 +36,7 @@ const EditIndexDialog: React.FC<Props> = ({
         form.setFieldsValue({
           name: index.name,
           type: index.type,
-          comment: index.comment,
-          disabled: index.disabled
+          comment: index.comment
         })
         setSelectedFields(index.fields.map(f => ({
           fieldId: f.field.id,
@@ -46,8 +45,7 @@ const EditIndexDialog: React.FC<Props> = ({
       } else {
         form.resetFields()
         form.setFieldsValue({
-          type: 'NORMAL',
-          disabled: false
+          type: 'NORMAL'
         })
         setSelectedFields([])
       }
@@ -88,7 +86,7 @@ const EditIndexDialog: React.FC<Props> = ({
             fieldId: f.fieldId,
             sort: f.sort
           })),
-          disabled: values.disabled || false
+          disabled: false
         }
 
         await onSubmit(params)
@@ -108,12 +106,42 @@ const EditIndexDialog: React.FC<Props> = ({
 
   const selectedFieldColumns = [
     {
+      title: '序号',
+      key: 'index',
+      width: 60,
+      align: 'center' as const,
+      render: (_: any, __: any, index: number) => index + 1
+    },
+    {
       title: '字段名',
       dataIndex: 'fieldId',
       key: 'fieldName',
       render: (fieldId: string) => {
         const field = fields.find(f => f.id === fieldId)
-        return field?.name || fieldId
+        return (
+          <Space>
+            <DatabaseOutlined />
+            <span>{field?.name || fieldId}</span>
+            {field?.primaryKey && <Tag color="blue">主键</Tag>}
+            {!field?.nullable && <Tag color="red">非空</Tag>}
+          </Space>
+        )
+      }
+    },
+    {
+      title: '字段类型',
+      key: 'fieldType',
+      width: 150,
+      render: (_: any, record: any) => {
+        const field = fields.find(f => f.id === record.fieldId)
+        if (!field) return '-'
+        let typeStr = field.typeName
+        if (field.length) {
+          typeStr += `(${field.length})`
+        } else if (field.precision) {
+          typeStr += `(${field.precision}${field.scale ? `,${field.scale}` : ''})`
+        }
+        return typeStr
       }
     },
     {
@@ -159,7 +187,7 @@ const EditIndexDialog: React.FC<Props> = ({
       onCancel={onClose}
       onOk={handleSubmit}
       confirmLoading={loading}
-      width={800}
+      width={900}
       maskClosable={false}
       keyboard={false}
       destroyOnClose
@@ -194,8 +222,7 @@ const EditIndexDialog: React.FC<Props> = ({
             options={[
               { label: '普通索引', value: 'NORMAL' },
               { label: '唯一索引', value: 'UNIQUE' },
-              { label: '全文索引', value: 'FULLTEXT' },
-              { label: '空间索引', value: 'SPATIAL' }
+              { label: '全文索引', value: 'FULLTEXT' }
             ]}
           />
         </Form.Item>
@@ -214,18 +241,6 @@ const EditIndexDialog: React.FC<Props> = ({
         </Form.Item>
 
         <Form.Item
-          name="disabled"
-          label="状态"
-          valuePropName="checked"
-          initialValue={false}
-        >
-          <Switch
-            checkedChildren="启用"
-            unCheckedChildren="禁用"
-          />
-        </Form.Item>
-
-        <Form.Item
           label={
             <Space>
               索引字段
@@ -239,22 +254,33 @@ const EditIndexDialog: React.FC<Props> = ({
           help={selectedFields.length === 0 ? '请选择至少一个字段' : undefined}
         >
           <div className={styles.fieldSelector}>
-            <Select
-              placeholder="请选择字段"
-              value={undefined}
-              onChange={handleAddField}
-              options={availableFields.map(field => ({
-                label: field.name,
-                value: field.id
-              }))}
-              style={{ width: '100%', marginBottom: 16 }}
-            />
+            <div className={styles.fieldSelectorHeader}>
+              <Select
+                placeholder="请选择要添加的字段"
+                value={undefined}
+                onChange={handleAddField}
+                options={availableFields.map(field => ({
+                  label: (
+                    <Space>
+                      <DatabaseOutlined />
+                      <span>{field.name}</span>
+                      {field.primaryKey && <Tag color="blue">主键</Tag>}
+                      {!field.nullable && <Tag color="red">非空</Tag>}
+                    </Space>
+                  ),
+                  value: field.id
+                }))}
+                style={{ width: '100%' }}
+                optionLabelProp="label"
+                notFoundContent="没有可选的字段"
+              />
+            </div>
             <Table
               columns={selectedFieldColumns}
               dataSource={selectedFields}
               rowKey="fieldId"
               pagination={false}
-              size="small"
+              size="middle"
             />
           </div>
         </Form.Item>

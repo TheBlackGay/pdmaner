@@ -563,7 +563,7 @@ const TableDetail: React.FC = () => {
     {
       title: '序号',
       key: 'index',
-      width: 80,
+      width: 60,
       align: 'center' as const,
       render: (_: any, __: any, index: number) => index + 1
     },
@@ -576,7 +576,7 @@ const TableDetail: React.FC = () => {
       render: (text: string, record: Index) => (
         <Space>
           {record.type === 'UNIQUE' && <Badge status="processing" />}
-          <span>{text}</span>
+          <span style={{ fontWeight: 500 }}>{text}</span>
         </Space>
       )
     },
@@ -587,13 +587,12 @@ const TableDetail: React.FC = () => {
       width: 120,
       render: (type: string) => {
         const typeMap = {
-          'NORMAL': { text: '普通索引', status: 'default' },
-          'UNIQUE': { text: '唯一索引', status: 'processing' },
-          'FULLTEXT': { text: '全文索引', status: 'warning' },
-          'SPATIAL': { text: '空间索引', status: 'success' }
+          'NORMAL': { text: '普通索引', color: 'default' },
+          'UNIQUE': { text: '唯一索引', color: 'blue' },
+          'FULLTEXT': { text: '全文索引', color: 'orange' }
         }
-        const config = typeMap[type as keyof typeof typeMap] || { text: type, status: 'default' }
-        return <Badge status={config.status as any} text={config.text} />
+        const config = typeMap[type as keyof typeof typeMap] || { text: type, color: 'default' }
+        return <Tag color={config.color}>{config.text}</Tag>
       }
     },
     {
@@ -604,8 +603,13 @@ const TableDetail: React.FC = () => {
       render: (fields: any[]) => (
         <Space wrap>
           {fields.map((f, idx) => (
-            <Tag key={f.field.id} color={idx === 0 ? 'blue' : 'default'}>
+            <Tag 
+              key={f.field.id} 
+              color={idx === 0 ? 'blue' : 'default'}
+              style={{ margin: '2px' }}
+            >
               {f.field.name}
+              {f.sort && <small style={{ marginLeft: 4, opacity: 0.7 }}>{f.sort}</small>}
             </Tag>
           ))}
         </Space>
@@ -619,22 +623,9 @@ const TableDetail: React.FC = () => {
       ellipsis: true,
     },
     {
-      title: '状态',
-      dataIndex: 'disabled',
-      key: 'status',
-      width: 100,
-      align: 'center' as const,
-      render: (disabled: boolean) => (
-        <Badge
-          status={disabled ? 'error' : 'success'}
-          text={disabled ? '已禁用' : '已启用'}
-        />
-      )
-    },
-    {
       title: '操作',
       key: 'action',
-      width: 180,
+      width: 120,
       fixed: 'right' as const,
       render: (_: any, record: Index) => (
         <Space>
@@ -643,12 +634,6 @@ const TableDetail: React.FC = () => {
             icon={<EditOutlined />}
             className={styles.actionButton}
             onClick={() => handleEditIndex(record)}
-          />
-          <Button
-            type="text"
-            icon={record.disabled ? <PlayCircleOutlined /> : <PauseCircleOutlined />}
-            className={styles.actionButton}
-            onClick={() => handleToggleIndexStatus(record)}
           />
           <Popconfirm
             title="确定要删除这个索引吗？"
@@ -672,30 +657,58 @@ const TableDetail: React.FC = () => {
         title: '字段名',
         dataIndex: ['field', 'name'],
         key: 'fieldName',
-        width: 200
+        width: 200,
+        render: (text: string, field: any) => (
+          <Space>
+            <DatabaseOutlined />
+            <span>{text}</span>
+            {field.field.primaryKey && <Tag color="blue">主键</Tag>}
+            {!field.field.nullable && <Tag color="red">非空</Tag>}
+          </Space>
+        )
       },
       {
-        title: '排序',
+        title: '字段类型',
+        key: 'fieldType',
+        width: 150,
+        render: (_: any, field: any) => {
+          let typeStr = field.field.typeName
+          if (field.field.length) {
+            typeStr += `(${field.field.length})`
+          } else if (field.field.precision) {
+            typeStr += `(${field.field.precision}${field.field.scale ? `,${field.field.scale}` : ''})`
+          }
+          return typeStr
+        }
+      },
+      {
+        title: '排序方式',
         dataIndex: 'sort',
         key: 'sort',
         width: 100,
-        render: (sort: string) => sort === 'ASC' ? '升序' : '降序'
+        render: (sort: string) => (
+          <Tag color={sort === 'ASC' ? 'green' : 'orange'}>
+            {sort === 'ASC' ? '升序' : '降序'}
+          </Tag>
+        )
       },
       {
-        title: '长度',
-        dataIndex: 'length',
-        key: 'length',
-        width: 100
+        title: '注释',
+        dataIndex: ['field', 'comment'],
+        key: 'comment',
+        ellipsis: true
       }
     ]
 
     return (
-      <Table
-        columns={columns}
-        dataSource={record.fields}
-        pagination={false}
-        size="small"
-      />
+      <div className={styles.expandedContent}>
+        <Table
+          columns={columns}
+          dataSource={record.fields}
+          pagination={false}
+          size="small"
+        />
+      </div>
     )
   }
 
@@ -817,31 +830,17 @@ const TableDetail: React.FC = () => {
               添加索引
             </Button>
             {selectedRows.length > 0 && (
-              <>
-                <Popconfirm
-                  title={`确定要删除选中的 ${selectedRows.length} 个索引吗？`}
-                  onConfirm={handleBatchDeleteIndexes}
-                >
-                  <Button
-                    danger
-                    icon={<DeleteOutlined />}
-                  >
-                    批量删除
-                  </Button>
-                </Popconfirm>
+              <Popconfirm
+                title={`确定要删除选中的 ${selectedRows.length} 个索引吗？`}
+                onConfirm={handleBatchDeleteIndexes}
+              >
                 <Button
-                  icon={<PlayCircleOutlined />}
-                  onClick={() => handleBatchToggleIndexStatus(true)}
+                  danger
+                  icon={<DeleteOutlined />}
                 >
-                  批量启用
+                  批量删除
                 </Button>
-                <Button
-                  icon={<PauseCircleOutlined />}
-                  onClick={() => handleBatchToggleIndexStatus(false)}
-                >
-                  批量禁用
-                </Button>
-              </>
+              </Popconfirm>
             )}
           </div>
         </div>
