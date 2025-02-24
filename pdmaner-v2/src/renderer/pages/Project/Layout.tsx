@@ -10,8 +10,6 @@ import {
   SearchOutlined,
   PlusOutlined,
   TableOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
 } from '@ant-design/icons'
 import { useProjectStore } from '@/stores/project'
 import { useTableStore } from '@/stores/table'
@@ -75,21 +73,49 @@ const ProjectLayout: React.FC = () => {
   const navigate = useNavigate()
   const { selectedProject } = useProjectStore()
   const [selectedMenu, setSelectedMenu] = useState('model')
-  const [collapsed, setCollapsed] = useState(false)
+  const [mainSiderWidth, setMainSiderWidth] = useState(200)
   const [subSiderWidth, setSubSiderWidth] = useState(300)
-  const resizingRef = useRef(false)
+  const resizingMainRef = useRef(false)
+  const resizingSubRef = useRef(false)
   const startXRef = useRef(0)
   const startWidthRef = useRef(0)
 
-  const handleResizeStart = (e: React.MouseEvent) => {
-    resizingRef.current = true
+  const handleMainSiderResizeStart = (e: React.MouseEvent) => {
+    resizingMainRef.current = true
+    startXRef.current = e.clientX
+    startWidthRef.current = mainSiderWidth
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const handleResizeMove = (e: MouseEvent) => {
+      if (resizingMainRef.current) {
+        const delta = e.clientX - startXRef.current
+        const newWidth = Math.max(150, Math.min(400, startWidthRef.current + delta))
+        setMainSiderWidth(newWidth)
+      }
+    }
+
+    const handleResizeEnd = () => {
+      resizingMainRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleResizeMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+    }
+
+    document.addEventListener('mousemove', handleResizeMove)
+    document.addEventListener('mouseup', handleResizeEnd)
+  }
+
+  const handleSubSiderResizeStart = (e: React.MouseEvent) => {
+    resizingSubRef.current = true
     startXRef.current = e.clientX
     startWidthRef.current = subSiderWidth
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
 
     const handleResizeMove = (e: MouseEvent) => {
-      if (resizingRef.current) {
+      if (resizingSubRef.current) {
         const delta = e.clientX - startXRef.current
         const newWidth = Math.max(200, Math.min(500, startWidthRef.current + delta))
         setSubSiderWidth(newWidth)
@@ -97,7 +123,7 @@ const ProjectLayout: React.FC = () => {
     }
 
     const handleResizeEnd = () => {
-      resizingRef.current = false
+      resizingSubRef.current = false
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
       document.removeEventListener('mousemove', handleResizeMove)
@@ -179,12 +205,19 @@ const ProjectLayout: React.FC = () => {
 
       <div className={styles.mainLayout}>
         {/* 左侧主菜单 */}
-        <div className={styles.mainSider}>
+        <div 
+          className={styles.mainSider}
+          style={{ width: mainSiderWidth }}
+        >
           <Menu
             mode="inline"
             selectedKeys={[selectedMenu]}
             items={menuItems}
             onClick={({ key }) => setSelectedMenu(key)}
+          />
+          <div 
+            className={styles.resizeHandle}
+            onMouseDown={handleMainSiderResizeStart}
           />
         </div>
 
@@ -192,24 +225,16 @@ const ProjectLayout: React.FC = () => {
         <div className={styles.contentLayout}>
           {/* 子菜单区域 */}
           <div 
-            className={`${styles.subSider} ${collapsed ? styles.collapsed : ''}`}
-            style={{ width: collapsed ? 40 : subSiderWidth }}
+            className={styles.subSider}
+            style={{ width: subSiderWidth }}
           >
             <div className={styles.subSiderContent}>
-              {!collapsed && renderSubMenu()}
+              {renderSubMenu()}
             </div>
             <div 
-              className={styles.collapseHandle}
-              onClick={() => setCollapsed(!collapsed)}
-            >
-              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            </div>
-            {!collapsed && (
-              <div 
-                className={styles.resizeHandle}
-                onMouseDown={handleResizeStart}
-              />
-            )}
+              className={styles.resizeHandle}
+              onMouseDown={handleSubSiderResizeStart}
+            />
           </div>
 
           {/* 主内容区域 */}

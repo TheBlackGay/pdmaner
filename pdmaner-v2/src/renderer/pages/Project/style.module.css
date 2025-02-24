@@ -51,7 +51,9 @@
   background: #fff;
   border-right: 1px solid #f0f0f0;
   flex: none;
-  overflow-y: auto;
+  overflow: hidden;
+  position: relative;
+  display: flex;
 }
 
 .contentLayout {
@@ -67,39 +69,12 @@
   border-right: 1px solid #f0f0f0;
   flex: none;
   position: relative;
-  transition: width 0.3s;
   display: flex;
-}
-
-.subSider.collapsed {
-  width: 40px;
 }
 
 .subSiderContent {
   flex: 1;
   overflow: hidden;
-}
-
-.collapseHandle {
-  position: absolute;
-  right: -16px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 64px;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  border-left: none;
-  border-radius: 0 4px 4px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-}
-
-.collapseHandle:hover {
-  background: #f5f5f5;
 }
 
 .resizeHandle {
@@ -111,10 +86,11 @@
   cursor: col-resize;
   background: transparent;
   z-index: 9;
+  transition: background-color 0.3s;
 }
 
 .resizeHandle:hover {
-  background: #f0f0f0;
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .content {
