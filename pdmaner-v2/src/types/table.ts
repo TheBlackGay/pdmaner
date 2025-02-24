@@ -2,6 +2,7 @@ export interface Table {
   id: string
   name: string
   comment?: string
+  charset?: string
   fields: Field[]
   indexes: Index[]
   createdAt: string
@@ -28,11 +29,13 @@ export interface Field {
 export interface CreateTableParams {
   name: string
   comment?: string
+  charset?: string
 }
 
 export interface UpdateTableParams {
   name: string
   comment?: string
+  charset?: string
 }
 
 export interface CreateFieldParams {

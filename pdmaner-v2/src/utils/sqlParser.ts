@@ -48,6 +48,27 @@ export class SQLParser {
       .filter(s => s.toLowerCase().startsWith('create table'))
   }
 
+  private extractCharset(sql: string): string {
+    // 匹配以下字符集语法：
+    // 1. CHARACTER SET xxx
+    // 2. CHARSET xxx
+    // 3. CHARSET=xxx
+    const charsetPatterns = [
+      /character\s+set\s+([^\s;]+)/i,
+      /charset\s+([^\s;]+)/i,
+      /charset=([^\s;]+)/i
+    ]
+
+    for (const pattern of charsetPatterns) {
+      const match = sql.match(pattern)
+      if (match) {
+        return match[1]
+      }
+    }
+
+    return ''
+  }
+
   private parseCreateTable(sql: string): ParsedTable | null {
     // 提取表名
     const tableNameMatch = sql.match(/create\s+table\s+(?:if\s+not\s+exists\s+)?[`"]?([^`"\s(]+)[`"]?\s*\(/i)
@@ -55,6 +76,7 @@ export class SQLParser {
 
     const tableName = tableNameMatch[1]
     const comment = this.extractTableComment(sql)
+    const charset = this.extractCharset(sql)
 
     // 提取字段和索引定义
     const bodyMatch = sql.match(/\(([\s\S]+)\)/i)
@@ -74,7 +96,6 @@ export class SQLParser {
         const field = this.parseFieldDefinition(trimmedLine)
         if (field) {
           fields.push(field)
-          // 如果字段定义中包含 PRIMARY KEY
           if (field.primaryKey) {
             primaryKey.push(field.name)
           }
@@ -121,7 +142,8 @@ export class SQLParser {
     return {
       table: {
         name: tableName,
-        comment
+        comment,
+        charset
       },
       fields,
       indexes
@@ -129,9 +151,24 @@ export class SQLParser {
   }
 
   private extractTableComment(sql: string): string {
-    // 匹配MySQL的表注释语法：COMMENT = '注释' 或 COMMENT '注释'
-    const commentMatch = sql.match(/comment\s*=?\s*['"]([^'"]+)['"]/i)
-    return commentMatch ? commentMatch[1] : ''
+    // 匹配以下几种表注释语法：
+    // 1. COMMENT = '注释'
+    // 2. COMMENT '注释'
+    // 3. COMMENT='注释'
+    const commentPatterns = [
+      /comment\s*=\s*['"]([^'"]+)['"]/i,
+      /comment\s+['"]([^'"]+)['"]/i,
+      /comment=['"]([^'"]+)['"]/i
+    ]
+
+    for (const pattern of commentPatterns) {
+      const match = sql.match(pattern)
+      if (match) {
+        return match[1]
+      }
+    }
+
+    return ''
   }
 
   private splitDefinitions(body: string): string[] {
@@ -210,9 +247,27 @@ export class SQLParser {
     const defaultMatch = rest.match(/default\s+(?:'([^']*)'|(\d+)|(\w+))/i)
     let defaultValue: string | undefined
     if (defaultMatch) {
-      defaultValue = defaultMatch[1] !== undefined ? defaultMatch[1] : 
-                    defaultMatch[2] !== undefined ? defaultMatch[2] :
-                    defaultMatch[3]
+      const stringValue = defaultMatch[1]
+      const numberValue = defaultMatch[2]
+      const wordValue = defaultMatch[3]
+      
+      // 处理不同类型的默认值
+      if (stringValue !== undefined) {
+        // 字符串类型，添加单引号
+        defaultValue = `'${stringValue}'`
+      } else if (numberValue !== undefined) {
+        // 数字类型，直接使用
+        defaultValue = numberValue
+      } else if (wordValue !== undefined) {
+        // 关键字类型（如CURRENT_TIMESTAMP），直接使用
+        const upperWord = wordValue.toUpperCase()
+        if (['NULL', 'CURRENT_TIMESTAMP'].includes(upperWord)) {
+          defaultValue = upperWord
+        } else {
+          // 其他情况当作字符串处理
+          defaultValue = `'${wordValue}'`
+        }
+      }
     }
     
     const commentMatch = rest.match(/comment\s*['"]([^'"]+)['"]/i)

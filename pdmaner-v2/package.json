@@ -26,12 +26,13 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@tauri-apps/api": "^1.5.3",
     "antd": "^5.14.1",
+    "handlebars": "^4.7.8",
     "react": "^18.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.1",
-    "zustand": "^4.5.1",
-    "react-dnd": "^16.0.1",
-    "react-dnd-html5-backend": "^16.0.1"
+    "zustand": "^4.5.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.4.0",

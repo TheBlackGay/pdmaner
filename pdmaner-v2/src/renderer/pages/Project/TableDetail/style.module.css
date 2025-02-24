@@ -55,6 +55,9 @@
 
 /* 表配置区域样式 */
 .tableConfig {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
@@ -68,6 +71,19 @@
 
 .tableConfig :global(.ant-collapse-content-box) {
   padding: 0 !important;
+}
+
+.tableConfig :global(.ant-form-item) {
+  margin-bottom: 0;
+}
+
+.tableConfig :global(.ant-form-item-label) {
+  width: 80px;
+  text-align: left;
+}
+
+.tableConfig :global(.ant-select) {
+  width: 200px;
 }
 
 .header {
@@ -375,4 +391,103 @@
 
 .configContent :global(.ant-space-wrap) {
   gap: 4px !important;
+}
+
+/* 数据库代码页面样式 */
+.databaseCode {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.databaseSelector {
+  display: flex;
+  gap: 1px;
+  background: #f0f0f0;
+  padding: 1px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.databaseItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.databaseItem:hover {
+  background: #f5f5f5;
+}
+
+.databaseItem.selected {
+  background: #e6f4ff;
+  color: #1890ff;
+}
+
+.databaseItem :global(.anticon) {
+  font-size: 16px;
+}
+
+.codeContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.codePreview {
+  flex: 1;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  overflow: auto;
+  padding: 16px;
+  background: #fafafa;
+}
+
+.codePreview pre {
+  margin: 0;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.codeActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.codeActions :global(.ant-btn) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 模态框样式 */
+.databaseCode :global(.ant-modal-body) pre {
+  margin: 0;
+  padding: 16px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: auto;
+  max-height: 600px;
 }

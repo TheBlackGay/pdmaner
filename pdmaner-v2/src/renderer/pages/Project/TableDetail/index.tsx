@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox, Dropdown, Badge, Tag, Modal, Form, Input, Select } from 'antd'
 import {
   PlusOutlined,
@@ -53,10 +53,35 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { SQLParser } from '@/utils/sqlParser'
+import { templateManager } from '@/utils/templateManager'
 
 const { TabPane } = Tabs
 const { Title, Paragraph } = Typography
 const { Panel } = Collapse
+
+const charsetOptions = [
+  { label: 'UTF-8 Unicode (utf8)', value: 'utf8' },
+  { label: 'UTF-8 Unicode 4字节 (utf8mb4)', value: 'utf8mb4' },
+  { label: 'GBK 中文简体 (gbk)', value: 'gbk' },
+  { label: 'GB2312 中文简体 (gb2312)', value: 'gb2312' },
+  { label: 'BIG5 中文繁体 (big5)', value: 'big5' },
+  { label: 'Latin1 西欧字符 (latin1)', value: 'latin1' },
+  { label: 'ASCII 7位ASCII (ascii)', value: 'ascii' },
+  { label: 'EUC-JP 日文 (ujis)', value: 'ujis' },
+  { label: 'Shift-JIS 日文 (sjis)', value: 'sjis' },
+  { label: 'EUC-KR 韩文 (euckr)', value: 'euckr' },
+  { label: 'UTF-16 Unicode (utf16)', value: 'utf16' },
+  { label: 'UTF-32 Unicode (utf32)', value: 'utf32' },
+  { label: 'Binary 二进制 (binary)', value: 'binary' }
+];
+
+// 添加数据库模板类型定义
+const DATABASE_TYPES = [
+  { key: 'mysql', label: 'MySQL', icon: <DatabaseOutlined /> },
+  { key: 'doris', label: 'Apache Doris', icon: <DatabaseOutlined /> },
+  { key: 'postgresql', label: 'PostgreSQL', icon: <DatabaseOutlined /> },
+  { key: 'oracle', label: 'Oracle', icon: <DatabaseOutlined /> }
+] as const;
 
 const TableDetail: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>()
@@ -287,6 +312,19 @@ const TableDetail: React.FC = () => {
       message.success('表注释更新成功')
     } catch (error) {
       message.error('表注释更新失败')
+    }
+  }
+
+  const handleCharsetChange = async (charset: string) => {
+    try {
+      await updateTable(selectedTable.id, {
+        name: selectedTable.name,
+        comment: selectedTable.comment,
+        charset
+      })
+      message.success('字符集更新成功')
+    } catch (error) {
+      message.error('字符集更新失败')
     }
   }
 
@@ -768,143 +806,302 @@ const TableDetail: React.FC = () => {
     }
   }
 
-  const renderContent = () => {
-    if (activeTab === 'fields') {
-      return (
-        <div className={styles.configContent}>
-          <div className={styles.toolbar}>
-            <div className={styles.toolbarLeft}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreateField}
-              >
-                添加字段
-              </Button>
-              <div className={styles.moveButtons}>
-                <Tooltip title="置顶">
-                  <Button
-                    icon={<VerticalAlignTopOutlined />}
-                    disabled={selectedRows.length !== 1}
-                    onClick={() => handleMoveField(selectedRows[0], 'top')}
-                  />
-                </Tooltip>
-                <Tooltip title="上移">
-                  <Button
-                    icon={<ArrowUpOutlined />}
-                    disabled={selectedRows.length !== 1}
-                    onClick={() => handleMoveField(selectedRows[0], 'up')}
-                  />
-                </Tooltip>
-                <Tooltip title="下移">
-                  <Button
-                    icon={<ArrowDownOutlined />}
-                    disabled={selectedRows.length !== 1}
-                    onClick={() => handleMoveField(selectedRows[0], 'down')}
-                  />
-                </Tooltip>
-                <Tooltip title="置底">
-                  <Button
-                    icon={<VerticalAlignBottomOutlined />}
-                    disabled={selectedRows.length !== 1}
-                    onClick={() => handleMoveField(selectedRows[0], 'bottom')}
-                  />
-                </Tooltip>
-              </div>
-              {selectedRows.length > 0 && (
-                <Popconfirm
-                  title={`确定要删除选中的 ${selectedRows.length} 个字段吗？`}
-                  onConfirm={handleBatchDelete}
-                >
-                  <Button
-                    danger
-                    icon={<DeleteOutlined />}
-                  >
-                    批量删除
-                  </Button>
-                </Popconfirm>
-              )}
-            </div>
-            <div className={styles.toolbarRight}>
-              <Button
-                icon={<DatabaseOutlined />}
-                onClick={() => message.info('字段模板功能开发中')}
-              >
-                字段模板
-              </Button>
-            </div>
-          </div>
-          <Table
-            columns={fieldColumns}
-            dataSource={selectedTable?.fields}
-            rowKey="id"
-            scroll={{ x: 'max-content' }}
-            pagination={false}
-            rowSelection={{
-              type: 'checkbox',
-              selectedRowKeys: selectedRows,
-              onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
-            }}
-            onRow={(record) => ({
-              onDoubleClick: () => handleEditField(record),
-              'data-row-key': record.id
-            })}
-          />
-        </div>
-      )
+  // 修改 DatabaseCode 组件
+  const DatabaseCode: React.FC<{ table: Table }> = ({ table }) => {
+    const [selectedDb, setSelectedDb] = useState<string>('mysql')
+    const [templateModalVisible, setTemplateModalVisible] = useState(false)
+    const [modelDataModalVisible, setModelDataModalVisible] = useState(false)
+    const [currentTemplate, setCurrentTemplate] = useState('')
+
+    useEffect(() => {
+      const template = templateManager.getTemplate(selectedDb)
+      if (template) {
+        setCurrentTemplate(template.template)
+      }
+    }, [selectedDb])
+
+    const handleTemplateChange = (template: string) => {
+      setCurrentTemplate(template)
     }
 
+    const handleTemplateSave = () => {
+      try {
+        const template = templateManager.getTemplate(selectedDb)
+        if (template) {
+          templateManager.setTemplate({
+            ...template,
+            template: currentTemplate
+          })
+          message.success('模板保存成功')
+          setTemplateModalVisible(false)
+        }
+      } catch (error) {
+        message.error('模板保存失败')
+      }
+    }
+
+    const generatedCode = useMemo(() => {
+      try {
+        return templateManager.generateCode(table, selectedDb)
+      } catch (error) {
+        console.error('生成代码失败:', error)
+        return '生成代码失败: ' + (error as Error).message
+      }
+    }, [table, selectedDb])
+
     return (
-      <div className={styles.configContent}>
-        <div className={styles.toolbar}>
-          <div className={styles.toolbarLeft}>
+      <div className={styles.databaseCode}>
+        <div className={styles.databaseSelector}>
+          {DATABASE_TYPES.map(db => (
+            <div
+              key={db.key}
+              className={`${styles.databaseItem} ${selectedDb === db.key ? styles.selected : ''}`}
+              onClick={() => setSelectedDb(db.key)}
+            >
+              {db.icon}
+              <span>{db.label}</span>
+            </div>
+          ))}
+        </div>
+        
+        <div className={styles.codeContent}>
+          <div className={styles.codePreview}>
+            <pre>
+              <code>
+                {generatedCode}
+              </code>
+            </pre>
+          </div>
+          
+          <div className={styles.codeActions}>
+            <Button 
+              icon={<FileTextOutlined />}
+              onClick={() => setModelDataModalVisible(true)}
+            >
+              模型数据
+            </Button>
+            <Button 
+              icon={<EditOutlined />}
+              onClick={() => setTemplateModalVisible(true)}
+            >
+              编辑代码模板
+            </Button>
             <Button
               type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreateIndex}
+              icon={<CopyOutlined />}
+              onClick={() => {
+                navigator.clipboard.writeText(generatedCode)
+                message.success('代码已复制到剪贴板')
+              }}
             >
-              添加索引
+              复制代码
             </Button>
-            {selectedRows.length > 0 && (
-              <Popconfirm
-                title={`确定要删除选中的 ${selectedRows.length} 个索引吗？`}
-                onConfirm={handleBatchDeleteIndexes}
-              >
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                >
-                  批量删除
-                </Button>
-              </Popconfirm>
-            )}
           </div>
         </div>
-        <Table
-          columns={indexColumns}
-          dataSource={selectedTable?.indexes}
-          rowKey="id"
-          scroll={{ x: 'max-content' }}
-          pagination={false}
-          expandable={{
-            expandedRowRender,
-            expandedRowKeys: expandedIndexes,
-            onExpand: (expanded, record) => {
-              setExpandedIndexes(prev =>
-                expanded
-                  ? [...prev, record.id]
-                  : prev.filter(id => id !== record.id)
-              )
-            }
-          }}
-          rowSelection={{
-            type: 'checkbox',
-            selectedRowKeys: selectedRows,
-            onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
-          }}
-        />
+
+        <Modal
+          title="模型数据"
+          open={modelDataModalVisible}
+          onCancel={() => setModelDataModalVisible(false)}
+          width={800}
+          footer={null}
+        >
+          <pre>
+            <code>
+              {JSON.stringify(table, null, 2)}
+            </code>
+          </pre>
+        </Modal>
+
+        <Modal
+          title="编辑代码模板"
+          open={templateModalVisible}
+          onCancel={() => setTemplateModalVisible(false)}
+          width={800}
+          onOk={handleTemplateSave}
+        >
+          <Form layout="vertical">
+            <Form.Item
+              label="建表语句模板"
+              tooltip={
+                <div>
+                  <p>可用变量：</p>
+                  <ul>
+                    <li>{'{{name}}'} - 表名</li>
+                    <li>{'{{comment}}'} - 表注释</li>
+                    <li>{'{{charset}}'} - 字符集</li>
+                    <li>{'{{#each fields}}'} - 字段循环</li>
+                    <li>{'{{#each indexes}}'} - 索引循环</li>
+                  </ul>
+                  <p>字段属性：</p>
+                  <ul>
+                    <li>name - 字段名</li>
+                    <li>typeName - 类型名</li>
+                    <li>length - 长度</li>
+                    <li>precision - 精度</li>
+                    <li>scale - 小数位</li>
+                    <li>nullable - 是否可空</li>
+                    <li>defaultValue - 默认值</li>
+                    <li>comment - 注释</li>
+                  </ul>
+                </div>
+              }
+            >
+              <Input.TextArea
+                rows={20}
+                value={currentTemplate}
+                onChange={e => handleTemplateChange(e.target.value)}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
     )
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'fields':
+        return (
+          <div className={styles.configContent}>
+            <div className={styles.toolbar}>
+              <div className={styles.toolbarLeft}>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleCreateField}
+                >
+                  添加字段
+                </Button>
+                <div className={styles.moveButtons}>
+                  <Tooltip title="置顶">
+                    <Button
+                      icon={<VerticalAlignTopOutlined />}
+                      disabled={selectedRows.length !== 1}
+                      onClick={() => handleMoveField(selectedRows[0], 'top')}
+                    />
+                  </Tooltip>
+                  <Tooltip title="上移">
+                    <Button
+                      icon={<ArrowUpOutlined />}
+                      disabled={selectedRows.length !== 1}
+                      onClick={() => handleMoveField(selectedRows[0], 'up')}
+                    />
+                  </Tooltip>
+                  <Tooltip title="下移">
+                    <Button
+                      icon={<ArrowDownOutlined />}
+                      disabled={selectedRows.length !== 1}
+                      onClick={() => handleMoveField(selectedRows[0], 'down')}
+                    />
+                  </Tooltip>
+                  <Tooltip title="置底">
+                    <Button
+                      icon={<VerticalAlignBottomOutlined />}
+                      disabled={selectedRows.length !== 1}
+                      onClick={() => handleMoveField(selectedRows[0], 'bottom')}
+                    />
+                  </Tooltip>
+                </div>
+                {selectedRows.length > 0 && (
+                  <Popconfirm
+                    title={`确定要删除选中的 ${selectedRows.length} 个字段吗？`}
+                    onConfirm={handleBatchDelete}
+                  >
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                    >
+                      批量删除
+                    </Button>
+                  </Popconfirm>
+                )}
+              </div>
+              <div className={styles.toolbarRight}>
+                <Button
+                  icon={<DatabaseOutlined />}
+                  onClick={() => message.info('字段模板功能开发中')}
+                >
+                  字段模板
+                </Button>
+              </div>
+            </div>
+            <Table
+              columns={fieldColumns}
+              dataSource={selectedTable?.fields}
+              rowKey="id"
+              scroll={{ x: 'max-content' }}
+              pagination={false}
+              rowSelection={{
+                type: 'checkbox',
+                selectedRowKeys: selectedRows,
+                onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
+              }}
+              onRow={(record) => ({
+                onDoubleClick: () => handleEditField(record),
+                'data-row-key': record.id
+              })}
+            />
+          </div>
+        )
+      case 'indexes':
+        return (
+          <div className={styles.configContent}>
+            <div className={styles.toolbar}>
+              <div className={styles.toolbarLeft}>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleCreateIndex}
+                >
+                  添加索引
+                </Button>
+                {selectedRows.length > 0 && (
+                  <Popconfirm
+                    title={`确定要删除选中的 ${selectedRows.length} 个索引吗？`}
+                    onConfirm={handleBatchDeleteIndexes}
+                  >
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                    >
+                      批量删除
+                    </Button>
+                  </Popconfirm>
+                )}
+              </div>
+            </div>
+            <Table
+              columns={indexColumns}
+              dataSource={selectedTable?.indexes}
+              rowKey="id"
+              scroll={{ x: 'max-content' }}
+              pagination={false}
+              expandable={{
+                expandedRowRender,
+                expandedRowKeys: expandedIndexes,
+                onExpand: (expanded, record) => {
+                  setExpandedIndexes(prev =>
+                    expanded
+                      ? [...prev, record.id]
+                      : prev.filter(id => id !== record.id)
+                  )
+                }
+              }}
+              rowSelection={{
+                type: 'checkbox',
+                selectedRowKeys: selectedRows,
+                onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
+              }}
+            />
+          </div>
+        )
+      case 'database_code':
+        return <DatabaseCode table={selectedTable} />;
+      default:
+        return null;
+    }
   }
 
   return (
@@ -934,6 +1131,15 @@ const TableDetail: React.FC = () => {
                 <Badge count={selectedTable.indexes?.length || 0} style={{ marginLeft: 8 }} />
               </>
             )
+          },
+          {
+            key: 'database_code',
+            label: (
+              <>
+                <FileTextOutlined />
+                数据库代码
+              </>
+            )
           }
         ]}
       />
@@ -959,6 +1165,23 @@ const TableDetail: React.FC = () => {
             <Paragraph editable={{ onChange: handleTableCommentChange }} className={styles.tableComment}>
               {selectedTable.comment || '添加表注释...'}
             </Paragraph>
+            <div className={styles.tableConfig}>
+              <Form layout="horizontal" size="small">
+                <Form.Item
+                  name="charset"
+                  label="字符集"
+                  initialValue="utf8mb4"
+                >
+                  <Select
+                    options={charsetOptions}
+                    style={{ width: '100%' }}
+                    showSearch
+                    optionFilterProp="label"
+                    placeholder="请选择字符集"
+                  />
+                </Form.Item>
+              </Form>
+            </div>
           </div>
         </Panel>
       </Collapse>
