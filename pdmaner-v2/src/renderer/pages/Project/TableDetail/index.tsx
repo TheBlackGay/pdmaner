@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox, Dropdown, Badge } from 'antd'
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   CaretRightOutlined,
   CopyOutlined,
   ImportOutlined,
@@ -53,15 +53,15 @@ const { Panel } = Collapse
 
 const TableDetail: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>()
-  const { 
-    selectedTable, 
+  const {
+    selectedTable,
     tables,
-    updateTable, 
-    createField, 
-    updateField, 
-    deleteField, 
-    createIndex, 
-    updateIndex, 
+    updateTable,
+    createField,
+    updateField,
+    deleteField,
+    createIndex,
+    updateIndex,
     deleteIndex,
     getTableWithFields
   } = useTableStore()
@@ -114,7 +114,7 @@ const TableDetail: React.FC = () => {
 
     try {
       // 找到包含这些字段的所有索引
-      const relatedIndexes = selectedTable.indexes?.filter(index => 
+      const relatedIndexes = selectedTable.indexes?.filter(index =>
         index.fields.some(f => selectedRows.includes(f.field.id))
       ) || []
 
@@ -173,7 +173,7 @@ const TableDetail: React.FC = () => {
           orderIndex: idx
         }))
       } as any)
-      
+
       message.success('字段排序更新成功')
       // 重新获取最新数据
       await getTableWithFields(selectedTable.id)
@@ -201,7 +201,7 @@ const TableDetail: React.FC = () => {
             orderIndex: idx
           }))
         } as any)
-        
+
         message.success('字段排序更新成功')
         // 重新获取最新数据
         await getTableWithFields(selectedTable.id)
@@ -290,7 +290,7 @@ const TableDetail: React.FC = () => {
 
     try {
       // 找到包含这个字段的所有索引
-      const relatedIndexes = selectedTable.indexes?.filter(index => 
+      const relatedIndexes = selectedTable.indexes?.filter(index =>
         index.fields.some(f => f.field.id === fieldId)
       ) || []
 
@@ -356,26 +356,22 @@ const TableDetail: React.FC = () => {
   const fieldColumns = [
     {
       title: '',
-      key: 'sort',
-      width: 48,
-      render: () => <HolderOutlined className={styles.dragHandle} />,
-      fixed: 'left' as const
-    },
-    {
-      title: '',
       dataIndex: 'selection',
+      key: 'selection',
       width: 48,
-      fixed: 'left' as const
+      fixed: 'left' as const,
+      align: 'center'
     },
     {
       title: '字段名',
       dataIndex: 'name',
       key: 'name',
       width: 200,
+      ellipsis: true,
       render: (text: string, record: Field) => (
         <Space>
           {record.primaryKey && <Badge status="processing" />}
-          {text}
+          <span style={{ color: '#1f1f1f' }}>{text}</span>
         </Space>
       )
     },
@@ -542,11 +538,11 @@ const TableDetail: React.FC = () => {
       ...props.style,
       transform: CSS.Transform.toString(transform),
       transition,
-      ...(isDragging ? { 
+      ...(isDragging ? {
         position: 'relative',
         zIndex: 9999,
         background: '#fafafa',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)' 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
       } : {})
     }
 
@@ -570,8 +566,8 @@ const TableDetail: React.FC = () => {
         <div className={styles.configContent}>
           <div className={styles.toolbar}>
             <div className={styles.toolbarLeft}>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleCreateField}
               >
@@ -579,28 +575,28 @@ const TableDetail: React.FC = () => {
               </Button>
               <div className={styles.moveButtons}>
                 <Tooltip title="置顶">
-                  <Button 
+                  <Button
                     icon={<VerticalAlignTopOutlined />}
                     disabled={selectedRows.length !== 1}
                     onClick={() => handleMoveField(selectedRows[0], 'top')}
                   />
                 </Tooltip>
                 <Tooltip title="上移">
-                  <Button 
+                  <Button
                     icon={<ArrowUpOutlined />}
                     disabled={selectedRows.length !== 1}
                     onClick={() => handleMoveField(selectedRows[0], 'up')}
                   />
                 </Tooltip>
                 <Tooltip title="下移">
-                  <Button 
+                  <Button
                     icon={<ArrowDownOutlined />}
                     disabled={selectedRows.length !== 1}
                     onClick={() => handleMoveField(selectedRows[0], 'down')}
                   />
                 </Tooltip>
                 <Tooltip title="置底">
-                  <Button 
+                  <Button
                     icon={<VerticalAlignBottomOutlined />}
                     disabled={selectedRows.length !== 1}
                     onClick={() => handleMoveField(selectedRows[0], 'bottom')}
@@ -612,7 +608,7 @@ const TableDetail: React.FC = () => {
                   title={`确定要删除选中的 ${selectedRows.length} 个字段吗？`}
                   onConfirm={handleBatchDelete}
                 >
-                  <Button 
+                  <Button
                     danger
                     icon={<DeleteOutlined />}
                   >
@@ -622,7 +618,7 @@ const TableDetail: React.FC = () => {
               )}
             </div>
             <div className={styles.toolbarRight}>
-              <Button 
+              <Button
                 icon={<DatabaseOutlined />}
                 onClick={() => message.info('字段模板功能开发中')}
               >
@@ -645,11 +641,6 @@ const TableDetail: React.FC = () => {
               strategy={verticalListSortingStrategy}
             >
               <Table
-                components={{
-                  body: {
-                    row: DraggableRow,
-                  },
-                }}
                 columns={fieldColumns}
                 dataSource={selectedTable?.fields}
                 rowKey="id"
@@ -675,8 +666,8 @@ const TableDetail: React.FC = () => {
       <div className={styles.configContent}>
         <div className={styles.toolbar}>
           <Space>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<PlusOutlined />}
               onClick={handleCreateIndex}
             >
@@ -697,11 +688,11 @@ const TableDetail: React.FC = () => {
             <div key={index.id} className={styles.indexItem}>
               <div className={styles.indexCell}>{idx + 1}</div>
               <div className={styles.indexCell}>
-                <CaretRightOutlined 
+                <CaretRightOutlined
                   className={expandedIndexes.includes(index.id) ? 'expanded' : ''}
                   onClick={() => {
-                    setExpandedIndexes(prev => 
-                      prev.includes(index.id) 
+                    setExpandedIndexes(prev =>
+                      prev.includes(index.id)
                         ? prev.filter(id => id !== index.id)
                         : [...prev, index.id]
                     )
@@ -710,8 +701,8 @@ const TableDetail: React.FC = () => {
               </div>
               <div className={styles.indexCell}>{index.name}</div>
               <div className={styles.indexCell}>
-                <Badge 
-                  status={index.type === 'UNIQUE' ? 'processing' : 'default'} 
+                <Badge
+                  status={index.type === 'UNIQUE' ? 'processing' : 'default'}
                   text={index.type === 'UNIQUE' ? '唯一索引' : '普通索引'}
                 />
               </div>
@@ -746,13 +737,13 @@ const TableDetail: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <Tabs 
+      <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
         className={styles.tabs}
         items={[
-          { 
-            key: 'fields', 
+          {
+            key: 'fields',
             label: (
               <>
                 <DatabaseOutlined />
@@ -761,8 +752,8 @@ const TableDetail: React.FC = () => {
               </>
             )
           },
-          { 
-            key: 'indexes', 
+          {
+            key: 'indexes',
             label: (
               <>
                 <KeyOutlined />
@@ -779,13 +770,13 @@ const TableDetail: React.FC = () => {
         expandIcon={({ isActive }) => <CaretRightOutlined rotate={isActive ? 90 : 0} />}
         className={styles.tableConfig}
       >
-        <Panel 
+        <Panel
           header={
             <Space>
               <TableOutlined />
               表配置
             </Space>
-          } 
+          }
           key="tableConfig"
         >
           <div className={styles.header}>
@@ -821,4 +812,4 @@ const TableDetail: React.FC = () => {
   )
 }
 
-export default TableDetail 
+export default TableDetail
