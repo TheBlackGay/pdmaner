@@ -1,0 +1,21 @@
+.project-layout {
+  height: 100vh;
+}
+
+.project-content {
+  padding: 24px;
+  background: #fff;
+}
+
+.project-name {
+  height: 64px;
+  line-height: 64px;
+  padding: 0 24px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a1a;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+} 
