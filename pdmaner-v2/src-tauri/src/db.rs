@@ -62,12 +62,20 @@ pub struct UpdateFieldParams {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct IndexFieldParam {
+    #[serde(rename = "fieldId")]
+    field_id: String,
+    sort: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CreateIndexParams {
     name: String,
     #[serde(rename = "type")]
     index_type: String,
     comment: Option<String>,
-    fields: Vec<String>,
+    fields: Vec<IndexFieldParam>,
+    disabled: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -76,7 +84,8 @@ pub struct UpdateIndexParams {
     #[serde(rename = "type")]
     index_type: String,
     comment: Option<String>,
-    fields: Vec<String>,
+    fields: Vec<IndexFieldParam>,
+    disabled: bool,
 }
 
 pub struct Database {
@@ -88,11 +97,11 @@ impl Database {
         // 获取应用数据目录
         let app_data_dir = app_data_dir(&tauri::Config::default())
             .ok_or_else(|| anyhow::anyhow!("Failed to get app data dir"))?;
-        
+
         // 创建数据目录（如果不存在）
         fs::create_dir_all(&app_data_dir)
             .map_err(|e| anyhow::anyhow!("Failed to create app data directory: {}", e))?;
-        
+
         // 构建数据库文件路径
         let db_path = app_data_dir.join("pdmaner.db");
         println!("Database path: {}", db_path.display());
@@ -111,7 +120,7 @@ impl Database {
             .connect(&db_url)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to connect to database: {}", e))?;
-        
+
         // 初始化数据库表
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS projects (
@@ -201,8 +210,8 @@ impl Database {
 
     pub async fn get_projects(&self) -> Result<Vec<serde_json::Value>> {
         let rows = sqlx::query(
-            "SELECT 
-                id, name, description, 
+            "SELECT
+                id, name, description,
                 created_at, updated_at
             FROM projects
             ORDER BY updated_at DESC"
@@ -230,7 +239,7 @@ impl Database {
 
         sqlx::query(
             "INSERT INTO projects (
-                id, name, description, 
+                id, name, description,
                 created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?)"
         )
@@ -281,8 +290,8 @@ impl Database {
 
     pub async fn get_tables(&self, project_id: &str) -> Result<Vec<serde_json::Value>> {
         let rows = sqlx::query(
-            "SELECT 
-                id, name, comment, 
+            "SELECT
+                id, name, comment,
                 created_at, updated_at
             FROM tables
             WHERE project_id = ?
@@ -338,8 +347,8 @@ impl Database {
 
     pub async fn get_table_with_fields(&self, table_id: &str) -> Result<serde_json::Value> {
         let table = sqlx::query(
-            "SELECT 
-                id, name, comment, 
+            "SELECT
+                id, name, comment,
                 created_at, updated_at
             FROM tables
             WHERE id = ?"
@@ -349,7 +358,7 @@ impl Database {
         .await?;
 
         let fields = sqlx::query(
-            "SELECT 
+            "SELECT
                 id, name, comment, type_name,
                 length, precision, scale,
                 nullable, primary_key, auto_increment,
@@ -364,7 +373,7 @@ impl Database {
         .await?;
 
         let indexes = sqlx::query(
-            "SELECT 
+            "SELECT
                 id, name, type, comment,
                 created_at, updated_at
             FROM indexes
@@ -399,7 +408,7 @@ impl Database {
         for index in indexes {
             let index_id = index.get::<String, _>("id");
             let index_fields = sqlx::query(
-                "SELECT 
+                "SELECT
                     if.id, if.field_id, if.order_index,
                     f.name as field_name, f.comment as field_comment,
                     f.type_name, f.length, f.precision, f.scale,
@@ -526,7 +535,7 @@ impl Database {
         let now = chrono::Utc::now().to_rfc3339();
 
         sqlx::query(
-            "UPDATE tables 
+            "UPDATE tables
             SET name = ?, comment = ?, updated_at = ?
             WHERE id = ?"
         )
@@ -549,7 +558,7 @@ impl Database {
         let now = chrono::Utc::now().to_rfc3339();
 
         sqlx::query(
-            "UPDATE fields 
+            "UPDATE fields
             SET name = ?, comment = ?, type_name = ?,
                 length = ?, precision = ?, scale = ?,
                 nullable = ?, primary_key = ?, auto_increment = ?,
@@ -615,7 +624,7 @@ impl Database {
     pub async fn reorder_fields(&self, table_id: &str, field_ids: Vec<String>) -> Result<()> {
         for (index, field_id) in field_ids.iter().enumerate() {
             sqlx::query(
-                "UPDATE fields 
+                "UPDATE fields
                 SET order_index = ?
                 WHERE id = ? AND table_id = ?"
             )
@@ -660,7 +669,7 @@ impl Database {
             )
             .bind(&index_field_id)
             .bind(&id)
-            .bind(field_id)
+            .bind(field_id.field_id.clone())
             .bind(i as i32)
             .bind(&now)
             .bind(&now)
@@ -675,7 +684,7 @@ impl Database {
         let now = chrono::Utc::now().to_rfc3339();
 
         sqlx::query(
-            "UPDATE indexes 
+            "UPDATE indexes
             SET name = ?, type = ?, comment = ?, updated_at = ?
             WHERE id = ?"
         )
@@ -704,7 +713,7 @@ impl Database {
             )
             .bind(&index_field_id)
             .bind(index_id)
-            .bind(field_id)
+            .bind(field_id.field_id.clone())
             .bind(i as i32)
             .bind(&now)
             .bind(&now)
@@ -733,7 +742,7 @@ impl Database {
 
     pub async fn get_index(&self, index_id: &str) -> Result<serde_json::Value> {
         let index = sqlx::query(
-            "SELECT 
+            "SELECT
                 id, name, type, comment,
                 created_at, updated_at
             FROM indexes
@@ -744,7 +753,7 @@ impl Database {
         .await?;
 
         let index_fields = sqlx::query(
-            "SELECT 
+            "SELECT
                 if.id, if.field_id, if.order_index,
                 f.name as field_name, f.comment as field_comment,
                 f.type_name, f.length, f.precision, f.scale,
@@ -794,4 +803,4 @@ impl Database {
             "updatedAt": index.get::<String, _>("updated_at"),
         }))
     }
-} 
+}

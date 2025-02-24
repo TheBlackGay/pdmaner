@@ -176,6 +176,7 @@ export interface Index {
   type: IndexType
   comment?: string
   fields: IndexField[]
+  disabled?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -185,20 +186,48 @@ export interface IndexField {
   fieldId: string
   orderIndex: number
   field: Field
+  sort?: 'ASC' | 'DESC'
+  length?: number
 }
 
-export type IndexType = 'UNIQUE' | 'NORMAL' | 'FULLTEXT'
+export type IndexType = 'UNIQUE' | 'NORMAL' | 'FULLTEXT' | 'SPATIAL'
 
 export interface CreateIndexParams {
   name: string
   type: IndexType
   comment?: string
-  fields: string[] // field ids
+  fields: {
+    fieldId: string
+    sort?: 'ASC' | 'DESC'
+  }[]
+  disabled: boolean
 }
 
 export interface UpdateIndexParams {
   name: string
   type: IndexType
   comment?: string
-  fields: string[] // field ids
-} 
+  fields: {
+    fieldId: string
+    sort?: 'ASC' | 'DESC'
+  }[]
+  disabled: boolean
+}
+
+export interface TableStore {
+  tables: Table[]
+  selectedTable: Table | null
+  loading: boolean
+  getTables: () => Promise<void>
+  getTableWithFields: (tableId: string) => Promise<void>
+  createTable: (params: CreateTableParams) => Promise<void>
+  updateTable: (tableId: string, params: UpdateTableParams) => Promise<void>
+  deleteTable: (tableId: string) => Promise<void>
+  createField: (tableId: string, params: CreateFieldParams) => Promise<void>
+  updateField: (fieldId: string, params: UpdateFieldParams) => Promise<void>
+  deleteField: (fieldId: string) => Promise<void>
+  createIndex: (params: CreateIndexParams) => Promise<void>
+  updateIndex: (params: UpdateIndexParams) => Promise<void>
+  deleteIndex: (indexId: string) => Promise<void>
+  setSelectedTable: (table: Table | null) => void
+}

@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { invoke } from '@tauri-apps/api/tauri'
-import type { 
-  Table, 
-  CreateTableParams, 
+import type {
+  Table,
+  CreateTableParams,
   UpdateTableParams,
   Field,
   CreateFieldParams,
@@ -27,7 +27,7 @@ interface TableState {
   deleteField: (fieldId: string) => Promise<void>
   reorderFields: (tableId: string, fieldIds: string[]) => Promise<void>
   createIndex: (tableId: string, params: CreateIndexParams) => Promise<Index>
-  updateIndex: (indexId: string, params: UpdateIndexParams) => Promise<void>
+  updateIndex: (indexId: string, params: CreateIndexParams) => Promise<void>
   deleteIndex: (indexId: string) => Promise<void>
 }
 
@@ -67,7 +67,7 @@ export const useTableStore = create<TableState>((set, get) => ({
       const updatedTable = await invoke<Table>('update_table', { tableId, params })
       set(state => ({
         tables: state.tables.map(t => t.id === tableId ? { ...t, ...updatedTable } : t),
-        selectedTable: state.selectedTable?.id === tableId 
+        selectedTable: state.selectedTable?.id === tableId
           ? { ...state.selectedTable, ...updatedTable }
           : state.selectedTable
       }))
@@ -126,7 +126,7 @@ export const useTableStore = create<TableState>((set, get) => ({
         if (selectedTable) {
           const updatedTable = {
             ...selectedTable,
-            fields: selectedTable.fields.map(f => 
+            fields: selectedTable.fields.map(f =>
               f.id === fieldId ? { ...f, ...updatedField } : f
             )
           }
@@ -177,6 +177,10 @@ export const useTableStore = create<TableState>((set, get) => ({
   },
 
   createIndex: async (tableId: string, params: CreateIndexParams) => {
+
+    console.log('createIndex:tableId:' + tableId)
+    console.log('createIndex:params:' + JSON.stringify(params))
+
     try {
       const index = await invoke<Index>('create_index', { tableId, params })
       set(state => {
@@ -195,12 +199,12 @@ export const useTableStore = create<TableState>((set, get) => ({
       })
       return index
     } catch (error) {
-      console.error('Failed to create index:', error)
+      console.error('Failed to create index2222:', error)
       throw error
     }
   },
 
-  updateIndex: async (indexId: string, params: UpdateIndexParams) => {
+  updateIndex: async (indexId: string, params: CreateIndexParams) => {
     try {
       const updatedIndex = await invoke<Index>('update_index', { indexId, params })
       set(state => {
@@ -208,7 +212,7 @@ export const useTableStore = create<TableState>((set, get) => ({
         if (selectedTable) {
           const updatedTable = {
             ...selectedTable,
-            indexes: (selectedTable.indexes || []).map(i => 
+            indexes: (selectedTable.indexes || []).map(i =>
               i.id === indexId ? updatedIndex : i
             )
           }
@@ -247,4 +251,4 @@ export const useTableStore = create<TableState>((set, get) => ({
       throw error
     }
   }
-})) 
+}))

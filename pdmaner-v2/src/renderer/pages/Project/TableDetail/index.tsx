@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox, Dropdown, Badge } from 'antd'
+import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip, Collapse, Checkbox, Dropdown, Badge, Tag } from 'antd'
 import {
   PlusOutlined,
   EditOutlined,
@@ -21,13 +21,15 @@ import {
   ExclamationCircleOutlined,
   VerticalAlignTopOutlined,
   VerticalAlignBottomOutlined,
-  HolderOutlined
+  HolderOutlined,
+  PlayCircleOutlined,
+  PauseCircleOutlined
 } from '@ant-design/icons'
 import { useParams } from 'react-router-dom'
 import { useTableStore } from '@/stores/table'
 import EditFieldDialog from '@/renderer/components/EditFieldDialog'
 import EditIndexDialog from '@/renderer/components/EditIndexDialog'
-import type { Field, Index } from '@/types/table'
+import type { Field, Index, CreateIndexParams, UpdateIndexParams } from '@/types/table'
 import styles from './style.module.css'
 import {
   DndContext,
@@ -313,14 +315,10 @@ const TableDetail: React.FC = () => {
   }
 
   const handleFieldSubmit = async (values: any) => {
-    try {
-      if (editingField) {
-        await updateField(editingField.id, values)
-      } else {
-        await createField(selectedTable.id, values)
-      }
-    } catch (error) {
-      throw error
+    if (editingField) {
+      await updateField(editingField.id, values)
+    } else {
+      await createField(selectedTable.id, values)
     }
   }
 
@@ -343,14 +341,75 @@ const TableDetail: React.FC = () => {
     }
   }
 
-  const handleIndexSubmit = async (values: any) => {
+  const handleToggleIndexStatus = async (index: Index) => {
+    if (!selectedTable) return
+
+    try {
+      const params: UpdateIndexParams = {
+        name: index.name,
+        type: index.type,
+        comment: index.comment || '',
+        fields: index.fields.map(f => ({
+          fieldId: f.field.id,
+          sort: f.sort
+        })),
+        disabled: !index.disabled
+      }
+
+      await updateIndex(params)
+      message.success(`索引${index.disabled ? '启用' : '禁用'}成功`)
+      await getTableWithFields(selectedTable.id)
+    } catch (error) {
+      console.error('切换索引状态失败:', error)
+      message.error(`索引${index.disabled ? '启用' : '禁用'}失败`)
+    }
+  }
+
+  const handleBatchToggleIndexStatus = async (enabled: boolean) => {
+    if (!selectedTable || selectedRows.length === 0) return
+
+    try {
+      const indexes = selectedTable.indexes?.filter(index => selectedRows.includes(index.id)) || []
+      await Promise.all(
+        indexes.map(index => {
+          const params: UpdateIndexParams = {
+            name: index.name,
+            type: index.type,
+            comment: index.comment || '',
+            fields: index.fields.map(f => ({
+              fieldId: f.field.id,
+              sort: f.sort
+            })),
+            disabled: !enabled
+          }
+          return updateIndex(params)
+        })
+      )
+      message.success(`批量${enabled ? '启用' : '禁用'}索引成功`)
+      setSelectedRows([])
+      await getTableWithFields(selectedTable.id)
+    } catch (error) {
+      console.error(`批量${enabled ? '启用' : '禁用'}索引失败:`, error)
+      message.error(`批量${enabled ? '启用' : '禁用'}索引失败`)
+    }
+  }
+
+  const handleIndexSubmit = async (values: CreateIndexParams | UpdateIndexParams) => {
+    if (!selectedTable) return
+
     try {
       if (editingIndex) {
         await updateIndex(editingIndex.id, values)
+        message.success('索引更新成功')
       } else {
         await createIndex(selectedTable.id, values)
+        message.success('索引创建成功')
       }
+      await getTableWithFields(selectedTable.id)
+      setEditIndexDialogOpen(false)
     } catch (error) {
+      console.error('提交索引失败:', error)
+      message.error(editingIndex ? '索引更新失败' : '索引创建失败')
       throw error
     }
   }
@@ -502,10 +561,24 @@ const TableDetail: React.FC = () => {
 
   const indexColumns = [
     {
+      title: '序号',
+      key: 'index',
+      width: 80,
+      align: 'center' as const,
+      render: (_: any, __: any, index: number) => index + 1
+    },
+    {
       title: '索引名',
       dataIndex: 'name',
       key: 'name',
       width: 200,
+      ellipsis: true,
+      render: (text: string, record: Index) => (
+        <Space>
+          {record.type === 'UNIQUE' && <Badge status="processing" />}
+          <span>{text}</span>
+        </Space>
+      )
     },
     {
       title: '类型',
@@ -514,35 +587,68 @@ const TableDetail: React.FC = () => {
       width: 120,
       render: (type: string) => {
         const typeMap = {
-          'NORMAL': '普通索引',
-          'UNIQUE': '唯一索引',
-          'FULLTEXT': '全文索引'
+          'NORMAL': { text: '普通索引', status: 'default' },
+          'UNIQUE': { text: '唯一索引', status: 'processing' },
+          'FULLTEXT': { text: '全文索引', status: 'warning' },
+          'SPATIAL': { text: '空间索引', status: 'success' }
         }
-        return typeMap[type as keyof typeof typeMap] || type
+        const config = typeMap[type as keyof typeof typeMap] || { text: type, status: 'default' }
+        return <Badge status={config.status as any} text={config.text} />
       }
     },
     {
       title: '字段',
       dataIndex: 'fields',
       key: 'fields',
-      render: (fields: any[]) => fields.map(f => f.field.name).join(', ')
+      ellipsis: true,
+      render: (fields: any[]) => (
+        <Space wrap>
+          {fields.map((f, idx) => (
+            <Tag key={f.field.id} color={idx === 0 ? 'blue' : 'default'}>
+              {f.field.name}
+            </Tag>
+          ))}
+        </Space>
+      )
     },
     {
       title: '注释',
       dataIndex: 'comment',
       key: 'comment',
       width: 200,
+      ellipsis: true,
+    },
+    {
+      title: '状态',
+      dataIndex: 'disabled',
+      key: 'status',
+      width: 100,
+      align: 'center' as const,
+      render: (disabled: boolean) => (
+        <Badge
+          status={disabled ? 'error' : 'success'}
+          text={disabled ? '已禁用' : '已启用'}
+        />
+      )
     },
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 180,
+      fixed: 'right' as const,
       render: (_: any, record: Index) => (
         <Space>
           <Button
             type="text"
             icon={<EditOutlined />}
+            className={styles.actionButton}
             onClick={() => handleEditIndex(record)}
+          />
+          <Button
+            type="text"
+            icon={record.disabled ? <PlayCircleOutlined /> : <PauseCircleOutlined />}
+            className={styles.actionButton}
+            onClick={() => handleToggleIndexStatus(record)}
           />
           <Popconfirm
             title="确定要删除这个索引吗？"
@@ -559,6 +665,54 @@ const TableDetail: React.FC = () => {
       ),
     },
   ]
+
+  const expandedRowRender = (record: Index) => {
+    const columns = [
+      {
+        title: '字段名',
+        dataIndex: ['field', 'name'],
+        key: 'fieldName',
+        width: 200
+      },
+      {
+        title: '排序',
+        dataIndex: 'sort',
+        key: 'sort',
+        width: 100,
+        render: (sort: string) => sort === 'ASC' ? '升序' : '降序'
+      },
+      {
+        title: '长度',
+        dataIndex: 'length',
+        key: 'length',
+        width: 100
+      }
+    ]
+
+    return (
+      <Table
+        columns={columns}
+        dataSource={record.fields}
+        pagination={false}
+        size="small"
+      />
+    )
+  }
+
+  const handleBatchDeleteIndexes = async () => {
+    if (!selectedTable || selectedRows.length === 0) return
+
+    try {
+      await Promise.all(selectedRows.map(id => deleteIndex(id)))
+      message.success('批量删除索引成功')
+      setSelectedRows([])
+      // 重新获取最新数据
+      await getTableWithFields(selectedTable.id)
+    } catch (error) {
+      message.error('批量删除索引失败')
+      console.error('批量删除索引失败:', error)
+    }
+  }
 
   const renderContent = () => {
     if (activeTab === 'fields') {
@@ -654,7 +808,7 @@ const TableDetail: React.FC = () => {
     return (
       <div className={styles.configContent}>
         <div className={styles.toolbar}>
-          <Space>
+          <div className={styles.toolbarLeft}>
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -662,64 +816,58 @@ const TableDetail: React.FC = () => {
             >
               添加索引
             </Button>
-          </Space>
-        </div>
-        <div className={styles.indexList}>
-          <div className={styles.indexHeader}>
-            <div className={styles.indexHeaderCell}>序号</div>
-            <div className={styles.indexHeaderCell}>展开</div>
-            <div className={styles.indexHeaderCell}>索引名</div>
-            <div className={styles.indexHeaderCell}>类型</div>
-            <div className={styles.indexHeaderCell}>字段</div>
-            <div className={styles.indexHeaderCell}>操作</div>
-          </div>
-          {(selectedTable.indexes || []).map((index, idx) => (
-            <div key={index.id} className={styles.indexItem}>
-              <div className={styles.indexCell}>{idx + 1}</div>
-              <div className={styles.indexCell}>
-                <CaretRightOutlined
-                  className={expandedIndexes.includes(index.id) ? 'expanded' : ''}
-                  onClick={() => {
-                    setExpandedIndexes(prev =>
-                      prev.includes(index.id)
-                        ? prev.filter(id => id !== index.id)
-                        : [...prev, index.id]
-                    )
-                  }}
-                />
-              </div>
-              <div className={styles.indexCell}>{index.name}</div>
-              <div className={styles.indexCell}>
-                <Badge
-                  status={index.type === 'UNIQUE' ? 'processing' : 'default'}
-                  text={index.type === 'UNIQUE' ? '唯一索引' : '普通索引'}
-                />
-              </div>
-              <div className={styles.indexCell}>{index.fields.map(f => f.field.name).join(', ')}</div>
-              <div className={styles.indexCell}>
-                <Space>
+            {selectedRows.length > 0 && (
+              <>
+                <Popconfirm
+                  title={`确定要删除选中的 ${selectedRows.length} 个索引吗？`}
+                  onConfirm={handleBatchDeleteIndexes}
+                >
                   <Button
-                    type="text"
-                    icon={<EditOutlined />}
-                    className={styles.actionButton}
-                    onClick={() => handleEditIndex(index)}
-                  />
-                  <Popconfirm
-                    title="确定要删除这个索引吗？"
-                    onConfirm={() => handleDeleteIndex(index.id)}
+                    danger
+                    icon={<DeleteOutlined />}
                   >
-                    <Button
-                      type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      className={styles.actionButton}
-                    />
-                  </Popconfirm>
-                </Space>
-              </div>
-            </div>
-          ))}
+                    批量删除
+                  </Button>
+                </Popconfirm>
+                <Button
+                  icon={<PlayCircleOutlined />}
+                  onClick={() => handleBatchToggleIndexStatus(true)}
+                >
+                  批量启用
+                </Button>
+                <Button
+                  icon={<PauseCircleOutlined />}
+                  onClick={() => handleBatchToggleIndexStatus(false)}
+                >
+                  批量禁用
+                </Button>
+              </>
+            )}
+          </div>
         </div>
+        <Table
+          columns={indexColumns}
+          dataSource={selectedTable?.indexes}
+          rowKey="id"
+          scroll={{ x: 'max-content' }}
+          pagination={false}
+          expandable={{
+            expandedRowRender,
+            expandedRowKeys: expandedIndexes,
+            onExpand: (expanded, record) => {
+              setExpandedIndexes(prev =>
+                expanded
+                  ? [...prev, record.id]
+                  : prev.filter(id => id !== record.id)
+              )
+            }
+          }}
+          rowSelection={{
+            type: 'checkbox',
+            selectedRowKeys: selectedRows,
+            onChange: (selectedRowKeys) => setSelectedRows(selectedRowKeys as string[])
+          }}
+        />
       </div>
     )
   }
@@ -794,6 +942,7 @@ const TableDetail: React.FC = () => {
         onClose={() => setEditIndexDialogOpen(false)}
         onSubmit={handleIndexSubmit}
         index={editingIndex}
+        tableId={selectedTable.id}
         fields={selectedTable.fields}
         title={editingIndex ? '编辑索引' : '新建索引'}
       />
