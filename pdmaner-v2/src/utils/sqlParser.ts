@@ -67,6 +67,7 @@ export class SQLParser {
     const indexes: CreateIndexParams[] = []
     let primaryKey: string[] = []
 
+    // 第一遍：处理字段定义
     for (const line of lines) {
       const trimmedLine = line.trim()
       if (this.isFieldDefinition(trimmedLine)) {
@@ -78,7 +79,13 @@ export class SQLParser {
             primaryKey.push(field.name)
           }
         }
-      } else if (this.isPrimaryKeyDefinition(trimmedLine)) {
+      }
+    }
+
+    // 第二遍：处理索引定义
+    for (const line of lines) {
+      const trimmedLine = line.trim()
+      if (this.isPrimaryKeyDefinition(trimmedLine)) {
         primaryKey = this.parsePrimaryKeyDefinition(trimmedLine)
       } else if (this.isIndexDefinition(trimmedLine)) {
         const index = this.parseIndexDefinition(trimmedLine)
@@ -164,6 +171,16 @@ export class SQLParser {
   }
 
   private isFieldDefinition(line: string): boolean {
+    // 首先检查这一行是否是索引定义
+    if (this.isIndexDefinition(line)) {
+      return false
+    }
+    // 字段定义必须以标识符开头，后面跟着数据类型
+    // 但不能以PRIMARY KEY, UNIQUE, KEY, INDEX等关键字开头
+    const keywords = /^(primary\s+key|unique|key|index|fulltext|spatial)\s+/i
+    if (keywords.test(line)) {
+      return false
+    }
     return /^[`"]?\w+[`"]?\s+\w+/.test(line)
   }
 
@@ -220,7 +237,21 @@ export class SQLParser {
     if (!indexMatch) return null
 
     const [, type, name, columns, comment] = indexMatch
-    const indexType = type ? type.toUpperCase().split(/\s+/)[0] : 'NORMAL'
+    
+    // 确定索引类型
+    let indexType = 'NORMAL'
+    if (type) {
+      const upperType = type.toUpperCase()
+      if (upperType.startsWith('PRIMARY')) {
+        indexType = 'PRIMARY'
+      } else if (upperType.startsWith('UNIQUE')) {
+        indexType = 'UNIQUE'
+      } else if (upperType.startsWith('FULLTEXT')) {
+        indexType = 'FULLTEXT'
+      } else if (upperType.startsWith('SPATIAL')) {
+        indexType = 'SPATIAL'
+      }
+    }
     
     // 解析索引字段
     const fields = columns.split(',').map(col => {
@@ -230,19 +261,22 @@ export class SQLParser {
       const [, fieldName, length, direction] = fieldMatch
       return {
         fieldId: fieldName,
-        sort: direction ? direction.toUpperCase() : 'ASC',
-        length: length ? parseInt(length) : undefined
+        sort: direction ? direction.toUpperCase() : 'ASC'
       }
     }).filter(Boolean)
 
     // 生成索引名（如果没有指定）
-    const indexName = name || (indexType === 'PRIMARY' ? 'PRIMARY' : 
+    const indexName = name || (
+      indexType === 'PRIMARY' ? 'PRIMARY' :
       indexType === 'UNIQUE' ? `uk_${fields.map(f => f.fieldId).join('_')}` :
-      `idx_${fields.map(f => f.fieldId).join('_')}`)
+      indexType === 'FULLTEXT' ? `ft_${fields.map(f => f.fieldId).join('_')}` :
+      indexType === 'SPATIAL' ? `sp_${fields.map(f => f.fieldId).join('_')}` :
+      `idx_${fields.map(f => f.fieldId).join('_')}`
+    )
 
     return {
       name: indexName,
-      type: indexType === 'PRIMARY' ? 'UNIQUE' : indexType === 'UNIQUE' ? 'UNIQUE' : 'NORMAL',
+      type: indexType === 'PRIMARY' ? 'UNIQUE' : indexType,
       comment: comment || '',
       fields,
       disabled: false
@@ -250,15 +284,12 @@ export class SQLParser {
   }
 
   private parsePrimaryKeyDefinition(line: string): string[] {
-    const match = line.match(/primary\s+key\s*\(([^)]+)\)/i)
+    const match = line.match(/^primary\s+key\s*\(([^)]+)\)/i)
     if (!match) return []
 
     return match[1]
       .split(',')
-      .map(col => {
-        const fieldMatch = col.trim().match(/[`"]?([^`"\s(]+)[`"]?/)
-        return fieldMatch ? fieldMatch[1] : ''
-      })
+      .map(field => field.trim().replace(/[`"]/g, ''))
       .filter(Boolean)
   }
 } 
