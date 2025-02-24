@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Layout, Menu, Button, Input, List } from 'antd'
 import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom'
 import {
@@ -10,6 +10,8 @@ import {
   SearchOutlined,
   PlusOutlined,
   TableOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons'
 import { useProjectStore } from '@/stores/project'
 import { useTableStore } from '@/stores/table'
@@ -17,12 +19,12 @@ import CreateTableDialog from '@/renderer/components/CreateTableDialog'
 import styles from './style.module.css'
 import TableDetail from './TableDetail'
 
-const { Header, Sider, Content } = Layout
+const { Header } = Layout
 
 // 子菜单组件 - 模型
 const ModelSubMenu: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>()
-  const { tables, loading, fetchTables, selectTable } = useTableStore()
+  const { tables, loading, fetchTables, selectTable, selectedTable } = useTableStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   useEffect(() => {
@@ -50,7 +52,7 @@ const ModelSubMenu: React.FC = () => {
           dataSource={tables}
           renderItem={table => (
             <List.Item
-              className={styles.tableItem}
+              className={`${styles.tableItem} ${selectedTable?.id === table.id ? styles.tableItemActive : ''}`}
               onClick={() => selectTable(table)}
             >
               <div className={styles.tableName}>{table.name}</div>
@@ -71,10 +73,40 @@ const ModelSubMenu: React.FC = () => {
 
 const ProjectLayout: React.FC = () => {
   const navigate = useNavigate()
-  const location = useLocation()
-  const { id } = useParams()
   const { selectedProject } = useProjectStore()
-  const [selectedMenu, setSelectedMenu] = useState('model') // 默认选中模型菜单
+  const [selectedMenu, setSelectedMenu] = useState('model')
+  const [collapsed, setCollapsed] = useState(false)
+  const [subSiderWidth, setSubSiderWidth] = useState(300)
+  const resizingRef = useRef(false)
+  const startXRef = useRef(0)
+  const startWidthRef = useRef(0)
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    resizingRef.current = true
+    startXRef.current = e.clientX
+    startWidthRef.current = subSiderWidth
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const handleResizeMove = (e: MouseEvent) => {
+      if (resizingRef.current) {
+        const delta = e.clientX - startXRef.current
+        const newWidth = Math.max(200, Math.min(500, startWidthRef.current + delta))
+        setSubSiderWidth(newWidth)
+      }
+    }
+
+    const handleResizeEnd = () => {
+      resizingRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleResizeMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+    }
+
+    document.addEventListener('mousemove', handleResizeMove)
+    document.addEventListener('mouseup', handleResizeEnd)
+  }
 
   const menuItems = [
     {
@@ -120,7 +152,7 @@ const ProjectLayout: React.FC = () => {
 
   return (
     <Layout className={styles.projectLayout}>
-      {/* 1. 顶部工具栏 */}
+      {/* 顶部工具栏 */}
       <Header className={styles.header}>
         <div className={styles.headerLeft}>
           <Button 
@@ -145,33 +177,51 @@ const ProjectLayout: React.FC = () => {
         </div>
       </Header>
 
-      <Layout>
-        {/* 2. 左侧主菜单 */}
-        <Sider width={200} theme="light" className={styles.mainSider}>
+      <div className={styles.mainLayout}>
+        {/* 左侧主菜单 */}
+        <div className={styles.mainSider}>
           <Menu
             mode="inline"
             selectedKeys={[selectedMenu]}
             items={menuItems}
             onClick={({ key }) => setSelectedMenu(key)}
           />
-        </Sider>
+        </div>
 
-        {/* 3. 子菜单区域 */}
-        <Sider width={250} theme="light" className={styles.subSider}>
-          <div className={styles.subContent}>
-            {renderSubMenu()}
+        {/* 子菜单和内容区域 */}
+        <div className={styles.contentLayout}>
+          {/* 子菜单区域 */}
+          <div 
+            className={`${styles.subSider} ${collapsed ? styles.collapsed : ''}`}
+            style={{ width: collapsed ? 40 : subSiderWidth }}
+          >
+            <div className={styles.subSiderContent}>
+              {!collapsed && renderSubMenu()}
+            </div>
+            <div 
+              className={styles.collapseHandle}
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            </div>
+            {!collapsed && (
+              <div 
+                className={styles.resizeHandle}
+                onMouseDown={handleResizeStart}
+              />
+            )}
           </div>
-        </Sider>
 
-        {/* 4. 主内容区域 */}
-        <Content className={styles.content}>
-          {selectedMenu === 'model' ? (
-            <TableDetail />
-          ) : (
-            <Outlet />
-          )}
-        </Content>
-      </Layout>
+          {/* 主内容区域 */}
+          <div className={styles.content}>
+            {selectedMenu === 'model' ? (
+              <TableDetail />
+            ) : (
+              <Outlet />
+            )}
+          </div>
+        </div>
+      </div>
     </Layout>
   )
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Tabs, Table, Button, Space, Popconfirm, message } from 'antd'
+import { Tabs, Table, Button, Space, Popconfirm, message, Typography, Tooltip } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useTableStore } from '@/stores/table'
 import EditFieldDialog from '@/renderer/components/EditFieldDialog'
@@ -8,9 +8,10 @@ import type { Field, Index } from '@/types/table'
 import styles from './style.module.css'
 
 const { TabPane } = Tabs
+const { Title, Paragraph } = Typography
 
 const TableDetail: React.FC = () => {
-  const { selectedTable, createField, updateField, deleteField, createIndex, updateIndex, deleteIndex } = useTableStore()
+  const { selectedTable, updateTable, createField, updateField, deleteField, createIndex, updateIndex, deleteIndex } = useTableStore()
   const [editFieldDialogOpen, setEditFieldDialogOpen] = useState(false)
   const [editIndexDialogOpen, setEditIndexDialogOpen] = useState(false)
   const [editingField, setEditingField] = useState<Field>()
@@ -29,6 +30,26 @@ const TableDetail: React.FC = () => {
         请选择一个表
       </div>
     )
+  }
+
+  const handleTableNameChange = async (name: string) => {
+    try {
+      // 检查表名是否重复
+      // TODO: 实现检查表名重复的逻辑
+      await updateTable(selectedTable.id, { name, comment: selectedTable.comment })
+      message.success('表名更新成功')
+    } catch (error) {
+      message.error('表名更新失败')
+    }
+  }
+
+  const handleTableCommentChange = async (comment: string) => {
+    try {
+      await updateTable(selectedTable.id, { name: selectedTable.name, comment })
+      message.success('表注释更新成功')
+    } catch (error) {
+      message.error('表注释更新失败')
+    }
   }
 
   const handleCreateField = () => {
@@ -236,10 +257,12 @@ const TableDetail: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>{selectedTable.name}</h2>
-        {selectedTable.comment && (
-          <div className={styles.comment}>{selectedTable.comment}</div>
-        )}
+        <Title level={4} editable={{ onChange: handleTableNameChange }} className={styles.tableTitle}>
+          {selectedTable.name}
+        </Title>
+        <Paragraph editable={{ onChange: handleTableCommentChange }} className={styles.tableComment}>
+          {selectedTable.comment || '添加表注释...'}
+        </Paragraph>
       </div>
 
       <Tabs defaultActiveKey="fields">

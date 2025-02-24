@@ -35,4 +35,23 @@
   display: flex;
   justify-content: flex-start;
   gap: 8px;
+}
+
+/* 表格样式 */
+:global(.ant-table-wrapper) {
+  flex: 1;
+  overflow: auto;
+}
+
+:global(.ant-table) {
+  height: 100%;
+}
+
+.tableTitle {
+  margin: 0 !important;
+}
+
+.tableComment {
+  margin: 8px 0 0 0 !important;
+  color: #666;
 } 

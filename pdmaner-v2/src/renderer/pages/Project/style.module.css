@@ -1,5 +1,7 @@
 .projectLayout {
   height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -11,6 +13,7 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #f0f0f0;
+  flex: none;
 }
 
 .headerLeft {
@@ -37,33 +40,94 @@
   width: 100%;
 }
 
+.mainLayout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
 .mainSider {
+  width: 200px;
   background: #fff;
   border-right: 1px solid #f0f0f0;
-}
-
-.subSider {
-  background: #fff;
-  border-right: 1px solid #f0f0f0;
-}
-
-.subContent {
-  height: 100%;
+  flex: none;
   overflow-y: auto;
 }
 
-.content {
-  padding: 24px;
+.contentLayout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+.subSider {
+  width: 300px;
   background: #fff;
-  height: 100%;
+  border-right: 1px solid #f0f0f0;
+  flex: none;
+  position: relative;
+  transition: width 0.3s;
+  display: flex;
+}
+
+.subSider.collapsed {
+  width: 40px;
+}
+
+.subSiderContent {
+  flex: 1;
+  overflow: hidden;
+}
+
+.collapseHandle {
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 64px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.collapseHandle:hover {
+  background: #f5f5f5;
+}
+
+.resizeHandle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 9;
+}
+
+.resizeHandle:hover {
+  background: #f0f0f0;
+}
+
+.content {
+  flex: 1;
   overflow: auto;
+  padding: 24px;
 }
 
 /* 子菜单样式 */
 .subMenuContainer {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .subMenuHeader {
@@ -72,6 +136,7 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #f0f0f0;
+  flex: none;
 }
 
 .subMenuHeader span {
@@ -95,6 +160,14 @@
 
 .tableItem:hover {
   background-color: #f5f5f5;
+}
+
+.tableItemActive {
+  background-color: #e6f4ff;
+}
+
+.tableItemActive:hover {
+  background-color: #e6f4ff;
 }
 
 .tableName {
