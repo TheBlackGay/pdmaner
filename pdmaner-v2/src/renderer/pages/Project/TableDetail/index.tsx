@@ -666,7 +666,7 @@ const TableDetail: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 180,
+      width: 80,
       fixed: 'right' as const,
       render: (_: any, record: Index) => (
         <Space>
@@ -687,32 +687,6 @@ const TableDetail: React.FC = () => {
               className={styles.actionButton}
             />
           </Popconfirm>
-          <div className={styles.moveButtons}>
-            <Tooltip title="置顶">
-              <Button
-                icon={<VerticalAlignTopOutlined />}
-                onClick={() => handleMoveIndex(record.id, 'top')}
-              />
-            </Tooltip>
-            <Tooltip title="上移">
-              <Button
-                icon={<ArrowUpOutlined />}
-                onClick={() => handleMoveIndex(record.id, 'up')}
-              />
-            </Tooltip>
-            <Tooltip title="下移">
-              <Button
-                icon={<ArrowDownOutlined />}
-                onClick={() => handleMoveIndex(record.id, 'down')}
-              />
-            </Tooltip>
-            <Tooltip title="置底">
-              <Button
-                icon={<VerticalAlignBottomOutlined />}
-                onClick={() => handleMoveIndex(record.id, 'bottom')}
-              />
-            </Tooltip>
-          </div>
         </Space>
       ),
     },

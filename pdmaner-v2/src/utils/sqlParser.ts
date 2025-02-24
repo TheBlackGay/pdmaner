@@ -108,7 +108,7 @@ export class SQLParser {
       // 添加主键索引
       indexes.push({
         name: 'PRIMARY',
-        type: 'PRIMARY',
+        type: 'UNIQUE',
         comment: '主键索引',
         fields: primaryKey.map(name => ({
           fieldId: name,
@@ -129,7 +129,8 @@ export class SQLParser {
   }
 
   private extractTableComment(sql: string): string {
-    const commentMatch = sql.match(/comment\s*=?\s*['"](.+?)['"]/i)
+    // 匹配MySQL的表注释语法：COMMENT = '注释' 或 COMMENT '注释'
+    const commentMatch = sql.match(/comment\s*=?\s*['"]([^'"]+)['"]/i)
     return commentMatch ? commentMatch[1] : ''
   }
 
@@ -204,8 +205,17 @@ export class SQLParser {
     const nullable = !rest.toLowerCase().includes('not null')
     const autoIncrement = rest.toLowerCase().includes('auto_increment')
     const primaryKey = rest.toLowerCase().includes('primary key')
-    const defaultMatch = rest.match(/default\s+(?:'([^']+)'|(\d+))/i)
-    const commentMatch = rest.match(/comment\s*['"](.+?)['"]/i)
+    
+    // 改进默认值匹配
+    const defaultMatch = rest.match(/default\s+(?:'([^']*)'|(\d+)|(\w+))/i)
+    let defaultValue: string | undefined
+    if (defaultMatch) {
+      defaultValue = defaultMatch[1] !== undefined ? defaultMatch[1] : 
+                    defaultMatch[2] !== undefined ? defaultMatch[2] :
+                    defaultMatch[3]
+    }
+    
+    const commentMatch = rest.match(/comment\s*['"]([^'"]+)['"]/i)
 
     // 解析精度和小数位
     let precision: number | undefined
@@ -225,7 +235,7 @@ export class SQLParser {
       nullable,
       primaryKey,
       autoIncrement,
-      defaultValue: defaultMatch ? defaultMatch[1] || defaultMatch[2] : undefined,
+      defaultValue,
       comment: commentMatch ? commentMatch[1] : undefined
     }
   }
@@ -239,17 +249,13 @@ export class SQLParser {
     const [, type, name, columns, comment] = indexMatch
     
     // 确定索引类型
-    let indexType = 'NORMAL'
+    let indexType: 'UNIQUE' | 'NORMAL' | 'FULLTEXT' = 'NORMAL'
     if (type) {
       const upperType = type.toUpperCase()
-      if (upperType.startsWith('PRIMARY')) {
-        indexType = 'PRIMARY'
-      } else if (upperType.startsWith('UNIQUE')) {
+      if (upperType.startsWith('PRIMARY') || upperType.startsWith('UNIQUE')) {
         indexType = 'UNIQUE'
       } else if (upperType.startsWith('FULLTEXT')) {
         indexType = 'FULLTEXT'
-      } else if (upperType.startsWith('SPATIAL')) {
-        indexType = 'SPATIAL'
       }
     }
     
@@ -258,25 +264,23 @@ export class SQLParser {
       const fieldMatch = col.trim().match(/[`"]?([^`"\s(]+)[`"]?(?:\s*\((\d+)\))?(?:\s+(ASC|DESC))?/i)
       if (!fieldMatch) return null
       
-      const [, fieldName, length, direction] = fieldMatch
+      const [, fieldName, , direction] = fieldMatch
       return {
         fieldId: fieldName,
-        sort: direction ? direction.toUpperCase() : 'ASC'
+        sort: direction ? direction.toUpperCase() as 'ASC' | 'DESC' : 'ASC'
       }
-    }).filter(Boolean)
+    }).filter((f): f is { fieldId: string; sort: 'ASC' | 'DESC' } => f !== null)
 
     // 生成索引名（如果没有指定）
     const indexName = name || (
-      indexType === 'PRIMARY' ? 'PRIMARY' :
       indexType === 'UNIQUE' ? `uk_${fields.map(f => f.fieldId).join('_')}` :
       indexType === 'FULLTEXT' ? `ft_${fields.map(f => f.fieldId).join('_')}` :
-      indexType === 'SPATIAL' ? `sp_${fields.map(f => f.fieldId).join('_')}` :
       `idx_${fields.map(f => f.fieldId).join('_')}`
     )
 
     return {
       name: indexName,
-      type: indexType === 'PRIMARY' ? 'UNIQUE' : indexType,
+      type: indexType,
       comment: comment || '',
       fields,
       disabled: false
