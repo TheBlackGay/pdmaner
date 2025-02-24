@@ -113,6 +113,17 @@ const TableDetail: React.FC = () => {
     if (!selectedTable || selectedRows.length === 0) return
 
     try {
+      // 找到包含这些字段的所有索引
+      const relatedIndexes = selectedTable.indexes?.filter(index => 
+        index.fields.some(f => selectedRows.includes(f.field.id))
+      ) || []
+
+      // 如果有相关索引，先删除这些索引
+      if (relatedIndexes.length > 0) {
+        await Promise.all(relatedIndexes.map(index => deleteIndex(index.id)))
+      }
+
+      // 然后删除字段
       await Promise.all(selectedRows.map(id => deleteField(id)))
       message.success('批量删除成功')
       setSelectedRows([])
@@ -120,11 +131,12 @@ const TableDetail: React.FC = () => {
       await getTableWithFields(selectedTable.id)
     } catch (error) {
       message.error('批量删除失败')
+      console.error('批量删除失败:', error)
     }
   }
 
   const handleMoveField = async (id: string, type: 'up' | 'down' | 'top' | 'bottom') => {
-    if (!selectedTable) return
+    if (!selectedTable || !id) return
 
     const fields = [...selectedTable.fields]
     const index = fields.findIndex(f => f.id === id)
@@ -133,47 +145,35 @@ const TableDetail: React.FC = () => {
     const field = fields[index]
     fields.splice(index, 1)
 
+    let newIndex = index
     switch (type) {
       case 'up':
-        if (index > 0) {
-          fields.splice(index - 1, 0, field)
-        } else {
-          fields.splice(index, 0, field)
-        }
+        newIndex = Math.max(0, index - 1)
         break
       case 'down':
-        if (index < fields.length) {
-          fields.splice(index + 1, 0, field)
-        } else {
-          fields.splice(fields.length, 0, field)
-        }
+        newIndex = Math.min(fields.length, index + 1)
         break
       case 'top':
-        fields.unshift(field)
+        newIndex = 0
         break
       case 'bottom':
-        fields.push(field)
+        newIndex = fields.length
         break
     }
 
+    fields.splice(newIndex, 0, field)
+
     try {
+      // 更新表数据
       await updateTable(selectedTable.id, {
         name: selectedTable.name,
         comment: selectedTable.comment,
-        fields: fields.map(f => ({
-          id: f.id,
-          name: f.name,
-          comment: f.comment,
-          typeName: f.typeName,
-          length: f.length,
-          precision: f.precision,
-          scale: f.scale,
-          nullable: f.nullable,
-          primaryKey: f.primaryKey,
-          autoIncrement: f.autoIncrement,
-          defaultValue: f.defaultValue
+        fields: fields.map((f, idx) => ({
+          ...f,
+          orderIndex: idx
         }))
-      })
+      } as any)
+      
       message.success('字段排序更新成功')
       // 重新获取最新数据
       await getTableWithFields(selectedTable.id)
@@ -190,25 +190,18 @@ const TableDetail: React.FC = () => {
     const newIndex = selectedTable.fields.findIndex(f => f.id === over.id)
 
     if (oldIndex !== -1 && newIndex !== -1) {
-      const newFields = arrayMove(selectedTable.fields, oldIndex, newIndex)
+      const newFields = arrayMove([...selectedTable.fields], oldIndex, newIndex)
+
       try {
         await updateTable(selectedTable.id, {
           name: selectedTable.name,
           comment: selectedTable.comment,
-          fields: newFields.map(f => ({
-            id: f.id,
-            name: f.name,
-            comment: f.comment,
-            typeName: f.typeName,
-            length: f.length,
-            precision: f.precision,
-            scale: f.scale,
-            nullable: f.nullable,
-            primaryKey: f.primaryKey,
-            autoIncrement: f.autoIncrement,
-            defaultValue: f.defaultValue
+          fields: newFields.map((f, idx) => ({
+            ...f,
+            orderIndex: idx
           }))
-        })
+        } as any)
+        
         message.success('字段排序更新成功')
         // 重新获取最新数据
         await getTableWithFields(selectedTable.id)
@@ -293,11 +286,27 @@ const TableDetail: React.FC = () => {
   }
 
   const handleDeleteField = async (fieldId: string) => {
+    if (!selectedTable) return
+
     try {
+      // 找到包含这个字段的所有索引
+      const relatedIndexes = selectedTable.indexes?.filter(index => 
+        index.fields.some(f => f.field.id === fieldId)
+      ) || []
+
+      // 如果有相关索引，先删除这些索引
+      if (relatedIndexes.length > 0) {
+        await Promise.all(relatedIndexes.map(index => deleteIndex(index.id)))
+      }
+
+      // 然后删除字段
       await deleteField(fieldId)
       message.success('字段删除成功')
+      // 重新获取最新数据
+      await getTableWithFields(selectedTable.id)
     } catch (error) {
       message.error('字段删除失败')
+      console.error('删除字段失败:', error)
     }
   }
 
@@ -354,7 +363,7 @@ const TableDetail: React.FC = () => {
     },
     {
       title: '',
-      key: 'selection',
+      dataIndex: 'selection',
       width: 48,
       fixed: 'left' as const
     },
@@ -541,25 +550,16 @@ const TableDetail: React.FC = () => {
       } : {})
     }
 
-    // 只将拖拽监听器应用到第一个单元格
-    const childrenWithProps = React.Children.map(children, (child: any, index) => {
-      if (index === 0) {
-        return React.cloneElement(child, {
-          ...child.props,
-          ...attributes,
-          ...listeners
-        })
-      }
-      return child
-    })
-
     return (
       <tr
         {...props}
         ref={setNodeRef}
         style={style}
       >
-        {childrenWithProps}
+        <td {...attributes} {...listeners}>
+          <HolderOutlined className={styles.dragHandle} />
+        </td>
+        {React.Children.map(children, (child) => child)}
       </tr>
     )
   }
