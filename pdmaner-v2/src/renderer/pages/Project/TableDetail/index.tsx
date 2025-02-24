@@ -3,19 +3,24 @@ import { Tabs, Table, Button, Space, Popconfirm, message } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useTableStore } from '@/stores/table'
 import EditFieldDialog from '@/renderer/components/EditFieldDialog'
-import type { Field } from '@/types/table'
+import EditIndexDialog from '@/renderer/components/EditIndexDialog'
+import type { Field, Index } from '@/types/table'
 import styles from './style.module.css'
 
 const { TabPane } = Tabs
 
 const TableDetail: React.FC = () => {
-  const { selectedTable, createField, updateField, deleteField } = useTableStore()
+  const { selectedTable, createField, updateField, deleteField, createIndex, updateIndex, deleteIndex } = useTableStore()
   const [editFieldDialogOpen, setEditFieldDialogOpen] = useState(false)
+  const [editIndexDialogOpen, setEditIndexDialogOpen] = useState(false)
   const [editingField, setEditingField] = useState<Field>()
+  const [editingIndex, setEditingIndex] = useState<Index>()
 
   useEffect(() => {
     setEditFieldDialogOpen(false)
+    setEditIndexDialogOpen(false)
     setEditingField(undefined)
+    setEditingIndex(undefined)
   }, [selectedTable])
 
   if (!selectedTable) {
@@ -57,7 +62,38 @@ const TableDetail: React.FC = () => {
     }
   }
 
-  const columns = [
+  const handleCreateIndex = () => {
+    setEditingIndex(undefined)
+    setEditIndexDialogOpen(true)
+  }
+
+  const handleEditIndex = (index: Index) => {
+    setEditingIndex(index)
+    setEditIndexDialogOpen(true)
+  }
+
+  const handleDeleteIndex = async (indexId: string) => {
+    try {
+      await deleteIndex(indexId)
+      message.success('索引删除成功')
+    } catch (error) {
+      message.error('索引删除失败')
+    }
+  }
+
+  const handleIndexSubmit = async (values: any) => {
+    try {
+      if (editingIndex) {
+        await updateIndex(editingIndex.id, values)
+      } else {
+        await createIndex(selectedTable.id, values)
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const fieldColumns = [
     {
       title: '字段名',
       dataIndex: 'name',
@@ -138,6 +174,65 @@ const TableDetail: React.FC = () => {
     },
   ]
 
+  const indexColumns = [
+    {
+      title: '索引名',
+      dataIndex: 'name',
+      key: 'name',
+      width: 200,
+    },
+    {
+      title: '类型',
+      dataIndex: 'type',
+      key: 'type',
+      width: 120,
+      render: (type: string) => {
+        const typeMap = {
+          'NORMAL': '普通索引',
+          'UNIQUE': '唯一索引',
+          'FULLTEXT': '全文索引'
+        }
+        return typeMap[type as keyof typeof typeMap] || type
+      }
+    },
+    {
+      title: '字段',
+      dataIndex: 'fields',
+      key: 'fields',
+      render: (fields: any[]) => fields.map(f => f.field.name).join(', ')
+    },
+    {
+      title: '注释',
+      dataIndex: 'comment',
+      key: 'comment',
+      width: 200,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      render: (_: any, record: Index) => (
+        <Space>
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            onClick={() => handleEditIndex(record)}
+          />
+          <Popconfirm
+            title="确定要删除这个索引吗？"
+            onConfirm={() => handleDeleteIndex(record.id)}
+          >
+            <Button
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+            />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ]
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -159,7 +254,7 @@ const TableDetail: React.FC = () => {
             </Button>
           </div>
           <Table
-            columns={columns}
+            columns={fieldColumns}
             dataSource={selectedTable.fields}
             rowKey="id"
             scroll={{ x: 'max-content' }}
@@ -167,7 +262,22 @@ const TableDetail: React.FC = () => {
           />
         </TabPane>
         <TabPane tab="索引" key="indexes">
-          索引管理
+          <div className={styles.toolbar}>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreateIndex}
+            >
+              添加索引
+            </Button>
+          </div>
+          <Table
+            columns={indexColumns}
+            dataSource={selectedTable.indexes}
+            rowKey="id"
+            scroll={{ x: 'max-content' }}
+            pagination={false}
+          />
         </TabPane>
         <TabPane tab="约束" key="constraints">
           约束管理
@@ -180,6 +290,15 @@ const TableDetail: React.FC = () => {
         onSubmit={handleFieldSubmit}
         field={editingField}
         title={editingField ? '编辑字段' : '新建字段'}
+      />
+
+      <EditIndexDialog
+        open={editIndexDialogOpen}
+        onClose={() => setEditIndexDialogOpen(false)}
+        onSubmit={handleIndexSubmit}
+        index={editingIndex}
+        fields={selectedTable.fields}
+        title={editingIndex ? '编辑索引' : '新建索引'}
       />
     </div>
   )

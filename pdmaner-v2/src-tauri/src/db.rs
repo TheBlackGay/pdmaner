@@ -61,6 +61,24 @@ pub struct UpdateFieldParams {
     default_value: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateIndexParams {
+    name: String,
+    #[serde(rename = "type")]
+    index_type: String,
+    comment: Option<String>,
+    fields: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateIndexParams {
+    name: String,
+    #[serde(rename = "type")]
+    index_type: String,
+    comment: Option<String>,
+    fields: Vec<String>,
+}
+
 pub struct Database {
     pool: Arc<Pool<Sqlite>>,
 }
@@ -139,6 +157,36 @@ impl Database {
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (table_id) REFERENCES tables (id)
+            );"
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS indexes (
+                id TEXT PRIMARY KEY,
+                table_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                type TEXT NOT NULL CHECK(type IN ('UNIQUE', 'NORMAL', 'FULLTEXT')),
+                comment TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (table_id) REFERENCES tables (id)
+            );"
+        )
+        .execute(&pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS index_fields (
+                id TEXT PRIMARY KEY,
+                index_id TEXT NOT NULL,
+                field_id TEXT NOT NULL,
+                order_index INTEGER NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (index_id) REFERENCES indexes (id),
+                FOREIGN KEY (field_id) REFERENCES fields (id)
             );"
         )
         .execute(&pool)
@@ -315,6 +363,18 @@ impl Database {
         .fetch_all(&*self.pool)
         .await?;
 
+        let indexes = sqlx::query(
+            "SELECT 
+                id, name, type, comment,
+                created_at, updated_at
+            FROM indexes
+            WHERE table_id = ?
+            ORDER BY created_at ASC"
+        )
+        .bind(table_id)
+        .fetch_all(&*self.pool)
+        .await?;
+
         let mut field_list = Vec::new();
         for field in fields {
             field_list.push(serde_json::json!({
@@ -335,6 +395,61 @@ impl Database {
             }));
         }
 
+        let mut index_list = Vec::new();
+        for index in indexes {
+            let index_id = index.get::<String, _>("id");
+            let index_fields = sqlx::query(
+                "SELECT 
+                    if.id, if.field_id, if.order_index,
+                    f.name as field_name, f.comment as field_comment,
+                    f.type_name, f.length, f.precision, f.scale,
+                    f.nullable, f.primary_key, f.auto_increment,
+                    f.default_value,
+                    if.created_at, if.updated_at
+                FROM index_fields if
+                LEFT JOIN fields f ON f.id = if.field_id
+                WHERE if.index_id = ?
+                ORDER BY if.order_index ASC"
+            )
+            .bind(&index_id)
+            .fetch_all(&*self.pool)
+            .await?;
+
+            let mut field_list = Vec::new();
+            for field in index_fields {
+                field_list.push(serde_json::json!({
+                    "id": field.get::<String, _>("id"),
+                    "fieldId": field.get::<String, _>("field_id"),
+                    "orderIndex": field.get::<i32, _>("order_index"),
+                    "field": {
+                        "id": field.get::<String, _>("field_id"),
+                        "name": field.get::<String, _>("field_name"),
+                        "comment": field.get::<Option<String>, _>("field_comment"),
+                        "typeName": field.get::<String, _>("type_name"),
+                        "length": field.get::<Option<i32>, _>("length"),
+                        "precision": field.get::<Option<i32>, _>("precision"),
+                        "scale": field.get::<Option<i32>, _>("scale"),
+                        "nullable": field.get::<bool, _>("nullable"),
+                        "primaryKey": field.get::<bool, _>("primary_key"),
+                        "autoIncrement": field.get::<bool, _>("auto_increment"),
+                        "defaultValue": field.get::<Option<String>, _>("default_value"),
+                    },
+                    "createdAt": field.get::<String, _>("created_at"),
+                    "updatedAt": field.get::<String, _>("updated_at"),
+                }));
+            }
+
+            index_list.push(serde_json::json!({
+                "id": index_id,
+                "name": index.get::<String, _>("name"),
+                "type": index.get::<String, _>("type"),
+                "comment": index.get::<Option<String>, _>("comment"),
+                "fields": field_list,
+                "createdAt": index.get::<String, _>("created_at"),
+                "updatedAt": index.get::<String, _>("updated_at"),
+            }));
+        }
+
         Ok(serde_json::json!({
             "id": table.get::<String, _>("id"),
             "name": table.get::<String, _>("name"),
@@ -342,6 +457,7 @@ impl Database {
             "createdAt": table.get::<String, _>("created_at"),
             "updatedAt": table.get::<String, _>("updated_at"),
             "fields": field_list,
+            "indexes": index_list,
         }))
     }
 
@@ -511,5 +627,171 @@ impl Database {
         }
 
         Ok(())
+    }
+
+    pub async fn create_index(&self, table_id: &str, params: CreateIndexParams) -> Result<serde_json::Value> {
+        let id = Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        sqlx::query(
+            "INSERT INTO indexes (
+                id, table_id, name, type, comment,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&id)
+        .bind(table_id)
+        .bind(&params.name)
+        .bind(&params.index_type)
+        .bind(&params.comment)
+        .bind(&now)
+        .bind(&now)
+        .execute(&*self.pool)
+        .await?;
+
+        // 创建索引字段关联
+        for (i, field_id) in params.fields.iter().enumerate() {
+            let index_field_id = Uuid::new_v4().to_string();
+            sqlx::query(
+                "INSERT INTO index_fields (
+                    id, index_id, field_id, order_index,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?)"
+            )
+            .bind(&index_field_id)
+            .bind(&id)
+            .bind(field_id)
+            .bind(i as i32)
+            .bind(&now)
+            .bind(&now)
+            .execute(&*self.pool)
+            .await?;
+        }
+
+        self.get_index(&id).await
+    }
+
+    pub async fn update_index(&self, index_id: &str, params: UpdateIndexParams) -> Result<serde_json::Value> {
+        let now = chrono::Utc::now().to_rfc3339();
+
+        sqlx::query(
+            "UPDATE indexes 
+            SET name = ?, type = ?, comment = ?, updated_at = ?
+            WHERE id = ?"
+        )
+        .bind(&params.name)
+        .bind(&params.index_type)
+        .bind(&params.comment)
+        .bind(&now)
+        .bind(index_id)
+        .execute(&*self.pool)
+        .await?;
+
+        // 删除旧的索引字段关联
+        sqlx::query("DELETE FROM index_fields WHERE index_id = ?")
+            .bind(index_id)
+            .execute(&*self.pool)
+            .await?;
+
+        // 创建新的索引字段关联
+        for (i, field_id) in params.fields.iter().enumerate() {
+            let index_field_id = Uuid::new_v4().to_string();
+            sqlx::query(
+                "INSERT INTO index_fields (
+                    id, index_id, field_id, order_index,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?)"
+            )
+            .bind(&index_field_id)
+            .bind(index_id)
+            .bind(field_id)
+            .bind(i as i32)
+            .bind(&now)
+            .bind(&now)
+            .execute(&*self.pool)
+            .await?;
+        }
+
+        self.get_index(index_id).await
+    }
+
+    pub async fn delete_index(&self, index_id: &str) -> Result<()> {
+        // 先删除索引字段关联
+        sqlx::query("DELETE FROM index_fields WHERE index_id = ?")
+            .bind(index_id)
+            .execute(&*self.pool)
+            .await?;
+
+        // 再删除索引
+        sqlx::query("DELETE FROM indexes WHERE id = ?")
+            .bind(index_id)
+            .execute(&*self.pool)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn get_index(&self, index_id: &str) -> Result<serde_json::Value> {
+        let index = sqlx::query(
+            "SELECT 
+                id, name, type, comment,
+                created_at, updated_at
+            FROM indexes
+            WHERE id = ?"
+        )
+        .bind(index_id)
+        .fetch_one(&*self.pool)
+        .await?;
+
+        let index_fields = sqlx::query(
+            "SELECT 
+                if.id, if.field_id, if.order_index,
+                f.name as field_name, f.comment as field_comment,
+                f.type_name, f.length, f.precision, f.scale,
+                f.nullable, f.primary_key, f.auto_increment,
+                f.default_value,
+                if.created_at, if.updated_at
+            FROM index_fields if
+            LEFT JOIN fields f ON f.id = if.field_id
+            WHERE if.index_id = ?
+            ORDER BY if.order_index ASC"
+        )
+        .bind(index_id)
+        .fetch_all(&*self.pool)
+        .await?;
+
+        let mut field_list = Vec::new();
+        for field in index_fields {
+            field_list.push(serde_json::json!({
+                "id": field.get::<String, _>("id"),
+                "fieldId": field.get::<String, _>("field_id"),
+                "orderIndex": field.get::<i32, _>("order_index"),
+                "field": {
+                    "id": field.get::<String, _>("field_id"),
+                    "name": field.get::<String, _>("field_name"),
+                    "comment": field.get::<Option<String>, _>("field_comment"),
+                    "typeName": field.get::<String, _>("type_name"),
+                    "length": field.get::<Option<i32>, _>("length"),
+                    "precision": field.get::<Option<i32>, _>("precision"),
+                    "scale": field.get::<Option<i32>, _>("scale"),
+                    "nullable": field.get::<bool, _>("nullable"),
+                    "primaryKey": field.get::<bool, _>("primary_key"),
+                    "autoIncrement": field.get::<bool, _>("auto_increment"),
+                    "defaultValue": field.get::<Option<String>, _>("default_value"),
+                },
+                "createdAt": field.get::<String, _>("created_at"),
+                "updatedAt": field.get::<String, _>("updated_at"),
+            }));
+        }
+
+        Ok(serde_json::json!({
+            "id": index.get::<String, _>("id"),
+            "name": index.get::<String, _>("name"),
+            "type": index.get::<String, _>("type"),
+            "comment": index.get::<Option<String>, _>("comment"),
+            "fields": field_list,
+            "createdAt": index.get::<String, _>("created_at"),
+            "updatedAt": index.get::<String, _>("updated_at"),
+        }))
     }
 } 

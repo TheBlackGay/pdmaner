@@ -5,7 +5,7 @@
 
 mod db;
 
-use db::{Database, CreateProjectParams, CreateTableParams, CreateFieldParams, UpdateTableParams, UpdateFieldParams};
+use db::{Database, CreateProjectParams, CreateTableParams, CreateFieldParams, UpdateTableParams, UpdateFieldParams, CreateIndexParams, UpdateIndexParams};
 use std::sync::Arc;
 use tauri::{Manager, State};
 
@@ -156,6 +156,44 @@ async fn reorder_fields(
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn create_index(
+    table_id: String,
+    params: CreateIndexParams,
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    state
+        .db
+        .create_index(&table_id, params)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_index(
+    index_id: String,
+    params: UpdateIndexParams,
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    state
+        .db
+        .update_index(&index_id, params)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_index(
+    index_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    state
+        .db
+        .delete_index(&index_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = Database::new().await?;
@@ -177,7 +215,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             update_field,
             delete_table,
             delete_field,
-            reorder_fields
+            reorder_fields,
+            create_index,
+            update_index,
+            delete_index
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]

@@ -3,6 +3,7 @@ export interface Table {
   name: string
   comment?: string
   fields: Field[]
+  indexes: Index[]
   createdAt: string
   updatedAt: string
 }
@@ -167,4 +168,37 @@ export const DATA_TYPES: DataType[] = [
     hasPrecision: false,
     hasScale: false
   }
-] 
+]
+
+export interface Index {
+  id: string
+  name: string
+  type: IndexType
+  comment?: string
+  fields: IndexField[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IndexField {
+  id: string
+  fieldId: string
+  orderIndex: number
+  field: Field
+}
+
+export type IndexType = 'UNIQUE' | 'NORMAL' | 'FULLTEXT'
+
+export interface CreateIndexParams {
+  name: string
+  type: IndexType
+  comment?: string
+  fields: string[] // field ids
+}
+
+export interface UpdateIndexParams {
+  name: string
+  type: IndexType
+  comment?: string
+  fields: string[] // field ids
+} 

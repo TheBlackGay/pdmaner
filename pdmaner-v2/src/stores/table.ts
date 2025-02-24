@@ -6,7 +6,10 @@ import type {
   UpdateTableParams,
   Field,
   CreateFieldParams,
-  UpdateFieldParams
+  UpdateFieldParams,
+  Index,
+  CreateIndexParams,
+  UpdateIndexParams
 } from '@/types/table'
 
 interface TableState {
@@ -23,6 +26,9 @@ interface TableState {
   updateField: (fieldId: string, params: UpdateFieldParams) => Promise<void>
   deleteField: (fieldId: string) => Promise<void>
   reorderFields: (tableId: string, fieldIds: string[]) => Promise<void>
+  createIndex: (tableId: string, params: CreateIndexParams) => Promise<Index>
+  updateIndex: (indexId: string, params: UpdateIndexParams) => Promise<void>
+  deleteIndex: (indexId: string) => Promise<void>
 }
 
 export const useTableStore = create<TableState>((set, get) => ({
@@ -104,18 +110,7 @@ export const useTableStore = create<TableState>((set, get) => ({
   createField: async (tableId: string, params: CreateFieldParams) => {
     try {
       const field = await invoke<Field>('create_field', { tableId, params })
-      set(state => {
-        const selectedTable = state.selectedTable
-        if (selectedTable?.id === tableId) {
-          return {
-            selectedTable: {
-              ...selectedTable,
-              fields: [...selectedTable.fields, field]
-            }
-          }
-        }
-        return state
-      })
+      await get().getTableWithFields(tableId)
       return field
     } catch (error) {
       console.error('Failed to create field:', error)
@@ -129,13 +124,15 @@ export const useTableStore = create<TableState>((set, get) => ({
       set(state => {
         const selectedTable = state.selectedTable
         if (selectedTable) {
+          const updatedTable = {
+            ...selectedTable,
+            fields: selectedTable.fields.map(f => 
+              f.id === fieldId ? { ...f, ...updatedField } : f
+            )
+          }
           return {
-            selectedTable: {
-              ...selectedTable,
-              fields: selectedTable.fields.map(f => 
-                f.id === fieldId ? { ...f, ...updatedField } : f
-              )
-            }
+            selectedTable: updatedTable,
+            tables: state.tables.map(t => t.id === selectedTable.id ? updatedTable : t)
           }
         }
         return state
@@ -152,11 +149,13 @@ export const useTableStore = create<TableState>((set, get) => ({
       set(state => {
         const selectedTable = state.selectedTable
         if (selectedTable) {
+          const updatedTable = {
+            ...selectedTable,
+            fields: selectedTable.fields.filter(f => f.id !== fieldId)
+          }
           return {
-            selectedTable: {
-              ...selectedTable,
-              fields: selectedTable.fields.filter(f => f.id !== fieldId)
-            }
+            selectedTable: updatedTable,
+            tables: state.tables.map(t => t.id === selectedTable.id ? updatedTable : t)
           }
         }
         return state
@@ -170,10 +169,81 @@ export const useTableStore = create<TableState>((set, get) => ({
   reorderFields: async (tableId: string, fieldIds: string[]) => {
     try {
       await invoke('reorder_fields', { tableId, fieldIds })
-      // 重新获取表和字段信息以确保顺序正确
       await get().getTableWithFields(tableId)
     } catch (error) {
       console.error('Failed to reorder fields:', error)
+      throw error
+    }
+  },
+
+  createIndex: async (tableId: string, params: CreateIndexParams) => {
+    try {
+      const index = await invoke<Index>('create_index', { tableId, params })
+      set(state => {
+        const selectedTable = state.selectedTable
+        if (selectedTable?.id === tableId) {
+          const updatedTable = {
+            ...selectedTable,
+            indexes: [...(selectedTable.indexes || []), index]
+          }
+          return {
+            selectedTable: updatedTable,
+            tables: state.tables.map(t => t.id === tableId ? updatedTable : t)
+          }
+        }
+        return state
+      })
+      return index
+    } catch (error) {
+      console.error('Failed to create index:', error)
+      throw error
+    }
+  },
+
+  updateIndex: async (indexId: string, params: UpdateIndexParams) => {
+    try {
+      const updatedIndex = await invoke<Index>('update_index', { indexId, params })
+      set(state => {
+        const selectedTable = state.selectedTable
+        if (selectedTable) {
+          const updatedTable = {
+            ...selectedTable,
+            indexes: (selectedTable.indexes || []).map(i => 
+              i.id === indexId ? updatedIndex : i
+            )
+          }
+          return {
+            selectedTable: updatedTable,
+            tables: state.tables.map(t => t.id === selectedTable.id ? updatedTable : t)
+          }
+        }
+        return state
+      })
+    } catch (error) {
+      console.error('Failed to update index:', error)
+      throw error
+    }
+  },
+
+  deleteIndex: async (indexId: string) => {
+    try {
+      await invoke('delete_index', { indexId })
+      set(state => {
+        const selectedTable = state.selectedTable
+        if (selectedTable) {
+          const updatedTable = {
+            ...selectedTable,
+            indexes: (selectedTable.indexes || []).filter(i => i.id !== indexId)
+          }
+          return {
+            selectedTable: updatedTable,
+            tables: state.tables.map(t => t.id === selectedTable.id ? updatedTable : t)
+          }
+        }
+        return state
+      })
+    } catch (error) {
+      console.error('Failed to delete index:', error)
       throw error
     }
   }
