@@ -1,5 +1,5 @@
-import React from 'react'
-import { Layout, Menu, Button, Input } from 'antd'
+import React, { useState, useEffect } from 'react'
+import { Layout, Menu, Button, Input, List } from 'antd'
 import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom'
 import {
   LeftOutlined,
@@ -8,22 +8,79 @@ import {
   RedoOutlined,
   SettingOutlined,
   SearchOutlined,
+  PlusOutlined,
+  TableOutlined,
 } from '@ant-design/icons'
 import { useProjectStore } from '@/stores/project'
+import { useTableStore } from '@/stores/table'
+import CreateTableDialog from '@/renderer/components/CreateTableDialog'
 import styles from './style.module.css'
+import TableDetail from './TableDetail'
 
 const { Header, Sider, Content } = Layout
+
+// 子菜单组件 - 模型
+const ModelSubMenu: React.FC = () => {
+  const { id: projectId } = useParams<{ id: string }>()
+  const { tables, loading, fetchTables, selectTable } = useTableStore()
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+
+  useEffect(() => {
+    if (projectId) {
+      fetchTables(projectId)
+    }
+  }, [projectId, fetchTables])
+
+  return (
+    <div className={styles.subMenuContainer}>
+      <div className={styles.subMenuHeader}>
+        <span>数据表</span>
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />}
+          size="small"
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          创建表
+        </Button>
+      </div>
+      <div className={styles.tableList}>
+        <List
+          loading={loading}
+          dataSource={tables}
+          renderItem={table => (
+            <List.Item
+              className={styles.tableItem}
+              onClick={() => selectTable(table)}
+            >
+              <div className={styles.tableName}>{table.name}</div>
+              {table.comment && (
+                <div className={styles.tableComment}>{table.comment}</div>
+              )}
+            </List.Item>
+          )}
+        />
+      </div>
+      <CreateTableDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+      />
+    </div>
+  )
+}
 
 const ProjectLayout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams()
   const { selectedProject } = useProjectStore()
+  const [selectedMenu, setSelectedMenu] = useState('model') // 默认选中模型菜单
 
   const menuItems = [
     {
       key: 'model',
       label: '模型',
+      icon: <TableOutlined />,
     },
     {
       key: 'types',
@@ -42,6 +99,24 @@ const ProjectLayout: React.FC = () => {
       label: '规范检查',
     },
   ]
+
+  // 渲染子菜单内容
+  const renderSubMenu = () => {
+    switch (selectedMenu) {
+      case 'model':
+        return <ModelSubMenu />
+      case 'types':
+        return <div>类型设置子菜单</div>
+      case 'generator':
+        return <div>代码生成器子菜单</div>
+      case 'version':
+        return <div>版本管理子菜单</div>
+      case 'check':
+        return <div>规范检查子菜单</div>
+      default:
+        return null
+    }
+  }
 
   return (
     <Layout className={styles.projectLayout}>
@@ -75,22 +150,26 @@ const ProjectLayout: React.FC = () => {
         <Sider width={200} theme="light" className={styles.mainSider}>
           <Menu
             mode="inline"
-            selectedKeys={[location.pathname]}
+            selectedKeys={[selectedMenu]}
             items={menuItems}
+            onClick={({ key }) => setSelectedMenu(key)}
           />
         </Sider>
 
         {/* 3. 子菜单区域 */}
         <Sider width={250} theme="light" className={styles.subSider}>
-          {/* 这里将根据主菜单选择显示不同的内容 */}
           <div className={styles.subContent}>
-            {/* 子菜单内容将由子组件控制 */}
+            {renderSubMenu()}
           </div>
         </Sider>
 
         {/* 4. 主内容区域 */}
         <Content className={styles.content}>
-          <Outlet />
+          {selectedMenu === 'model' ? (
+            <TableDetail />
+          ) : (
+            <Outlet />
+          )}
         </Content>
       </Layout>
     </Layout>

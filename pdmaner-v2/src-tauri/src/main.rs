@@ -5,7 +5,7 @@
 
 mod db;
 
-use db::{Database, CreateProjectParams};
+use db::{Database, CreateProjectParams, CreateTableParams};
 use std::sync::Arc;
 use tauri::{Manager, State};
 
@@ -35,6 +35,31 @@ async fn create_project(
 }
 
 #[tauri::command]
+async fn get_tables(
+    project_id: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    state
+        .db
+        .get_tables(&project_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn create_table(
+    project_id: String,
+    params: CreateTableParams,
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    state
+        .db
+        .create_table(&project_id, params)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn create_sample_projects(state: State<'_, AppState>) -> Result<(), String> {
     state
         .db
@@ -55,7 +80,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .invoke_handler(tauri::generate_handler![
             get_projects,
             create_project,
-            create_sample_projects
+            create_sample_projects,
+            get_tables,
+            create_table
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]

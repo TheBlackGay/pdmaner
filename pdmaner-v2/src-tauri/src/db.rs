@@ -13,6 +13,12 @@ pub struct CreateProjectParams {
     description: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CreateTableParams {
+    name: String,
+    comment: Option<String>,
+}
+
 pub struct Database {
     pool: Arc<Pool<Sqlite>>,
 }
@@ -57,8 +63,21 @@ impl Database {
             );"
         )
         .execute(&pool)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to create projects table: {}", e))?;
+        .await?;
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS tables (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                comment TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (project_id) REFERENCES projects (id)
+            );"
+        )
+        .execute(&pool)
+        .await?;
 
         println!("Database initialized successfully");
 
@@ -145,5 +164,62 @@ impl Database {
         }
 
         Ok(())
+    }
+
+    pub async fn get_tables(&self, project_id: &str) -> Result<Vec<serde_json::Value>> {
+        let rows = sqlx::query(
+            "SELECT 
+                id, name, comment, 
+                created_at, updated_at
+            FROM tables
+            WHERE project_id = ?
+            ORDER BY created_at ASC"
+        )
+        .bind(project_id)
+        .fetch_all(&*self.pool)
+        .await?;
+
+        let mut tables = Vec::new();
+        for row in rows {
+            tables.push(serde_json::json!({
+                "id": row.get::<String, _>("id"),
+                "name": row.get::<String, _>("name"),
+                "comment": row.get::<Option<String>, _>("comment"),
+                "createdAt": row.get::<String, _>("created_at"),
+                "updatedAt": row.get::<String, _>("updated_at"),
+                "fields": Vec::<String>::new(), // 暂时返回空字段列表
+            }));
+        }
+
+        Ok(tables)
+    }
+
+    pub async fn create_table(&self, project_id: &str, params: CreateTableParams) -> Result<serde_json::Value> {
+        let id = Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        sqlx::query(
+            "INSERT INTO tables (
+                id, project_id, name, comment,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&id)
+        .bind(project_id)
+        .bind(&params.name)
+        .bind(&params.comment)
+        .bind(&now)
+        .bind(&now)
+        .execute(&*self.pool)
+        .await?;
+
+        Ok(serde_json::json!({
+            "id": id,
+            "name": params.name,
+            "comment": params.comment,
+            "createdAt": now,
+            "updatedAt": now,
+            "fields": Vec::<String>::new(), // 暂时返回空字段列表
+        }))
     }
 } 
