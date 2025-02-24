@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Modal, Form, Input, Select, Space, Tooltip, Button, Table, message, Tag } from 'antd'
 import type { Field, Index, CreateIndexParams, UpdateIndexParams } from '@/types/table'
-import { QuestionCircleOutlined, DeleteOutlined, PlusOutlined, DatabaseOutlined } from '@ant-design/icons'
+import { QuestionCircleOutlined, DeleteOutlined, PlusOutlined, DatabaseOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons'
 import styles from './style.module.css'
 
 interface Props {
@@ -68,6 +68,18 @@ const EditIndexDialog: React.FC<Props> = ({
     setSelectedFields(prev =>
       prev.map(f => f.fieldId === fieldId ? { ...f, sort } : f)
     )
+  }
+
+  const handleMoveField = (fieldId: string, direction: 'up' | 'down') => {
+    const index = selectedFields.findIndex(f => f.fieldId === fieldId)
+    if (index === -1) return
+
+    const newFields = [...selectedFields]
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    const field = newFields[index]
+    newFields.splice(index, 1)
+    newFields.splice(newIndex, 0, field)
+    setSelectedFields(newFields)
   }
 
   const handleSubmit = async () => {
@@ -153,10 +165,46 @@ const EditIndexDialog: React.FC<Props> = ({
       key: 'sort',
       width: 120,
       align: 'center' as const,
-      render: (_: any, record: any) => (
-        <Tag color={record.sort === 'ASC' ? 'green' : 'orange'}>
-          {record.sort === 'ASC' ? '升序' : '降序'}
-        </Tag>
+      render: (sort: string, record: any, index: number) => (
+        <Select
+          value={sort || 'ASC'}
+          onChange={(value) => handleSortChange(record.fieldId, value)}
+          style={{ width: 100 }}
+          options={[
+            { label: '升序', value: 'ASC' },
+            { label: '降序', value: 'DESC' }
+          ]}
+        />
+      )
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 180,
+      align: 'center' as const,
+      render: (_: any, record: any, index: number) => (
+        <Space>
+          {index !== 0 && (
+            <Button
+              type="text"
+              icon={<ArrowUpOutlined />}
+              onClick={() => handleMoveField(record.fieldId, 'up')}
+            />
+          )}
+          {index !== selectedFields.length - 1 && (
+            <Button
+              type="text"
+              icon={<ArrowDownOutlined />}
+              onClick={() => handleMoveField(record.fieldId, 'down')}
+            />
+          )}
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleRemoveField(record.fieldId)}
+          />
+        </Space>
       )
     }
   ]
