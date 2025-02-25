@@ -14,7 +14,16 @@ import {
   FileTextOutlined,
   UploadOutlined,
   DatabaseOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  CopyOutlined,
+  ScissorOutlined,
+  SnippetsOutlined,
+  DeleteOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  CodeOutlined,
+  BranchesOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons'
 import { useProjectStore } from '../../../stores/project'
 import { useTableStore } from '../../../stores/table'
@@ -31,8 +40,24 @@ const { Header, Content } = Layout
 // 子菜单组件 - 模型
 const ModelSubMenu: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>()
-  const { tables, loading, fetchTables, selectTable, selectedTable } = useTableStore()
+  const {
+    tables,
+    loading,
+    fetchTables,
+    selectTable,
+    selectedTable,
+    deleteTable,
+    createTable
+  } = useTableStore()
+  const { createField } = useFieldStore()
+  const { createIndex } = useIndexStore()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
+  const [clipboardData, setClipboardData] = useState<{
+    type: 'copy' | 'cut';
+    table: any;
+  } | null>(null)
 
   useEffect(() => {
     if (projectId) {
@@ -40,12 +65,138 @@ const ModelSubMenu: React.FC = () => {
     }
   }, [projectId, fetchTables])
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenuPosition) {
+        const menuElement = document.querySelector(`.${styles.contextMenu}`)
+        if (menuElement && !menuElement.contains(event.target as Node)) {
+          handleContextMenuClose()
+        }
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [contextMenuPosition])
+
+  const handleContextMenu = (e: React.MouseEvent, table: any) => {
+    e.preventDefault()
+    setContextMenuPosition({ x: e.clientX, y: e.clientY })
+    setSelectedTableId(table.id)
+  }
+
+  const handleContextMenuClose = () => {
+    setContextMenuPosition(null)
+    setSelectedTableId(null)
+  }
+
+  const handleCopy = () => {
+    const table = tables.find(t => t.id === selectedTableId)
+    if (table) {
+      setClipboardData({
+        type: 'copy',
+        table: { ...table }
+      })
+      message.success('已复制到剪贴板')
+    }
+    handleContextMenuClose()
+  }
+
+  const handleCut = () => {
+    const table = tables.find(t => t.id === selectedTableId)
+    if (table) {
+      setClipboardData({
+        type: 'cut',
+        table: { ...table }
+      })
+      message.success('已剪切到剪贴板')
+    }
+    handleContextMenuClose()
+  }
+
+  const handlePaste = async () => {
+    if (!selectedTable || !projectId) return
+
+    try {
+      // 创建新表
+      const newName = `${selectedTable.name}_copy`
+      const newTable = await createTable(projectId, {
+        name: newName,
+        comment: selectedTable.comment,
+        charset: selectedTable.charset
+      })
+
+      // 复制字段
+      for (const field of selectedTable.fields) {
+        await createField(newTable.id, {
+          name: field.name,
+          comment: field.comment,
+          typeName: field.typeName,
+          length: field.length,
+          precision: field.precision,
+          scale: field.scale,
+          nullable: field.nullable,
+          primaryKey: field.primaryKey,
+          autoIncrement: field.autoIncrement,
+          defaultValue: field.defaultValue
+        })
+      }
+
+      // 复制索引
+      for (const index of selectedTable.indexes) {
+        await createIndex(newTable.id, {
+          name: index.name,
+          type: index.type,
+          comment: index.comment,
+          fields: index.fields.map(f => ({
+            fieldId: f.fieldId,
+            sort: f.sort
+          })),
+          disabled: index.disabled || false
+        })
+      }
+
+      message.success('粘贴成功')
+      await fetchTables()
+    } catch (error) {
+      console.error('Failed to paste table:', error)
+      message.error('粘贴失败：' + (error as Error).message)
+    }
+  }
+
+  const handleDelete = () => {
+    if (!selectedTableId) return
+
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这个数据表吗？此操作不可恢复。',
+      okText: '确定',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await deleteTable(selectedTableId)
+          message.success('删除成功')
+          if (projectId) {
+            await fetchTables(projectId)
+          }
+        } catch (error) {
+          console.error('删除失败:', error)
+          message.error('删除失败: ' + (error as Error).message)
+        }
+        handleContextMenuClose()
+      }
+    })
+  }
+
   return (
     <div className={styles.subMenuContainer}>
       <div className={styles.subMenuHeader}>
-        <span>数据表</span>
-        <Button 
-          type="primary" 
+        <span>数据模型</span>
+        <Button
+          type="primary"
           icon={<PlusOutlined />}
           size="small"
           onClick={() => setCreateDialogOpen(true)}
@@ -61,11 +212,12 @@ const ModelSubMenu: React.FC = () => {
             <List.Item
               className={`${styles.tableItem} ${selectedTable?.id === table.id ? styles.tableItemActive : ''}`}
               onClick={() => selectTable(table)}
+              onContextMenu={(e) => handleContextMenu(e, table)}
             >
-              <div className={styles.tableName}>{table.name}</div>
-              {table.comment && (
-                <div className={styles.tableComment}>{table.comment}</div>
-              )}
+              <div className={styles.tableName}>
+                {table.name}
+                {table.comment && <span className={styles.tableComment}>[{table.comment}]</span>}
+              </div>
             </List.Item>
           )}
         />
@@ -74,6 +226,32 @@ const ModelSubMenu: React.FC = () => {
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
       />
+      {contextMenuPosition && (
+        <div
+          className={styles.contextMenu}
+          style={{
+            position: 'fixed',
+            left: contextMenuPosition.x,
+            top: contextMenuPosition.y,
+          }}
+        >
+          <Menu onClick={handleContextMenuClose}>
+            <Menu.Item key="copy" icon={<CopyOutlined />} onClick={handleCopy}>
+              复制
+            </Menu.Item>
+            <Menu.Item key="cut" icon={<ScissorOutlined />} onClick={handleCut}>
+              剪切
+            </Menu.Item>
+            <Menu.Item key="paste" icon={<SnippetsOutlined />} onClick={handlePaste}>
+              粘贴
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item key="delete" icon={<DeleteOutlined />} onClick={handleDelete} danger>
+              删除
+            </Menu.Item>
+          </Menu>
+        </div>
+      )}
     </div>
   )
 }
@@ -95,6 +273,7 @@ const ProjectLayout: React.FC = () => {
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [importForm] = Form.useForm()
   const [templateDrawerVisible, setTemplateDrawerVisible] = useState(false)
+  const [mainSiderCollapsed, setMainSiderCollapsed] = useState(false)
 
   const handleMainSiderResizeStart = (e: React.MouseEvent) => {
     resizingMainRef.current = true
@@ -153,24 +332,28 @@ const ProjectLayout: React.FC = () => {
   const menuItems = [
     {
       key: 'model',
-      label: '模型',
+      label: mainSiderCollapsed ? null : '数据模型',
       icon: <TableOutlined />,
     },
     {
       key: 'types',
-      label: '类型设置',
+      label: mainSiderCollapsed ? null : '类型设置',
+      icon: <SettingOutlined />,
     },
     {
       key: 'generator',
-      label: '代码生成器',
+      label: mainSiderCollapsed ? null : '代码生成器',
+      icon: <CodeOutlined />,
     },
     {
       key: 'version',
-      label: '版本管理',
+      label: mainSiderCollapsed ? null : '版本管理',
+      icon: <BranchesOutlined />,
     },
     {
       key: 'check',
-      label: '规范检查',
+      label: mainSiderCollapsed ? null : '规范检查',
+      icon: <CheckCircleOutlined />,
     },
   ]
 
@@ -261,8 +444,8 @@ const ProjectLayout: React.FC = () => {
     <Layout className={styles.projectLayout}>
       <Header className={styles.header}>
         <div className={styles.headerLeft}>
-          <Button 
-            type="text" 
+          <Button
+            type="text"
             icon={<LeftOutlined />}
             onClick={() => navigate('/')}
           />
@@ -321,7 +504,7 @@ const ProjectLayout: React.FC = () => {
         </div>
         <div className={styles.headerRight}>
           <Space>
-            <Input 
+            <Input
               prefix={<SearchOutlined />}
               placeholder="搜索表/字段"
               className={styles.searchInput}
@@ -357,33 +540,40 @@ const ProjectLayout: React.FC = () => {
 
       <div className={styles.mainLayout}>
         {/* 左侧主菜单 */}
-        <div 
+        <div
           className={styles.mainSider}
-          style={{ width: mainSiderWidth }}
+          style={{ width: mainSiderCollapsed ? 48 : mainSiderWidth }}
         >
           <Menu
             mode="inline"
             selectedKeys={[selectedMenu]}
             items={menuItems}
             onClick={({ key }) => setSelectedMenu(key)}
+            inlineCollapsed={mainSiderCollapsed}
           />
-          <div 
+          <div
             className={styles.resizeHandle}
             onMouseDown={handleMainSiderResizeStart}
+          />
+          <Button
+            type="text"
+            icon={mainSiderCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => setMainSiderCollapsed(!mainSiderCollapsed)}
+            className={styles.collapseButton}
           />
         </div>
 
         {/* 子菜单和内容区域 */}
         <div className={styles.contentLayout}>
           {/* 子菜单区域 */}
-          <div 
+          <div
             className={styles.subSider}
             style={{ width: subSiderWidth }}
           >
             <div className={styles.subSiderContent}>
               {renderSubMenu()}
             </div>
-            <div 
+            <div
               className={styles.resizeHandle}
               onMouseDown={handleSubSiderResizeStart}
             />
@@ -456,4 +646,4 @@ CREATE TABLE user (
   )
 }
 
-export default ProjectLayout 
+export default ProjectLayout
