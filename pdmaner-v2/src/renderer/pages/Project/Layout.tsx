@@ -233,21 +233,25 @@ const ModelSubMenu: React.FC = () => {
             position: 'fixed',
             left: contextMenuPosition.x,
             top: contextMenuPosition.y,
+            zIndex: 1000
           }}
         >
-          <Menu onClick={handleContextMenuClose}>
+          <Menu
+            selectedKeys={[]}
+            style={{ minWidth: 120 }}
+          >
             <Menu.Item key="copy" icon={<CopyOutlined />} onClick={handleCopy}>
-              复制
+              复制表
             </Menu.Item>
             <Menu.Item key="cut" icon={<ScissorOutlined />} onClick={handleCut}>
-              剪切
+              剪切表
             </Menu.Item>
             <Menu.Item key="paste" icon={<SnippetsOutlined />} onClick={handlePaste}>
-              粘贴
+              粘贴表
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item key="delete" icon={<DeleteOutlined />} onClick={handleDelete} danger>
-              删除
+              删除表
             </Menu.Item>
           </Menu>
         </div>
@@ -342,7 +346,7 @@ const ProjectLayout: React.FC = () => {
     },
     {
       key: 'generator',
-      label: mainSiderCollapsed ? null : '代码生成器',
+      label: mainSiderCollapsed ? null : '代码生成',
       icon: <CodeOutlined />,
     },
     {

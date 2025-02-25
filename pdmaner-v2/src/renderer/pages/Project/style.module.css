@@ -50,10 +50,34 @@
 
 .mainSider {
   position: relative;
+  width: 200px;
   height: 100%;
   background: #fff;
   border-right: 1px solid #f0f0f0;
-  transition: width 0.3s;
+  transition: width 0.2s;
+  flex: none;
+  overflow: hidden;
+}
+
+.mainSider :global(.ant-menu) {
+  height: 100%;
+  border-right: none !important;
+}
+
+.mainSider :global(.ant-menu-inline-collapsed) {
+  width: 48px;
+}
+
+.mainSider :global(.ant-menu-item) {
+  height: 40px;
+  line-height: 40px;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  width: 100% !important;
+}
+
+.mainSider :global(.ant-menu-item .anticon) {
+  font-size: 16px;
 }
 
 .contentLayout {
@@ -425,29 +449,35 @@
 /* 折叠按钮样式 */
 .collapseButton {
   position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 32px;
-  height: 32px;
-  padding: 0;
+  right: 0;
+  bottom: 12px;
+  width: 48px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 1;
+}
+
+.collapseButton:hover {
+  color: #1890ff;
 }
 
 /* 右键菜单样式 */
 .contextMenu {
-  position: fixed;
-  z-index: 1000;
   background: #fff;
+  box-shadow: 0 3px 6px -4px rgba(0,0,0,0.12), 0 6px 16px 0 rgba(0,0,0,0.08);
   border-radius: 4px;
-  box-shadow: 0 3px 6px -4px rgba(0,0,0,.12), 0 6px 16px 0 rgba(0,0,0,.08), 0 9px 28px 8px rgba(0,0,0,.05);
+  min-width: 120px;
 }
 
 .contextMenu :global(.ant-menu) {
   border: none;
-  border-radius: 4px;
+  box-shadow: none;
 }
 
 .contextMenu :global(.ant-menu-item) {
@@ -455,6 +485,13 @@
   line-height: 32px;
   margin: 0;
   padding: 0 12px;
+  clear: both;
+  white-space: nowrap;
+}
+
+.contextMenu :global(.ant-menu-item .anticon) {
+  margin-right: 8px;
+  font-size: 14px;
 }
 
 .contextMenu :global(.ant-menu-item:hover) {
