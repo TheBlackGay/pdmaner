@@ -23,7 +23,11 @@ import {
   MenuFoldOutlined,
   CodeOutlined,
   BranchesOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  CaretRightOutlined,
+  FundViewOutlined,
+  ApartmentOutlined,
+  ReadOutlined
 } from '@ant-design/icons'
 import { useProjectStore } from '../../../stores/project'
 import { useTableStore } from '../../../stores/table'
@@ -70,10 +74,8 @@ const ModelSubMenu: React.FC = () => {
   const [editDomainVisible, setEditDomainVisible] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const [domainContextMenuPosition, setDomainContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
-  const [clipboardData, setClipboardData] = useState<{
-    type: 'copy' | 'cut';
-    table: any;
-  } | null>(null)
+  const [expandedDomains, setExpandedDomains] = useState<string[]>([])
+  const [expandedModules, setExpandedModules] = useState<{[key: string]: string[]}>({})
 
   useEffect(() => {
     if (projectId) {
@@ -256,6 +258,26 @@ const ModelSubMenu: React.FC = () => {
     setSelectedDomain(null)
   }
 
+  const handleDomainExpand = (domainId: string) => {
+    setExpandedDomains(prev => 
+      prev.includes(domainId) 
+        ? prev.filter(id => id !== domainId)
+        : [...prev, domainId]
+    )
+  }
+
+  const handleModuleExpand = (domainId: string, moduleType: string) => {
+    setExpandedModules(prev => {
+      const domainModules = prev[domainId] || []
+      return {
+        ...prev,
+        [domainId]: domainModules.includes(moduleType)
+          ? domainModules.filter(type => type !== moduleType)
+          : [...domainModules, moduleType]
+      }
+    })
+  }
+
   return (
     <div 
       className={styles.subMenuContainer} 
@@ -274,13 +296,117 @@ const ModelSubMenu: React.FC = () => {
       </div>
       <div className={styles.tableList}>
         {domains.map(domain => (
-          <div
-            key={domain.id}
-            className={styles.domainItem}
-            onContextMenu={(e) => handleDomainContextMenu(e, domain)}
-          >
-            <span className={styles.domainName}>{domain.name}</span>
-            <span className={styles.domainCode}>[{domain.code}]</span>
+          <div key={domain.id} className={styles.domainWrapper}>
+            <div
+              className={styles.domainItem}
+              onContextMenu={(e) => handleDomainContextMenu(e, domain)}
+              onClick={() => handleDomainExpand(domain.id)}
+            >
+              <div className={styles.domainHeader}>
+                <CaretRightOutlined 
+                  className={`${styles.expandIcon} ${expandedDomains.includes(domain.id) ? styles.expanded : ''}`}
+                />
+                <span className={styles.domainName}>{domain.name}</span>
+                <span className={styles.domainCode}>[{domain.code}]</span>
+              </div>
+            </div>
+            
+            {expandedDomains.includes(domain.id) && (
+              <div className={styles.moduleList}>
+                {/* 数据表模块 */}
+                <div className={styles.moduleItem}>
+                  <div 
+                    className={styles.moduleHeader}
+                    onClick={() => handleModuleExpand(domain.id, 'tables')}
+                  >
+                    <CaretRightOutlined 
+                      className={`${styles.expandIcon} ${(expandedModules[domain.id] || []).includes('tables') ? styles.expanded : ''}`}
+                    />
+                    <DatabaseOutlined />
+                    <span>数据表</span>
+                    <span className={styles.moduleCount}>
+                      ({domain.modules.tables.length})
+                    </span>
+                  </div>
+                  {(expandedModules[domain.id] || []).includes('tables') && (
+                    <div className={styles.tableItems}>
+                      {domain.modules.tables.map(tableId => {
+                        const table = tables.find(t => t.id === tableId)
+                        if (!table) return null
+                        return (
+                          <div 
+                            key={table.id}
+                            className={`${styles.tableItem} ${selectedTable?.id === table.id ? styles.tableItemActive : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              selectTable(table)
+                            }}
+                          >
+                            <span className={styles.tableName}>{table.name}</span>
+                            {table.comment && (
+                              <span className={styles.tableComment}>
+                                [{table.comment}]
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 数据视图模块 */}
+                <div className={styles.moduleItem}>
+                  <div 
+                    className={styles.moduleHeader}
+                    onClick={() => handleModuleExpand(domain.id, 'views')}
+                  >
+                    <CaretRightOutlined 
+                      className={`${styles.expandIcon} ${(expandedModules[domain.id] || []).includes('views') ? styles.expanded : ''}`}
+                    />
+                    <FundViewOutlined />
+                    <span>数据视图</span>
+                    <span className={styles.moduleCount}>
+                      ({domain.modules.views.length})
+                    </span>
+                  </div>
+                </div>
+
+                {/* 关系图模块 */}
+                <div className={styles.moduleItem}>
+                  <div 
+                    className={styles.moduleHeader}
+                    onClick={() => handleModuleExpand(domain.id, 'relations')}
+                  >
+                    <CaretRightOutlined 
+                      className={`${styles.expandIcon} ${(expandedModules[domain.id] || []).includes('relations') ? styles.expanded : ''}`}
+                    />
+                    <ApartmentOutlined />
+                    <span>关系图</span>
+                    <span className={styles.moduleCount}>
+                      ({domain.modules.relations.length})
+                    </span>
+                  </div>
+                </div>
+
+                {/* 数据字典模块 */}
+                <div className={styles.moduleItem}>
+                  <div 
+                    className={styles.moduleHeader}
+                    onClick={() => handleModuleExpand(domain.id, 'dictionary')}
+                  >
+                    <CaretRightOutlined 
+                      className={`${styles.expandIcon} ${(expandedModules[domain.id] || []).includes('dictionary') ? styles.expanded : ''}`}
+                    />
+                    <ReadOutlined />
+                    <span>数据字典</span>
+                    <span className={styles.moduleCount}>
+                      ({domain.modules.dictionary.length})
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
