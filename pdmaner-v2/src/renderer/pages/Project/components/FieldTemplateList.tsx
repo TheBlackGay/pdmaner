@@ -1,14 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Empty, Button, Tag, Modal, Form, message } from 'antd';
-import { SearchOutlined, MessageOutlined, DeleteOutlined, EditOutlined, CheckOutlined } from '@ant-design/icons';
+import { Input, Empty, Button, Tag, Modal, Form, message, Menu, List, Dropdown, Tooltip } from 'antd';
+import { 
+  SearchOutlined, 
+  MessageOutlined, 
+  DeleteOutlined, 
+  EditOutlined, 
+  CheckOutlined,
+  FolderOutlined,
+  PlusOutlined,
+  MoreOutlined,
+  DatabaseOutlined
+} from '@ant-design/icons';
 import type { Field } from '@/types/table';
-import styles from '../style.module.css';
+import styles from './style.module.css';
 
 interface FieldTemplate {
   id: string;
   name: string;
   comment?: string;
   fields: Field[];
+  groupId: string;
+  createdAt: number;
+}
+
+interface TemplateGroup {
+  id: string;
+  name: string;
+  description?: string;
   createdAt: number;
 }
 
@@ -18,24 +36,42 @@ interface FieldTemplateListProps {
 
 const FieldTemplateList: React.FC<FieldTemplateListProps> = ({ onUseTemplate }) => {
   const [templates, setTemplates] = useState<FieldTemplate[]>([]);
+  const [groups, setGroups] = useState<TemplateGroup[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState<FieldTemplate | null>(null);
+  const [currentGroup, setCurrentGroup] = useState<TemplateGroup | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('all');
   const [form] = Form.useForm();
+  const [groupForm] = Form.useForm();
 
   useEffect(() => {
+    loadGroups();
     loadTemplates();
   }, []);
+
+  const loadGroups = () => {
+    try {
+      const storedGroups = localStorage.getItem('templateGroups');
+      if (storedGroups) {
+        setGroups(JSON.parse(storedGroups));
+      }
+    } catch (error) {
+      console.error('Failed to load groups:', error);
+      message.error('加载分组失败');
+    }
+  };
 
   const loadTemplates = () => {
     try {
       const storedTemplates = localStorage.getItem('fieldTemplates');
       if (storedTemplates) {
         const parsedTemplates = JSON.parse(storedTemplates);
-        // 确保每个模板都有 fields 数组
         const validTemplates = parsedTemplates.map((template: any) => ({
           ...template,
-          fields: Array.isArray(template.fields) ? template.fields : []
+          fields: Array.isArray(template.fields) ? template.fields : [],
+          groupId: template.groupId || 'ungrouped'
         }));
         setTemplates(validTemplates);
       }
@@ -45,12 +81,22 @@ const FieldTemplateList: React.FC<FieldTemplateListProps> = ({ onUseTemplate }) 
     }
   };
 
+  const saveGroups = (newGroups: TemplateGroup[]) => {
+    try {
+      localStorage.setItem('templateGroups', JSON.stringify(newGroups));
+      setGroups(newGroups);
+    } catch (error) {
+      console.error('Failed to save groups:', error);
+      message.error('保存分组失败');
+    }
+  };
+
   const saveTemplates = (newTemplates: FieldTemplate[]) => {
     try {
-      // 确保每个模板都有 fields 数组
       const validTemplates = newTemplates.map(template => ({
         ...template,
-        fields: Array.isArray(template.fields) ? template.fields : []
+        fields: Array.isArray(template.fields) ? template.fields : [],
+        groupId: template.groupId || 'ungrouped'
       }));
       localStorage.setItem('fieldTemplates', JSON.stringify(validTemplates));
       setTemplates(validTemplates);
@@ -62,6 +108,65 @@ const FieldTemplateList: React.FC<FieldTemplateListProps> = ({ onUseTemplate }) 
 
   const handleSearch = (value: string) => {
     setSearchValue(value);
+  };
+
+  const handleCreateGroup = () => {
+    setCurrentGroup(null);
+    groupForm.resetFields();
+    setGroupModalVisible(true);
+  };
+
+  const handleEditGroup = (group: TemplateGroup) => {
+    setCurrentGroup(group);
+    groupForm.setFieldsValue(group);
+    setGroupModalVisible(true);
+  };
+
+  const handleDeleteGroup = (groupId: string) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: '删除分组会将组内模板移至未分组，是否继续？',
+      okText: '确定',
+      cancelText: '取消',
+      onOk: () => {
+        const newGroups = groups.filter(g => g.id !== groupId);
+        saveGroups(newGroups);
+
+        // 将该分组下的模板移至未分组
+        const newTemplates = templates.map(t => 
+          t.groupId === groupId ? { ...t, groupId: 'ungrouped' } : t
+        );
+        saveTemplates(newTemplates);
+        message.success('删除成功');
+      }
+    });
+  };
+
+  const handleSaveGroup = async () => {
+    try {
+      const values = await groupForm.validateFields();
+      if (currentGroup) {
+        // 编辑分组
+        const newGroups = groups.map(g =>
+          g.id === currentGroup.id ? { ...g, ...values } : g
+        );
+        saveGroups(newGroups);
+        message.success('更新成功');
+      } else {
+        // 创建新分组
+        const newGroup: TemplateGroup = {
+          id: Date.now().toString(),
+          name: values.name,
+          description: values.description,
+          createdAt: Date.now()
+        };
+        saveGroups([...groups, newGroup]);
+        message.success('创建成功');
+      }
+      setGroupModalVisible(false);
+    } catch (error) {
+      console.error('Form validation failed:', error);
+    }
   };
 
   const handleEdit = (template: FieldTemplate) => {
@@ -104,71 +209,184 @@ const FieldTemplateList: React.FC<FieldTemplateListProps> = ({ onUseTemplate }) 
     }
   };
 
-  const filteredTemplates = templates.filter(template => 
-    template.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    template.comment?.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  const handleMoveTemplate = (templateId: string, targetGroupId: string) => {
+    const newTemplates = templates.map(t =>
+      t.id === templateId ? { ...t, groupId: targetGroupId } : t
+    );
+    saveTemplates(newTemplates);
+    message.success('移动成功');
+  };
+
+  const menuItems = [
+    {
+      key: 'all',
+      label: '全部模板',
+      icon: <DatabaseOutlined />
+    },
+    {
+      key: 'ungrouped',
+      label: '未分组',
+      icon: <FolderOutlined />
+    },
+    ...groups.map(group => ({
+      key: group.id,
+      label: (
+        <div className={styles.groupMenuItem}>
+          <span>{group.name}</span>
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: 'edit',
+                  label: '编辑分组',
+                  icon: <EditOutlined />,
+                  onClick: () => handleEditGroup(group)
+                },
+                {
+                  key: 'delete',
+                  label: '删除分组',
+                  icon: <DeleteOutlined />,
+                  onClick: () => handleDeleteGroup(group.id)
+                }
+              ]
+            }}
+            trigger={['click']}
+          >
+            <Button
+              type="text"
+              size="small"
+              icon={<MoreOutlined />}
+              className={styles.groupMoreBtn}
+              onClick={e => e.stopPropagation()}
+            />
+          </Dropdown>
+        </div>
+      ),
+      icon: <FolderOutlined />
+    }))
+  ];
+
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      template.comment?.toLowerCase().includes(searchValue.toLowerCase());
+    const matchesGroup = selectedGroupId === 'all' || template.groupId === selectedGroupId;
+    return matchesSearch && matchesGroup;
+  });
 
   return (
     <div className={styles.templateContainer}>
-      <div className={styles.templateSearch}>
-        <Input
-          placeholder="搜索字段模板..."
-          prefix={<SearchOutlined />}
-          value={searchValue}
-          onChange={e => handleSearch(e.target.value)}
-          allowClear
-        />
+      <div className={styles.templateHeader}>
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />}
+          onClick={handleCreateGroup}
+          block
+        >
+          新建分组
+        </Button>
       </div>
-      
-      <div className={styles.templateList}>
-        {filteredTemplates.length === 0 ? (
-          <Empty description="暂无字段模板" />
-        ) : (
-          filteredTemplates.map(template => (
-            <div key={template.id} className={styles.templateItem}>
-              <div className={styles.templateInfo}>
-                <div className={styles.templateName}>
-                  <strong>{template.name}</strong>
-                  <Tag color="blue">{(template.fields || []).length} 个字段</Tag>
-                </div>
-                {template.comment && (
-                  <div className={styles.templateComment}>
-                    <MessageOutlined />
-                    <span>{template.comment}</span>
-                  </div>
-                )}
-              </div>
-              <div className={styles.templateActions}>
-                <Button 
-                  type="text" 
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDelete(template.id)}
-                >
-                  删除
-                </Button>
-                <Button 
-                  type="text" 
-                  icon={<EditOutlined />}
-                  onClick={() => handleEdit(template)}
-                >
-                  编辑
-                </Button>
-                <Button 
-                  type="primary" 
-                  icon={<CheckOutlined />}
-                  onClick={() => onUseTemplate(template)}
-                >
-                  使用模板
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
+
+      <div className={styles.templateContent}>
+        <Menu
+          selectedKeys={[selectedGroupId]}
+          items={menuItems}
+          onClick={({key}) => setSelectedGroupId(key)}
+          className={styles.groupMenu}
+        />
+
+        <div className={styles.templateSearch}>
+          <Input
+            placeholder="搜索字段模板..."
+            prefix={<SearchOutlined />}
+            value={searchValue}
+            onChange={e => handleSearch(e.target.value)}
+            allowClear
+          />
+        </div>
+        
+        <div className={styles.templateList}>
+          <List
+            dataSource={filteredTemplates}
+            locale={{ emptyText: <Empty description="暂无字段模板" /> }}
+            renderItem={template => (
+              <List.Item
+                className={styles.templateItem}
+                actions={[
+                  <Button
+                    key="use"
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    onClick={() => onUseTemplate(template)}
+                  >
+                    使用模板
+                  </Button>
+                ]}
+                extra={
+                  <Dropdown
+                    menu={{
+                      items: [
+                        {
+                          key: 'edit',
+                          label: '编辑模板',
+                          icon: <EditOutlined />,
+                          onClick: () => handleEdit(template)
+                        },
+                        {
+                          key: 'delete',
+                          label: '删除模板',
+                          icon: <DeleteOutlined />,
+                          onClick: () => handleDelete(template.id)
+                        },
+                        {
+                          key: 'move',
+                          label: '移动到',
+                          icon: <FolderOutlined />,
+                          children: [
+                            {
+                              key: 'ungrouped',
+                              label: '未分组',
+                              onClick: () => handleMoveTemplate(template.id, 'ungrouped')
+                            },
+                            ...groups.map(group => ({
+                              key: group.id,
+                              label: group.name,
+                              onClick: () => handleMoveTemplate(template.id, group.id)
+                            }))
+                          ]
+                        }
+                      ]
+                    }}
+                  >
+                    <Button type="text" icon={<MoreOutlined />} />
+                  </Dropdown>
+                }
+              >
+                <List.Item.Meta
+                  title={
+                    <div className={styles.templateTitle}>
+                      <span>{template.name}</span>
+                      <Tag color="blue">{template.fields.length} 个字段</Tag>
+                    </div>
+                  }
+                  description={
+                    template.comment && (
+                      <Tooltip title={template.comment}>
+                        <div className={styles.templateDesc}>
+                          <MessageOutlined />
+                          <span>{template.comment}</span>
+                        </div>
+                      </Tooltip>
+                    )
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        </div>
       </div>
 
       <Modal
-        title="编辑字段模板"
+        title={currentTemplate ? "编辑字段模板" : "新建字段模板"}
         open={editModalVisible}
         onOk={handleSave}
         onCancel={() => setEditModalVisible(false)}
@@ -188,6 +406,31 @@ const FieldTemplateList: React.FC<FieldTemplateListProps> = ({ onUseTemplate }) 
             label="备注"
           >
             <Input.TextArea placeholder="请输入备注信息" rows={4} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={currentGroup ? "编辑分组" : "新建分组"}
+        open={groupModalVisible}
+        onOk={handleSaveGroup}
+        onCancel={() => setGroupModalVisible(false)}
+        okText="保存"
+        cancelText="取消"
+      >
+        <Form form={groupForm} layout="vertical">
+          <Form.Item
+            name="name"
+            label="分组名称"
+            rules={[{ required: true, message: '请输入分组名称' }]}
+          >
+            <Input placeholder="请输入分组名称" />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="描述"
+          >
+            <Input.TextArea placeholder="请输入分组描述" rows={4} />
           </Form.Item>
         </Form>
       </Modal>

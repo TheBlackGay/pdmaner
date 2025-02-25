@@ -969,14 +969,6 @@ const TableDetail: React.FC = () => {
                   </Popconfirm>
                 )}
               </div>
-              <div className={styles.toolbarRight}>
-                <Button
-                  icon={<DatabaseOutlined />}
-                  onClick={() => message.info('字段模板功能开发中')}
-                >
-                  字段模板
-                </Button>
-              </div>
             </div>
             <Table
               columns={fieldColumns}

@@ -242,28 +242,79 @@
   gap: 8px !important;
 }
 
-/* 字段模板样式 */
+/* 字段模板容器布局 */
 .templateContainer {
   display: flex;
-  flex-direction: column;
   height: 100%;
+  background: #fff;
 }
 
-.templateHeader {
+.templateSider {
+  width: 240px;
+  border-right: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.siderHeader {
   padding: 16px;
   border-bottom: 1px solid #f0f0f0;
-  background: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
+.templateMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 分组样式 */
+.groupTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.groupMoreBtn {
+  visibility: hidden;
+  padding: 2px !important;
+  height: 20px !important;
+  width: 20px !important;
+}
+
+.groupTitle:hover .groupMoreBtn {
+  visibility: visible;
+}
+
+.templateSider :global(.ant-tree) {
+  padding: 8px;
+}
+
+.templateSider :global(.ant-tree-node-content-wrapper) {
+  display: flex;
+  align-items: center;
+}
+
+.templateSider :global(.ant-tree-node-selected) {
+  background-color: #e6f4ff !important;
+}
+
+.templateSider :global(.ant-tree-switcher) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 搜索框样式 */
 .templateSearch {
   padding: 16px;
   background: #fff;
   border-bottom: 1px solid #f0f0f0;
 }
 
+/* 模板列表样式 */
 .templateList {
   flex: 1;
   overflow-y: auto;
@@ -340,4 +391,37 @@
 
 .templateList :global(.ant-empty-description) {
   color: #8c8c8c;
+}
+
+/* 下拉菜单样式 */
+.templateActions :global(.ant-dropdown-menu) {
+  padding: 4px;
+}
+
+.templateActions :global(.ant-dropdown-menu-item) {
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.templateActions :global(.ant-dropdown-menu-item:hover) {
+  background: #f0f7ff;
+}
+
+/* 滚动条样式 */
+.templateList::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.templateList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.templateList::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.templateList::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
