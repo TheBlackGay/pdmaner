@@ -34,8 +34,21 @@ import CreateTableDialog from '@/renderer/components/CreateTableDialog'
 import styles from './style.module.css'
 import TableDetail from './TableDetail'
 import FieldTemplateList from './components/FieldTemplateList'
+import CreateDomainDialog from '../../components/CreateDomainDialog'
 
 const { Header, Content } = Layout
+
+interface Domain {
+  id: string
+  code: string
+  name: string
+  modules: {
+    tables: string[]
+    views: string[]
+    relations: string[]
+    dictionary: string[]
+  }
+}
 
 // 子菜单组件 - 模型
 const ModelSubMenu: React.FC = () => {
@@ -51,9 +64,12 @@ const ModelSubMenu: React.FC = () => {
   } = useTableStore()
   const { createField } = useFieldStore()
   const { createIndex } = useIndexStore()
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [domains, setDomains] = useState<Domain[]>([])
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null)
+  const [createDomainVisible, setCreateDomainVisible] = useState(false)
+  const [editDomainVisible, setEditDomainVisible] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
-  const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
+  const [domainContextMenuPosition, setDomainContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const [clipboardData, setClipboardData] = useState<{
     type: 'copy' | 'cut';
     table: any;
@@ -81,15 +97,27 @@ const ModelSubMenu: React.FC = () => {
     }
   }, [contextMenuPosition])
 
-  const handleContextMenu = (e: React.MouseEvent, table: any) => {
+  const handleContainerContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
+    setDomainContextMenuPosition(null)
     setContextMenuPosition({ x: e.clientX, y: e.clientY })
-    setSelectedTableId(table.id)
   }
 
   const handleContextMenuClose = () => {
     setContextMenuPosition(null)
-    setSelectedTableId(null)
+  }
+
+  const handleDomainContextMenu = (e: React.MouseEvent, domain: Domain) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenuPosition(null)
+    setSelectedDomain(domain)
+    setDomainContextMenuPosition({ x: e.clientX, y: e.clientY })
+  }
+
+  const handleCreate = () => {
+    setContextMenuPosition(null)
+    setCreateDomainVisible(true)
   }
 
   const handleCopy = () => {
@@ -159,7 +187,7 @@ const ModelSubMenu: React.FC = () => {
       }
 
       message.success('粘贴成功')
-      await fetchTables()
+      await fetchTables(projectId)
     } catch (error) {
       console.error('Failed to paste table:', error)
       message.error('粘贴失败：' + (error as Error).message)
@@ -191,71 +219,121 @@ const ModelSubMenu: React.FC = () => {
     })
   }
 
+  const handleCreateDomain = async (values: { code: string; name: string; selectedTables: string[] }) => {
+    const newDomain: Domain = {
+      id: Date.now().toString(),
+      code: values.code,
+      name: values.name,
+      modules: {
+        tables: values.selectedTables,
+        views: [],
+        relations: [],
+        dictionary: []
+      }
+    }
+    setDomains([...domains, newDomain])
+  }
+
+  const handleEditDomain = async (values: { code: string; name: string; selectedTables: string[] }) => {
+    if (!selectedDomain) return
+    
+    const updatedDomains = domains.map(domain => {
+      if (domain.id === selectedDomain.id) {
+        return {
+          ...domain,
+          code: values.code,
+          name: values.name,
+          modules: {
+            ...domain.modules,
+            tables: values.selectedTables
+          }
+        }
+      }
+      return domain
+    })
+    
+    setDomains(updatedDomains)
+    setSelectedDomain(null)
+  }
+
   return (
-    <div className={styles.subMenuContainer}>
+    <div 
+      className={styles.subMenuContainer} 
+      onContextMenu={handleContainerContextMenu}
+    >
       <div className={styles.subMenuHeader}>
         <span>数据模型</span>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           size="small"
-          onClick={() => setCreateDialogOpen(true)}
+          onClick={() => setCreateDomainVisible(true)}
         >
           创建表
         </Button>
       </div>
       <div className={styles.tableList}>
-        <List
-          loading={loading}
-          dataSource={tables}
-          renderItem={table => (
-            <List.Item
-              className={`${styles.tableItem} ${selectedTable?.id === table.id ? styles.tableItemActive : ''}`}
-              onClick={() => selectTable(table)}
-              onContextMenu={(e) => handleContextMenu(e, table)}
-            >
-              <div className={styles.tableName}>
-                {table.name}
-                {table.comment && <span className={styles.tableComment}>[{table.comment}]</span>}
-              </div>
-            </List.Item>
-          )}
-        />
+        {domains.map(domain => (
+          <div
+            key={domain.id}
+            className={styles.domainItem}
+            onContextMenu={(e) => handleDomainContextMenu(e, domain)}
+          >
+            <span className={styles.domainName}>{domain.name}</span>
+            <span className={styles.domainCode}>[{domain.code}]</span>
+          </div>
+        ))}
       </div>
-      <CreateTableDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-      />
+
       {contextMenuPosition && (
         <div
           className={styles.contextMenu}
-          style={{
+          style={{ 
             position: 'fixed',
             left: contextMenuPosition.x,
             top: contextMenuPosition.y,
             zIndex: 1000
           }}
         >
-          <Menu
-            selectedKeys={[]}
-            style={{ minWidth: 120 }}
-          >
-            <Menu.Item key="copy" icon={<CopyOutlined />} onClick={handleCopy}>
-              复制表
-            </Menu.Item>
-            <Menu.Item key="cut" icon={<ScissorOutlined />} onClick={handleCut}>
-              剪切表
-            </Menu.Item>
-            <Menu.Item key="paste" icon={<SnippetsOutlined />} onClick={handlePaste}>
-              粘贴表
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item key="delete" icon={<DeleteOutlined />} onClick={handleDelete} danger>
-              删除表
+          <Menu>
+            <Menu.Item onClick={() => {
+              setContextMenuPosition(null)
+              setCreateDomainVisible(true)
+            }}>
+              新建
             </Menu.Item>
           </Menu>
         </div>
       )}
+      {domainContextMenuPosition && (
+        <div
+          className={styles.contextMenu}
+          style={{ left: domainContextMenuPosition.x, top: domainContextMenuPosition.y }}
+        >
+          <Menu>
+            <Menu.Item onClick={() => {
+              setDomainContextMenuPosition(null)
+              setEditDomainVisible(true)
+            }}>
+              编辑
+            </Menu.Item>
+          </Menu>
+        </div>
+      )}
+      <CreateDomainDialog
+        open={createDomainVisible}
+        onClose={() => setCreateDomainVisible(false)}
+        onSubmit={handleCreateDomain}
+        tables={tables}
+      />
+      <CreateDomainDialog
+        open={editDomainVisible}
+        onClose={() => setEditDomainVisible(false)}
+        onSubmit={handleEditDomain}
+        tables={tables}
+        initialValues={selectedDomain}
+        title="编辑主题域"
+      />
     </div>
   )
 }
@@ -278,6 +356,12 @@ const ProjectLayout: React.FC = () => {
   const [importForm] = Form.useForm()
   const [templateDrawerVisible, setTemplateDrawerVisible] = useState(false)
   const [mainSiderCollapsed, setMainSiderCollapsed] = useState(false)
+  const [domains, setDomains] = useState<Domain[]>([])
+  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null)
+  const [createDomainVisible, setCreateDomainVisible] = useState(false)
+  const [editDomainVisible, setEditDomainVisible] = useState(false)
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
+  const [domainContextMenuPosition, setDomainContextMenuPosition] = useState<{ x: number; y: number } | null>(null)
 
   const handleMainSiderResizeStart = (e: React.MouseEvent) => {
     resizingMainRef.current = true
