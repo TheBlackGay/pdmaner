@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Layout, Menu, Button, Input, List, Space, Tooltip, Dropdown, Modal, Form, Select, message } from 'antd'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
+import { Layout, Menu, Button, Input, List, Space, Tooltip, Dropdown, Modal, Form, Select, message, Drawer, Empty, Tag } from 'antd'
 import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom'
 import {
   LeftOutlined,
@@ -12,7 +12,9 @@ import {
   TableOutlined,
   ImportOutlined,
   FileTextOutlined,
-  UploadOutlined
+  UploadOutlined,
+  DatabaseOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons'
 import { useProjectStore } from '../../../stores/project'
 import { useTableStore } from '../../../stores/table'
@@ -22,6 +24,7 @@ import { SQLParser } from '../../../utils/sqlParser'
 import CreateTableDialog from '@/renderer/components/CreateTableDialog'
 import styles from './style.module.css'
 import TableDetail from './TableDetail'
+import FieldTemplateList from './components/FieldTemplateList'
 
 const { Header, Content } = Layout
 
@@ -91,6 +94,7 @@ const ProjectLayout: React.FC = () => {
   const startWidthRef = useRef(0)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [importForm] = Form.useForm()
+  const [templateDrawerVisible, setTemplateDrawerVisible] = useState(false)
 
   const handleMainSiderResizeStart = (e: React.MouseEvent) => {
     resizingMainRef.current = true
@@ -316,13 +320,40 @@ const ProjectLayout: React.FC = () => {
           </Space>
         </div>
         <div className={styles.headerRight}>
-          <Input 
-            prefix={<SearchOutlined />}
-            placeholder="搜索表/字段"
-            className={styles.searchInput}
-          />
+          <Space>
+            <Input 
+              prefix={<SearchOutlined />}
+              placeholder="搜索表/字段"
+              className={styles.searchInput}
+            />
+            <Tooltip title="字段模板库">
+              <Button
+                icon={<DatabaseOutlined />}
+                onClick={() => setTemplateDrawerVisible(true)}
+              >
+                字段模板库
+              </Button>
+            </Tooltip>
+          </Space>
         </div>
       </Header>
+
+      <Drawer
+        title="字段模板库"
+        placement="right"
+        width={400}
+        open={templateDrawerVisible}
+        onClose={() => setTemplateDrawerVisible(false)}
+        bodyStyle={{ padding: 0 }}
+      >
+        <FieldTemplateList
+          onUseTemplate={(template) => {
+            // TODO: 处理使用模板的逻辑
+            console.log('使用模板:', template);
+            setTemplateDrawerVisible(false);
+          }}
+        />
+      </Drawer>
 
       <div className={styles.mainLayout}>
         {/* 左侧主菜单 */}
