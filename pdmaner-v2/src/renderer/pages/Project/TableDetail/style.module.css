@@ -491,3 +491,25 @@
   overflow: auto;
   max-height: 600px;
 }
+
+/* 字段注释样式 */
+.fieldComment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 13px;
+  width: 100%;
+}
+
+.fieldComment span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fieldComment :global(.anticon) {
+  flex: none;
+  color: #8c8c8c;
+}

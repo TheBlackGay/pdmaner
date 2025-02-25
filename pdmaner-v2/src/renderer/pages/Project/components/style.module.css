@@ -44,9 +44,17 @@
   visibility: visible;
 }
 
+/* 分组标题样式 */
+.groupTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f1f1f;
+  margin-bottom: 12px;
+}
+
 /* 搜索框样式 */
 .templateSearch {
-  padding: 12px 16px;
+  padding: 16px;
   border-bottom: 1px solid #f0f0f0;
   background: #fff;
 }
@@ -172,4 +180,27 @@
   max-width: 300px;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* 字段注释样式 */
+.fieldComment {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #666;
+  font-size: 13px;
+}
+
+.fieldComment span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 24px);
+}
+
+.fieldComment :global(.anticon) {
+  margin-top: 3px;
+  color: #8c8c8c;
+  flex: none;
 } 

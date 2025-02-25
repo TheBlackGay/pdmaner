@@ -273,6 +273,14 @@ const FieldTemplateList: React.FC<FieldTemplateListProps> = ({ onUseTemplate }) 
     return matchesSearch && matchesGroup;
   });
 
+  // 获取当前分组名称
+  const getCurrentGroupName = () => {
+    if (selectedGroupId === 'all') return '全部模板';
+    if (selectedGroupId === 'ungrouped') return '未分组';
+    const group = groups.find(g => g.id === selectedGroupId);
+    return group ? group.name : '';
+  };
+
   return (
     <div className={styles.templateContainer}>
       <div className={styles.templateHeader}>
@@ -295,6 +303,7 @@ const FieldTemplateList: React.FC<FieldTemplateListProps> = ({ onUseTemplate }) 
         />
 
         <div className={styles.templateSearch}>
+          <div className={styles.groupTitle}>{getCurrentGroupName()}</div>
           <Input
             placeholder="搜索字段模板..."
             prefix={<SearchOutlined />}

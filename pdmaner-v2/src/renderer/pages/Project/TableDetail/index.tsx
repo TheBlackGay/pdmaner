@@ -27,7 +27,8 @@ import {
   SaveOutlined,
   UndoOutlined,
   RedoOutlined,
-  SettingOutlined
+  SettingOutlined,
+  MessageOutlined
 } from '@ant-design/icons'
 import { useParams } from 'react-router-dom'
 import { useTableStore } from '@/stores/table'
@@ -476,82 +477,59 @@ const TableDetail: React.FC = () => {
 
   const fieldColumns = [
     {
-      title: '',
-      dataIndex: 'selection',
-      key: 'selection',
-      width: 48,
-      align: 'center' as const
+      title: '序号',
+      key: 'index',
+      width: 60,
+      align: 'center' as const,
+      render: (_: any, __: any, index: number) => index + 1
     },
     {
       title: '字段名',
       dataIndex: 'name',
       key: 'name',
       width: 200,
-      ellipsis: true,
       render: (text: string, record: Field) => (
         <Space>
-          {record.primaryKey && <Badge status="processing" />}
-          <span style={{ color: '#1f1f1f' }}>{text}</span>
+          <DatabaseOutlined />
+          <span>{text}</span>
+          {record.primaryKey && <Tag color="blue">主键</Tag>}
+          {!record.nullable && <Tag color="red">非空</Tag>}
         </Space>
       )
     },
     {
-      title: '注释',
-      dataIndex: 'comment',
-      key: 'comment',
-      width: 200,
-      ellipsis: true,
-    },
-    {
       title: '类型',
-      dataIndex: 'typeName',
-      key: 'typeName',
+      key: 'type',
       width: 150,
-      render: (typeName: string, record: Field) => {
-        let typeStr = typeName
+      render: (record: Field) => {
+        let typeStr = record.typeName
         if (record.length) {
           typeStr += `(${record.length})`
         } else if (record.precision) {
           typeStr += `(${record.precision}${record.scale ? `,${record.scale}` : ''})`
         }
-        return (
-          <Space>
-            <DatabaseOutlined />
-            {typeStr}
-          </Space>
-        )
+        return typeStr
       }
-    },
-    {
-      title: '属性',
-      key: 'attributes',
-      width: 200,
-      render: (_: any, record: Field) => (
-        <Space>
-          {record.primaryKey && (
-            <Tooltip title="主键">
-              <KeyOutlined style={{ color: '#1890ff' }} />
-            </Tooltip>
-          )}
-          {!record.nullable && (
-            <Tooltip title="不可为空">
-              <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
-            </Tooltip>
-          )}
-          {record.autoIncrement && (
-            <Tooltip title="自增">
-              <ArrowUpOutlined style={{ color: '#52c41a' }} />
-            </Tooltip>
-          )}
-        </Space>
-      )
     },
     {
       title: '默认值',
       dataIndex: 'defaultValue',
       key: 'defaultValue',
       width: 150,
-      render: (value: string) => value || '-'
+      ellipsis: true
+    },
+    {
+      title: '注释',
+      dataIndex: 'comment',
+      key: 'comment',
+      render: (comment: string) => comment ? (
+        <Tooltip title={comment}>
+          <div className={styles.fieldComment}>
+            <MessageOutlined />
+            <span>{comment}</span>
+          </div>
+        </Tooltip>
+      ) : null
     },
     {
       title: '操作',
@@ -563,23 +541,23 @@ const TableDetail: React.FC = () => {
           <Button
             type="text"
             icon={<EditOutlined />}
-            className={styles.actionButton}
-            onClick={() => handleEditField(record)}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleEditField(record)
+            }}
           />
-          <Popconfirm
-            title="确定要删除这个字段吗？"
-            onConfirm={() => handleDeleteField(record.id)}
-          >
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              className={styles.actionButton}
-            />
-          </Popconfirm>
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleDeleteField(record.id)
+            }}
+          />
         </Space>
-      ),
-    },
+      )
+    }
   ]
 
   const handleMoveIndex = async (id: string, type: 'up' | 'down' | 'top' | 'bottom') => {
