@@ -714,11 +714,13 @@
 
 .fields-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid rgba(5, 217, 232, 0.15);
-  background: linear-gradient(180deg, rgba(10, 15, 30, 0.4), rgba(10, 15, 30, 0.3));
+  align-items: center;
+  padding: 16px;
+  background: rgba(10, 12, 24, 0.6);
+  border-bottom: 1px solid rgba(5, 217, 232, 0.2);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .fields-header h4 {
@@ -729,122 +731,518 @@
 }
 
 .add-field-btn {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(5, 217, 232, 0.15), rgba(5, 217, 232, 0.1));
-  border: 1px solid rgba(5, 217, 232, 0.3);
-  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.3), rgba(162, 57, 202, 0.3));
+  border: 1px solid rgba(5, 217, 232, 0.4);
   color: #05d9e8;
-  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+  transition: all 0.3s;
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.2);
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
 }
 
 .add-field-btn:hover {
-  background: linear-gradient(135deg, rgba(5, 217, 232, 0.25), rgba(5, 217, 232, 0.15));
-  border-color: rgba(5, 217, 232, 0.5);
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.4), rgba(162, 57, 202, 0.4));
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 10px rgba(5, 217, 232, 0.2);
 }
 
 .fields-table-container {
-  overflow-y: auto;
-  max-height: 600px;
-  margin-top: 10px;
-  border: 1px solid rgba(5, 217, 232, 0.2);
-  border-radius: 8px;
-  position: relative;
+  flex: 1;
+  overflow: auto;
+  background: rgba(10, 12, 24, 0.3);
+  border-radius: 0 0 8px 8px;
 }
 
 .fields-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: fixed; /* 固定表格布局 */
 }
 
-/* 设置表头固定 */
 .fields-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background-color: #141630;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  background-color: rgba(15, 20, 40, 0.5);
 }
 
 .fields-table th {
-  padding: 12px 8px;
+  padding: 14px 16px;
+  font-weight: 500;
   text-align: left;
   color: #05d9e8;
-  font-weight: 500;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
+  position: relative;
+  font-size: 14px;
   border-bottom: 1px solid rgba(5, 217, 232, 0.3);
-  text-shadow: 0 0 5px rgba(5, 217, 232, 0.3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  background-color: #141630;
 }
 
 .fields-table td {
-  padding: 10px 16px;
-  border-bottom: 1px solid rgba(5, 217, 232, 0.1);
+  padding: 12px 16px;
+  font-size: 14px;
   color: #e0e0ff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  border-bottom: 1px solid rgba(5, 217, 232, 0.1);
+  transition: all 0.2s;
+}
+
+.fields-table tr {
+  display: table-row;
+}
+
+.fields-table td {
+  display: table-cell;
+}
+
+.fields-table .selected-row {
+  background-color: rgba(5, 217, 232, 0.15);
+  box-shadow: 0 0 0 1px rgba(5, 217, 232, 0.6) inset;
 }
 
 .fields-table tr:hover {
-  background: rgba(5, 217, 232, 0.05);
+  background-color: rgba(5, 217, 232, 0.08);
 }
 
 .comment-cell {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
 }
 
-.table-actions {
+/* 添加禁用按钮样式 */
+.header-actions .edit-btn,
+.header-actions .delete-btn,
+.header-actions .copy-btn {
+  margin-left: 8px;
+  opacity: 0.7;
+}
+
+.header-actions .edit-btn:hover,
+.header-actions .copy-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.header-actions .delete-btn:hover {
+  opacity: 1;
+  color: #ff2a6d;
+}
+
+.header-actions .edit-btn[disabled],
+.header-actions .delete-btn[disabled],
+.header-actions .copy-btn[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 分割线 */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(5, 217, 232, 0.3) 20%, 
+    rgba(5, 217, 232, 0.3) 80%, 
+    transparent 100%);
+  margin: 10px 0;
+}
+
+/* 改进模态框 */
+.modal-backdrop.visible {
   display: flex;
-  gap: 8px;
-  justify-content: center;
-  align-items: center;
+  opacity: 1;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease-out;
 }
 
-.table-actions button {
-  background: transparent;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-container {
+  animation: slideIn 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 改进字段组管理 */
+.management-modal {
+  background: rgba(10, 12, 24, 0.95);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(5, 217, 232, 0.3);
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  animation: modalAppear 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 添加空状态提示 */
+.no-fields-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 20px;
+  color: #8a8a9a;
+  text-align: center;
+}
+
+.no-fields-message svg {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.fields-table-container {
+  flex: 1;
+  overflow: auto;
+  background: rgba(10, 12, 24, 0.3);
+  border-radius: 0 0 8px 8px;
+}
+
+/* 图标按钮样式 */
+.icon-button {
+  background: none;
   border: none;
-  font-size: 16px;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
+  color: #c8c8ff;
 }
 
-.table-actions .edit-btn {
-  color: #05d9e8;
-}
-
-.table-actions .edit-btn:hover {
-  background: rgba(5, 217, 232, 0.1);
+.icon-button:hover {
+  background-color: rgba(5, 217, 232, 0.1);
   color: #05d9e8;
   transform: scale(1.1);
 }
 
-.table-actions .delete-btn {
-  color: #ff2a6d;
+/* 表格行选中悬停状态 */
+.fields-table .selected-row:hover {
+  background-color: rgba(5, 217, 232, 0.2);
 }
 
+/* 改进标准字段库状态指示器 */
+.standard-fields-library::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #05d9e8;
+  border-radius: 50%;
+  margin: 8px;
+  box-shadow: 0 0 8px rgba(5, 217, 232, 0.8);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(5, 217, 232, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(5, 217, 232, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(5, 217, 232, 0); }
+}
+
+/* 响应式动画效果 */
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fields-table tr {
+  animation: fadeInRight 0.3s ease-out forwards;
+  animation-delay: calc(0.05s * var(--row-index, 0));
+  opacity: 0;
+}
+
+.modal-container {
+  animation: fadeInUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.fields-header {
+  animation: fadeInDown 0.3s ease-out forwards;
+}
+
+/* 改进字段表单分组 */
+.form-section {
+  margin-bottom: 20px;
+  border: 1px solid rgba(5, 217, 232, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(12, 14, 28, 0.3);
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #05d9e8;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.3);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(5, 217, 232, 0.05);
+  border-bottom: 1px solid rgba(5, 217, 232, 0.1);
+}
+
+.form-section .form-row {
+  padding: 16px;
+}
+
+/* 增强交互反馈 */
+.table-actions {
+  display: none !important;
+}
+
+/* 隐藏所有操作按钮 */
+.table-actions button {
+  display: none;
+}
+
+/* 禁用悬停效果 */
+.table-actions .edit-btn:hover,
 .table-actions .delete-btn:hover {
+  display: none;
+}
+
+/* 增强字段组样式 */
+.group-item {
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  border-left: 3px solid transparent;
+  background: rgba(10, 12, 24, 0.4);
+  margin-bottom: 4px;
+  border-radius: 0 4px 4px 0;
+}
+
+.group-item:hover {
+  background: rgba(5, 217, 232, 0.1);
+  transform: translateX(4px);
+}
+
+.group-item.active {
+  background: rgba(5, 217, 232, 0.15);
+  border-left: 3px solid #05d9e8;
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.2);
+  transform: translateX(4px);
+}
+
+/* 美化管理模态框 */
+.management-modal {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-height: calc(100vh - 80px);
+  width: 90%;
+  max-width: 1200px;
+}
+
+.management-body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  overflow: hidden;
+  height: 100%;
+}
+
+.management-sidebar {
+  overflow-y: auto;
+  border-right: 1px solid rgba(5, 217, 232, 0.15);
+  background: rgba(8, 10, 22, 0.6);
+}
+
+.management-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 添加空状态美化 */
+.no-fields-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  color: rgba(200, 200, 255, 0.5);
+  text-align: center;
+}
+
+.no-fields-message p {
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.add-field-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 添加更好的表单输入样式 */
+.cyber-input:focus, 
+.cyber-select:focus, 
+.cyber-textarea:focus {
+  border-color: #05d9e8;
+  box-shadow: 0 0 0 2px rgba(5, 217, 232, 0.2);
+  outline: none;
+}
+
+/* 添加页面过渡动画 */
+.standard-fields-library {
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.standard-fields-library.collapsed {
+  width: 30px;
+}
+
+/* 添加更多动态效果 */
+.add-field-btn:active {
+  transform: scale(0.98);
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  transition: backdrop-filter 0.3s ease;
+}
+
+/* 改进复选框样式 */
+.cyber-checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.cyber-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkbox-icon {
+  height: 18px;
+  width: 18px;
+  border: 1px solid rgba(5, 217, 232, 0.4);
+  border-radius: 4px;
+  display: inline-block;
+  position: relative;
+  margin-right: 8px;
+  background: rgba(5, 217, 232, 0.05);
+  transition: all 0.2s;
+}
+
+.cyber-checkbox:hover .checkbox-icon {
+  background: rgba(5, 217, 232, 0.1);
+  border-color: rgba(5, 217, 232, 0.6);
+}
+
+.cyber-checkbox input[type="checkbox"]:checked ~ .checkbox-icon {
+  background: rgba(5, 217, 232, 0.2);
+  border-color: rgba(5, 217, 232, 0.8);
+}
+
+.cyber-checkbox input[type="checkbox"]:checked ~ .checkbox-icon:after {
+  content: "";
+  position: absolute;
+  display: block;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid #05d9e8;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-text {
+  color: #c8c8ff;
+  transition: all 0.2s;
+}
+
+.cyber-checkbox:hover .checkbox-text {
+  color: #e0e0ff;
+}
+
+.cyber-checkbox input[type="checkbox"]:checked ~ .checkbox-text {
+  color: #05d9e8;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.3);
+}
+
+/* 优化模态框关闭按钮 */
+.close-btn {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(200, 200, 255, 0.7);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 20px;
+}
+
+.close-btn:hover {
   background: rgba(255, 42, 109, 0.1);
   color: #ff2a6d;
-  transform: scale(1.1);
+  transform: rotate(90deg);
+}
+
+/* 优化模态框标题 */
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #05d9e8;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
 }
 
 .management-modal .modal-header-actions {
@@ -852,135 +1250,42 @@
   gap: 8px;
 }
 
-/* 通用模态框样式 */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(10, 12, 26, 0.85);
-  backdrop-filter: blur(15px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3000; /* 提高z-index确保在抽屉之上 */
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  pointer-events: none; /* 默认不接收鼠标事件 */
+/* 表格操作相关样式 */
+.table-actions {
+  display: none !important;
 }
 
-.modal-backdrop.visible {
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important; /* 可见时接收鼠标事件 */
-  position: fixed !important; /* 确保固定定位 */
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 9000 !important; /* 确保最高层级 */
+.fields-table tr:hover .table-actions {
+  opacity: 0; /* 不显示 */
 }
 
-/* 模态框容器 */
-.modal-container {
-  background-color: #12152d;
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(5, 217, 232, 0.3);
-  width: 100%;
-  max-width: 550px;
-  animation: slideIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-  position: relative;
-  border: 1px solid rgba(5, 217, 232, 0.2);
-  overflow: hidden;
-  z-index: 9001; /* 确保比modal-backdrop的z-index更高 */
+/* 隐藏所有操作按钮 */
+.table-actions button {
+  display: none;
 }
 
-/* 添加动画效果 */
-@keyframes slideIn {
-  from { 
-    transform: translateY(-20px); 
-    opacity: 0;
-  }
-  to { 
-    transform: translateY(0); 
-    opacity: 1;
-  }
+/* 禁用悬停效果 */
+.table-actions .edit-btn:hover,
+.table-actions .delete-btn:hover {
+  display: none;
 }
 
-/* 高级选项相关样式 */
-.advanced-options-section {
-  margin: 16px 0;
-  border: 1px solid rgba(5, 217, 232, 0.2);
-  border-radius: 6px;
-  overflow: hidden;
+/* 表格操作列相关的定义 */
+tr:hover .table-actions {
+  display: none;
 }
 
-.advanced-toggle {
-  padding: 12px 16px;
-  background: linear-gradient(180deg, rgba(5, 217, 232, 0.08), rgba(5, 217, 232, 0.04));
-  color: #05d9e8;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 500;
-  transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+/* 确保选中行只有7个单元格 */
+.fields-table .selected-row td:nth-child(n+8) {
+  display: none !important;
 }
 
-.advanced-toggle:hover {
-  background: linear-gradient(180deg, rgba(5, 217, 232, 0.12), rgba(5, 217, 232, 0.08));
-  box-shadow: inset 0 0 10px rgba(5, 217, 232, 0.1);
+/* 确保所有行都只有7个单元格 */
+.fields-table tr td:nth-child(n+8) {
+  display: none !important;
 }
 
-.advanced-toggle span {
-  margin-left: 5px;
-  font-size: 14px;
-}
-
-.advanced-options-content {
-  padding: 16px;
-  background: rgba(10, 12, 24, 0.4);
-  border-top: 1px solid rgba(5, 217, 232, 0.15);
-}
-
-/* 添加选中行样式 */
-.fields-table .selected-row {
-  background-color: rgba(5, 217, 232, 0.1);
-  box-shadow: 0 0 0 1px rgba(5, 217, 232, 0.5) inset;
-}
-
-.fields-table tr {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.fields-table tr:hover {
-  background-color: rgba(5, 217, 232, 0.05);
-}
-
-/* 添加禁用按钮样式 */
-.header-actions .edit-btn,
-.header-actions .delete-btn {
-  margin-left: 8px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  font-size: 12px;
-}
-
-.header-actions .edit-btn[disabled],
-.header-actions .delete-btn[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.header-actions .edit-btn svg,
-.header-actions .delete-btn svg {
-  margin-right: 4px;
+/* 确保表头只有7列 */
+.fields-table thead th:nth-child(n+8) {
+  display: none !important;
 } 
