@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   MenuFoldOutlined,
@@ -14,7 +15,14 @@ import {
   ImportOutlined,
   ExportOutlined,
   SettingOutlined,
-  KeyOutlined
+  KeyOutlined,
+  InfoCircleOutlined,
+  DownOutlined,
+  UpOutlined,
+  LeftOutlined,
+  RightOutlined,
+  CloseOutlined,
+  MenuOutlined
 } from '@ant-design/icons';
 import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
@@ -44,6 +52,14 @@ interface FieldGroup {
   expanded?: boolean;
 }
 
+// 字段拖拽接口
+interface DraggingField {
+  id: string;
+  type: 'field' | 'group';
+  groupId: string;
+  fieldId?: string;
+}
+
 // 标准字段库组件
 const StandardFieldsLibrary: React.FC = () => {
   // 获取redux中的状态和dispatch方法
@@ -52,90 +68,21 @@ const StandardFieldsLibrary: React.FC = () => {
   const { success } = useNotificationContext();
   
   // 状态
-  const [collapsed, setCollapsed] = useState(true); // 默认收起
+  const [collapsed, setCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [fieldGroups, setFieldGroups] = useState<FieldGroup[]>([
-    {
-      id: '1',
-      name: '基础字段',
-      code: 'base',
-      expanded: true,
-      fields: [
-        {
-          id: '101',
-          name: '主键ID',
-          code: 'id',
-          type: 'bigint',
-          length: 20,
-          primaryKey: true,
-          notNull: true,
-          autoIncrement: true,
-          comment: '主键'
-        },
-        {
-          id: '102',
-          name: '创建时间',
-          code: 'create_time',
-          type: 'datetime',
-          primaryKey: false,
-          notNull: true,
-          autoIncrement: false,
-          comment: '创建时间'
-        }
-      ]
-    },
-    {
-      id: '2',
-      name: '审计字段',
-      code: 'audit',
-      expanded: false,
-      fields: [
-        {
-          id: '201',
-          name: '创建人',
-          code: 'create_by',
-          type: 'varchar',
-          length: 50,
-          primaryKey: false,
-          notNull: true,
-          autoIncrement: false,
-          comment: '创建人'
-        },
-        {
-          id: '202',
-          name: '更新时间',
-          code: 'update_time',
-          type: 'datetime',
-          primaryKey: false,
-          notNull: false,
-          autoIncrement: false,
-          comment: '更新时间'
-        },
-        {
-          id: '203',
-          name: '更新人',
-          code: 'update_by',
-          type: 'varchar',
-          length: 50,
-          primaryKey: false,
-          notNull: false,
-          autoIncrement: false,
-          comment: '更新人'
-        }
-      ]
-    }
-  ]);
-
-  // 模态框状态
-  const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
-  const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
-  const [isEditingField, setIsEditingField] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedField, setSelectedField] = useState<StandardField | null>(null);
+  const [fieldGroups, setFieldGroups] = useState<FieldGroup[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false);
-  const [activeGroupInManagement, setActiveGroupInManagement] = useState<string | null>(null);
+  const [isAddGroupModalOpen, setIsAddGroupModalOpen] = useState(false);
+  const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<FieldGroup | null>(null);
+  const [editingField, setEditingField] = useState<StandardField | null>(null);
+  const [editingGroup, setEditingGroup] = useState<FieldGroup | null>(null);
+  const [draggingField, setDraggingField] = useState<DraggingField | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 初始化标准字段数据
+  // 初始化标准字段库数据
   useEffect(() => {
     if (currentProject) {
       // 从项目中获取标准字段库数据
@@ -212,18 +159,41 @@ const StandardFieldsLibrary: React.FC = () => {
     }
   }, [currentProject]);
 
+  // 自动保存功能
+  useEffect(() => {
+    // 避免初始化时触发保存
+    if (!currentProject || fieldGroups.length === 0) {
+      return;
+    }
+
+    // 使用节流函数延迟保存，避免频繁更新
+    const saveTimeout = setTimeout(() => {
+      // 保存到项目
+      if (currentProject && dispatch) {
+        dispatch(setCurrentProject({
+          ...currentProject,
+          standardFields: fieldGroups
+        }));
+        // 可选：添加保存成功提示
+        // success('标准字段库已自动保存');
+      }
+    }, 2000);
+
+    // 清除上一次的定时器
+    return () => clearTimeout(saveTimeout);
+  }, [fieldGroups, currentProject, dispatch]);
+
   // 收起/展开标准字段库
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
   };
 
   // 展开/折叠字段组
-  const toggleGroupExpanded = (groupId: string) => {
-    setFieldGroups(fieldGroups.map(group => 
-      group.id === groupId 
-        ? { ...group, expanded: !group.expanded } 
-        : group
-    ));
+  const toggleGroupExpansion = (groupId: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
   };
 
   // 拖拽开始
@@ -249,6 +219,13 @@ const StandardFieldsLibrary: React.FC = () => {
 
   // 添加新的字段分组
   const handleAddGroup = (name: string, code: string) => {
+    // 检查分组代码是否已存在
+    const codeExists = fieldGroups.some(group => group.code === code);
+    if (codeExists) {
+      alert(`分组代码 "${code}" 已存在，请使用其他代码`);
+      return;
+    }
+    
     const newGroup: FieldGroup = {
       id: `group_${Date.now()}`,
       name,
@@ -257,13 +234,17 @@ const StandardFieldsLibrary: React.FC = () => {
       expanded: true
     };
     
-    setFieldGroups([...fieldGroups, newGroup]);
+    const updatedGroups = [...fieldGroups, newGroup];
+    setFieldGroups(updatedGroups);
     setIsAddGroupModalOpen(false);
     
     // 如果是在管理模式下添加的，则设置为活动分组
     if (isManagementModalOpen) {
-      setActiveGroupInManagement(newGroup.id);
+      setActiveGroup(newGroup);
     }
+    
+    // 显示成功提示
+    success(`分组 "${name}" 添加成功`);
   };
 
   // 添加新字段
@@ -279,9 +260,10 @@ const StandardFieldsLibrary: React.FC = () => {
         : group
     ));
     
-    setIsFieldModalOpen(false);
-    setSelectedGroupId(null);
-    setSelectedField(null);
+    closeFieldModal();
+    
+    // 显示成功提示
+    success(`字段 "${field.name}" 添加成功`);
   };
 
   // 编辑字段
@@ -297,15 +279,18 @@ const StandardFieldsLibrary: React.FC = () => {
         : group
     ));
     
-    setIsFieldModalOpen(false);
-    setSelectedGroupId(null);
-    setSelectedField(null);
-    setIsEditingField(false);
+    closeFieldModal();
+    
+    // 显示成功提示
+    success(`字段 "${field.name}" 更新成功`);
   };
 
   // 删除字段
   const handleDeleteField = (groupId: string, fieldId: string) => {
-    if (window.confirm('确定要删除这个字段吗？')) {
+    // 找到要删除的字段名称，用于提示
+    const fieldToDelete = fieldGroups.find(g => g.id === groupId)?.fields.find(f => f.id === fieldId);
+    
+    if (window.confirm(`确定要删除字段 "${fieldToDelete?.name || ''}" 吗？`)) {
       setFieldGroups(fieldGroups.map(group => 
         group.id === groupId 
           ? { 
@@ -314,29 +299,45 @@ const StandardFieldsLibrary: React.FC = () => {
             } 
           : group
       ));
+      
+      // 显示成功提示
+      success(`字段 "${fieldToDelete?.name || ''}" 已删除`);
     }
   };
 
   // 删除分组
   const handleDeleteGroup = (groupId: string) => {
-    if (window.confirm('确定要删除这个分组及其所有字段吗？')) {
+    // 找到要删除的分组名称，用于提示
+    const groupToDelete = fieldGroups.find(g => g.id === groupId);
+    
+    if (window.confirm(`确定要删除分组 "${groupToDelete?.name || ''}" 及其所有字段吗？`)) {
       setFieldGroups(fieldGroups.filter(group => group.id !== groupId));
       
       // 如果删除的是当前活动的分组，清除活动分组
-      if (activeGroupInManagement === groupId) {
-        setActiveGroupInManagement(null);
+      if (activeGroup && activeGroup.id === groupId) {
+        setActiveGroup(null);
       }
+      
+      // 显示成功提示
+      success(`分组 "${groupToDelete?.name || ''}" 已删除`);
     }
   };
 
   // 保存标准字段库配置
   const handleSaveStandardFields = () => {
-    // 这里可以添加保存到本地存储或发送到服务器的逻辑
-    console.log('保存标准字段库', fieldGroups);
+    // 保存到项目中
+    if (currentProject && dispatch) {
+      dispatch(setCurrentProject({
+        ...currentProject,
+        standardFields: fieldGroups
+      }));
+      
+      // 显示成功提示
+      success('标准字段库配置已保存');
+    }
     
     // 关闭管理模态框
     setIsManagementModalOpen(false);
-    alert('标准字段库配置已保存');
   };
 
   // 根据搜索词过滤分组和字段
@@ -358,6 +359,173 @@ const StandardFieldsLibrary: React.FC = () => {
     }).filter(group => group.fields.length > 0);
   };
 
+  // 导出标准字段库
+  const exportStandardFields = () => {
+    const data = JSON.stringify(fieldGroups, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `标准字段库_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    success('标准字段库导出成功');
+  };
+  
+  // 触发文件选择对话框
+  const triggerImportDialog = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  // 导入标准字段库
+  const importStandardFields = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importedGroups = JSON.parse(content) as FieldGroup[];
+        
+        // 验证导入的数据
+        if (!Array.isArray(importedGroups)) {
+          throw new Error('导入的数据格式不正确');
+        }
+        
+        // 确认导入
+        if (window.confirm(`确定要导入这些字段分组吗？这将替换当前的标准字段库。\n发现 ${importedGroups.length} 个分组，共 ${importedGroups.reduce((sum, group) => sum + group.fields.length, 0)} 个字段。`)) {
+          setFieldGroups(importedGroups);
+          
+          // 保存到项目中
+          if (currentProject && dispatch) {
+            dispatch(setCurrentProject({
+              ...currentProject,
+              standardFields: importedGroups
+            }));
+          }
+          
+          success('标准字段库导入成功');
+        }
+      } catch (error) {
+        console.error('导入失败', error);
+        alert('导入失败，请确保文件格式正确');
+      }
+      
+      // 重置文件输入，以便可以再次选择同一文件
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+    
+    reader.readAsText(file);
+  };
+  
+  // 拖拽排序相关函数
+  const handleFieldDragStart = (e: React.DragEvent, groupId: string, fieldId: string) => {
+    setDraggingField({
+      id: fieldId,
+      type: 'field',
+      groupId,
+      fieldId
+    });
+    
+    // 设置拖拽效果
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  
+  const handleGroupDragStart = (e: React.DragEvent, groupId: string) => {
+    setDraggingField({
+      id: groupId,
+      type: 'group',
+      groupId
+    });
+    
+    // 设置拖拽效果
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+  
+  const handleFieldDrop = (e: React.DragEvent, targetGroupId: string, targetFieldId: string) => {
+    e.preventDefault();
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      
+      if (data.type === 'field' && (data.groupId !== targetGroupId || data.fieldId !== targetFieldId)) {
+        // 移动字段
+        const sourceGroup = fieldGroups.find(g => g.id === data.groupId);
+        const targetGroup = fieldGroups.find(g => g.id === targetGroupId);
+        
+        if (!sourceGroup || !targetGroup) return;
+        
+        // 找到拖拽的字段
+        const draggedField = sourceGroup.fields.find(f => f.id === data.fieldId);
+        if (!draggedField) return;
+        
+        // 从源分组中移除字段
+        const sourceFields = sourceGroup.fields.filter(f => f.id !== data.fieldId);
+        
+        // 在目标分组中添加字段
+        const targetFieldIndex = targetGroup.fields.findIndex(f => f.id === targetFieldId);
+        const targetFields = [...targetGroup.fields];
+        targetFields.splice(targetFieldIndex, 0, draggedField);
+        
+        // 更新状态
+        setFieldGroups(fieldGroups.map(group => {
+          if (group.id === data.groupId) {
+            return { ...group, fields: sourceFields };
+          }
+          if (group.id === targetGroupId) {
+            return { ...group, fields: targetFields };
+          }
+          return group;
+        }));
+      }
+    } catch (error) {
+      console.error('拖拽错误', error);
+    }
+  };
+  
+  const handleGroupDrop = (e: React.DragEvent, targetGroupId: string) => {
+    e.preventDefault();
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      
+      if (data.type === 'group' && data.groupId !== targetGroupId) {
+        // 移动分组
+        const draggedGroupIndex = fieldGroups.findIndex(g => g.id === data.groupId);
+        const targetGroupIndex = fieldGroups.findIndex(g => g.id === targetGroupId);
+        
+        if (draggedGroupIndex === -1 || targetGroupIndex === -1) return;
+        
+        // 复制分组数组并重新排序
+        const newGroups = [...fieldGroups];
+        const [draggedGroup] = newGroups.splice(draggedGroupIndex, 1);
+        newGroups.splice(targetGroupIndex, 0, draggedGroup);
+        
+        // 更新状态
+        setFieldGroups(newGroups);
+      }
+    } catch (error) {
+      console.error('拖拽错误', error);
+    }
+  };
+  
+  const handleDragEnd = () => {
+    setDraggingField(null);
+  };
+
   // 渲染字段分组
   const renderFieldGroups = () => {
     const filteredGroups = getFilteredGroups();
@@ -368,44 +536,35 @@ const StandardFieldsLibrary: React.FC = () => {
           <p>没有找到匹配的字段</p>
           <button 
             className="add-group-btn"
-            onClick={() => setIsAddGroupModalOpen(true)}
+            onClick={() => setIsManagementModalOpen(true)}
           >
-            添加新分组
+            <PlusOutlined />
+            管理字段库
           </button>
         </div>
       );
     }
     
     return filteredGroups.map(group => (
-      <div key={group.id} className="field-group">
+      <div 
+        key={group.id} 
+        className={`field-group ${draggingField && draggingField.type === 'group' && draggingField.groupId === group.id ? 'dragging' : ''}`}
+      >
         <div className="group-header">
           <div 
             className="group-title"
-            onClick={() => toggleGroupExpanded(group.id)}
+            onClick={() => toggleGroupExpansion(group.id)}
           >
-            {group.expanded ? 
-              <CaretDownOutlined /> : 
+            {expandedGroups[group.id] ? 
+              <DownOutlined /> : 
               <CaretRightOutlined />
             }
             {group.name} <span className="group-code">({group.code})</span>
-          </div>
-          <div className="group-actions">
-            <button
-              title="添加字段"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedGroupId(group.id);
-                setIsEditingField(false);
-                setSelectedField(null);
-                setIsFieldModalOpen(true);
-              }}
-            >
-              <PlusOutlined />
-            </button>
+            <span className="field-count">{group.fields.length}个字段</span>
           </div>
         </div>
         
-        {group.expanded && (
+        {expandedGroups[group.id] && (
           <div className="group-fields">
             {group.fields.map(field => (
               <div 
@@ -422,28 +581,12 @@ const StandardFieldsLibrary: React.FC = () => {
                     {field.name}
                     {field.primaryKey && <KeyOutlined style={{ marginLeft: '5px', color: '#faad14' }} />}
                   </div>
-                  <div className="field-type">
-                    {field.type}{field.length ? `(${field.length}${field.scale ? `,${field.scale}` : ''})` : ''}
+                  <div className="field-meta">
+                    <div className="field-type">
+                      {field.type}{field.length ? `(${field.length}${field.scale ? `,${field.scale}` : ''})` : ''}
+                    </div>
+                    {field.comment && <div className="field-comment" title={field.comment}>{field.comment}</div>}
                   </div>
-                </div>
-                <div className="field-actions">
-                  <button
-                    title="编辑字段"
-                    onClick={() => {
-                      setSelectedGroupId(group.id);
-                      setSelectedField(field);
-                      setIsEditingField(true);
-                      setIsFieldModalOpen(true);
-                    }}
-                  >
-                    <EditOutlined />
-                  </button>
-                  <button
-                    title="删除字段"
-                    onClick={() => handleDeleteField(group.id, field.id)}
-                  >
-                    <DeleteOutlined />
-                  </button>
                 </div>
               </div>
             ))}
@@ -455,8 +598,10 @@ const StandardFieldsLibrary: React.FC = () => {
 
   // 渲染添加分组模态框
   const renderAddGroupModal = () => {
-    return (
-      <div className={`modal-backdrop ${isAddGroupModalOpen ? 'visible' : ''}`} onClick={() => setIsAddGroupModalOpen(false)}>
+    if (!isAddGroupModalOpen) return null;
+    
+    const modalContent = (
+      <div className="modal-backdrop visible" onClick={() => setIsAddGroupModalOpen(false)}>
         <div className="modal-container" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
             <h3>添加字段分组</h3>
@@ -478,17 +623,18 @@ const StandardFieldsLibrary: React.FC = () => {
               handleAddGroup(name, code);
             }}>
               <div className="form-group">
-                <label>分组名称</label>
+                <label>分组名称 <span className="required">*</span></label>
                 <input 
                   type="text" 
                   name="name" 
                   className="cyber-input" 
                   placeholder="例如：基础字段" 
                   required 
+                  autoFocus
                 />
               </div>
               <div className="form-group">
-                <label>分组代码</label>
+                <label>分组代码 <span className="required">*</span></label>
                 <input 
                   type="text" 
                   name="code" 
@@ -496,6 +642,7 @@ const StandardFieldsLibrary: React.FC = () => {
                   placeholder="例如：base" 
                   required 
                 />
+                <small className="form-helper">分组代码必须唯一，用于标识字段分组</small>
               </div>
               <div className="modal-footer">
                 <button type="button" className="cancel-btn" onClick={() => setIsAddGroupModalOpen(false)}>取消</button>
@@ -506,16 +653,32 @@ const StandardFieldsLibrary: React.FC = () => {
         </div>
       </div>
     );
+    
+    return ReactDOM.createPortal(
+      modalContent,
+      document.body
+    );
+  };
+
+  // 修复setIsAddFieldModalOpen和setShowAdvancedOptions的使用
+  // 在模态框关闭时，需要同时重置高级选项状态
+  const closeFieldModal = () => {
+    setIsAddFieldModalOpen(false);
+    setShowAdvancedOptions(false);
+    setEditingField(null);
+    setEditingGroup(null);
   };
 
   // 渲染字段编辑/添加模态框
   const renderFieldModal = () => {
-    return (
-      <div className={`modal-backdrop ${isFieldModalOpen ? 'visible' : ''}`} onClick={() => setIsFieldModalOpen(false)}>
+    if (!isAddFieldModalOpen) return null;
+    
+    const modalContent = (
+      <div className="modal-backdrop visible" onClick={closeFieldModal}>
         <div className="modal-container" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
-            <h3>{isEditingField ? '编辑字段' : '添加字段'}</h3>
-            <button className="close-btn" onClick={() => setIsFieldModalOpen(false)}>×</button>
+            <h3>{editingField ? '编辑字段' : '添加字段'}</h3>
+            <button className="close-btn" onClick={closeFieldModal}>×</button>
           </div>
           <div className="modal-body">
             <form onSubmit={(e) => {
@@ -524,7 +687,7 @@ const StandardFieldsLibrary: React.FC = () => {
               const formData = new FormData(form);
               
               const field: StandardField = {
-                id: selectedField?.id || '',
+                id: editingField?.id || '',
                 name: formData.get('name') as string,
                 code: formData.get('code') as string,
                 type: formData.get('type') as string,
@@ -542,10 +705,10 @@ const StandardFieldsLibrary: React.FC = () => {
                 return;
               }
               
-              if (isEditingField && selectedField && selectedGroupId) {
-                handleEditField(selectedGroupId, field);
-              } else if (selectedGroupId) {
-                handleAddField(selectedGroupId, field);
+              if (editingField && editingGroup) {
+                handleEditField(editingGroup.id, field);
+              } else if (editingGroup) {
+                handleAddField(editingGroup.id, field);
               }
             }}>
               <div className="form-row">
@@ -555,10 +718,12 @@ const StandardFieldsLibrary: React.FC = () => {
                     type="text" 
                     name="name" 
                     className="cyber-input" 
-                    defaultValue={selectedField?.name || ''} 
+                    defaultValue={editingField?.name || ''} 
                     placeholder="例如：创建时间" 
                     required 
+                    autoFocus
                   />
+                  <small className="form-helper">字段的显示名称</small>
                 </div>
                 <div className="form-group">
                   <label>字段代码 <span className="required">*</span></label>
@@ -566,10 +731,11 @@ const StandardFieldsLibrary: React.FC = () => {
                     type="text" 
                     name="code" 
                     className="cyber-input" 
-                    defaultValue={selectedField?.code || ''} 
+                    defaultValue={editingField?.code || ''} 
                     placeholder="例如：create_time" 
                     required 
                   />
+                  <small className="form-helper">字段的实际代码，用于数据库列名</small>
                 </div>
               </div>
               
@@ -579,7 +745,7 @@ const StandardFieldsLibrary: React.FC = () => {
                   <select 
                     name="type" 
                     className="cyber-select" 
-                    defaultValue={selectedField?.type || 'varchar'}
+                    defaultValue={editingField?.type || 'varchar'}
                     required
                   >
                     <option value="varchar">VARCHAR</option>
@@ -599,7 +765,7 @@ const StandardFieldsLibrary: React.FC = () => {
                     type="number" 
                     name="length" 
                     className="cyber-input" 
-                    defaultValue={selectedField?.length || ''} 
+                    defaultValue={editingField?.length || ''} 
                     placeholder="例如：32" 
                   />
                 </div>
@@ -609,21 +775,10 @@ const StandardFieldsLibrary: React.FC = () => {
                     type="number" 
                     name="scale" 
                     className="cyber-input" 
-                    defaultValue={selectedField?.scale || ''} 
+                    defaultValue={editingField?.scale || ''} 
                     placeholder="例如：2" 
                   />
                 </div>
-              </div>
-              
-              <div className="form-group">
-                <label>默认值</label>
-                <input 
-                  type="text" 
-                  name="defaultValue" 
-                  className="cyber-input" 
-                  defaultValue={selectedField?.defaultValue || ''} 
-                  placeholder="例如：CURRENT_TIMESTAMP" 
-                />
               </div>
               
               <div className="checkbox-row">
@@ -632,7 +787,7 @@ const StandardFieldsLibrary: React.FC = () => {
                     type="checkbox" 
                     id="primaryKey" 
                     name="primaryKey" 
-                    defaultChecked={selectedField?.primaryKey} 
+                    defaultChecked={editingField?.primaryKey} 
                   />
                   <label htmlFor="primaryKey">
                     <span className="checkbox-icon"></span>
@@ -645,7 +800,7 @@ const StandardFieldsLibrary: React.FC = () => {
                     type="checkbox" 
                     id="notNull" 
                     name="notNull" 
-                    defaultChecked={selectedField?.notNull} 
+                    defaultChecked={editingField?.notNull} 
                   />
                   <label htmlFor="notNull">
                     <span className="checkbox-icon"></span>
@@ -658,7 +813,7 @@ const StandardFieldsLibrary: React.FC = () => {
                     type="checkbox" 
                     id="autoIncrement" 
                     name="autoIncrement" 
-                    defaultChecked={selectedField?.autoIncrement} 
+                    defaultChecked={editingField?.autoIncrement} 
                   />
                   <label htmlFor="autoIncrement">
                     <span className="checkbox-icon"></span>
@@ -667,18 +822,44 @@ const StandardFieldsLibrary: React.FC = () => {
                 </div>
               </div>
               
-              <div className="form-group">
-                <label>备注</label>
-                <textarea 
-                  name="comment" 
-                  className="cyber-textarea" 
-                  defaultValue={selectedField?.comment || ''} 
-                  placeholder="字段的备注信息"
-                ></textarea>
+              {/* 高级选项的切换按钮 */}
+              <div className="advanced-options-section">
+                <div className="advanced-toggle" onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}>
+                  {showAdvancedOptions ? <UpOutlined /> : <DownOutlined />}
+                  <span>高级选项</span>
+                </div>
+                
+                {/* 高级选项的内容区域 */}
+                {showAdvancedOptions && (
+                  <div className="advanced-options-content">
+                    <div className="form-group">
+                      <label>默认值</label>
+                      <input 
+                        type="text" 
+                        name="defaultValue" 
+                        className="cyber-input" 
+                        defaultValue={editingField?.defaultValue || ''} 
+                        placeholder="例如：CURRENT_TIMESTAMP" 
+                      />
+                      <small className="form-helper">字段的默认值，可以是具体值或SQL函数</small>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>备注</label>
+                      <textarea 
+                        name="comment" 
+                        className="cyber-textarea" 
+                        defaultValue={editingField?.comment || ''} 
+                        placeholder="字段的备注信息"
+                      ></textarea>
+                      <small className="form-helper">对字段的详细描述，将显示在数据库注释中</small>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="modal-footer">
-                <button type="button" className="cancel-btn" onClick={() => setIsFieldModalOpen(false)}>取消</button>
+                <button type="button" className="cancel-btn" onClick={closeFieldModal}>取消</button>
                 <button type="submit" className="confirm-btn">确定</button>
               </div>
             </form>
@@ -686,18 +867,23 @@ const StandardFieldsLibrary: React.FC = () => {
         </div>
       </div>
     );
+    
+    return ReactDOM.createPortal(
+      modalContent,
+      document.body
+    );
   };
 
   // 打开管理模态框
   const openManagementModal = () => {
     setIsManagementModalOpen(true);
-    setActiveGroupInManagement(fieldGroups.length > 0 ? fieldGroups[0].id : null);
+    setActiveGroup(fieldGroups.length > 0 ? fieldGroups[0] : null);
   };
 
   // 关闭管理模态框
   const closeManagementModal = () => {
     setIsManagementModalOpen(false);
-    setActiveGroupInManagement(null);
+    setActiveGroup(null);
   };
 
   // 渲染字段库管理模态框
@@ -705,15 +891,23 @@ const StandardFieldsLibrary: React.FC = () => {
     if (!isManagementModalOpen) return null;
     
     // 找到当前选中的分组
-    const activeGroup = fieldGroups.find(group => group.id === activeGroupInManagement);
+    const currentActiveGroup = activeGroup ? fieldGroups.find(group => group.id === activeGroup.id) : null;
     
-    // 使用ReactDOM.createPortal将模态框渲染到body
-    return (
+    // 模态框内容
+    const modalContent = (
       <div className="modal-backdrop visible" onClick={closeManagementModal}>
         <div className="management-modal" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
             <h3>标准字段库管理</h3>
-            <button className="close-btn" onClick={closeManagementModal}>×</button>
+            <div className="modal-header-actions">
+              <button className="import-export-btn" onClick={exportStandardFields} title="导出字段库">
+                <ExportOutlined />
+              </button>
+              <button className="import-export-btn" onClick={triggerImportDialog} title="导入字段库">
+                <ImportOutlined />
+              </button>
+              <button className="close-btn" onClick={closeManagementModal}>×</button>
+            </div>
           </div>
           
           <div className="management-body">
@@ -732,19 +926,22 @@ const StandardFieldsLibrary: React.FC = () => {
                 {fieldGroups.map(group => (
                   <div 
                     key={group.id}
-                    className={`group-item ${group.id === activeGroupInManagement ? 'active' : ''}`}
-                    onClick={() => setActiveGroupInManagement(group.id)}
+                    className={`group-item ${activeGroup && group.id === activeGroup.id ? 'active' : ''}`}
+                    onClick={() => setActiveGroup(group)}
                   >
-                    <div>
+                    <div className="group-item-info">
                       <div className="group-name">{group.name}</div>
                       <div className="group-code">{group.code}</div>
                     </div>
                     <div className="group-actions">
                       <button
+                        className="delete-btn"
                         title="删除分组"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteGroup(group.id);
+                          if (confirm(`确定要删除分组 "${group.name}" 吗？此操作不可撤销。`)) {
+                            handleDeleteGroup(group.id);
+                          }
                         }}
                       >
                         <DeleteOutlined />
@@ -756,18 +953,17 @@ const StandardFieldsLibrary: React.FC = () => {
             </div>
             
             <div className="management-content">
-              {activeGroup ? (
+              {currentActiveGroup ? (
                 <>
                   <div className="fields-header">
-                    <h4>{activeGroup.name} 字段列表</h4>
+                    <h4>{currentActiveGroup.name} 字段列表</h4>
                     <div className="fields-actions">
                       <button 
                         className="add-field-btn"
                         onClick={() => {
-                          setSelectedGroupId(activeGroup.id);
-                          setIsEditingField(false);
-                          setSelectedField(null);
-                          setIsFieldModalOpen(true);
+                          setEditingGroup(currentActiveGroup);
+                          setEditingField(null);
+                          setIsAddFieldModalOpen(true);
                         }}
                       >
                         <PlusOutlined /> 添加字段
@@ -776,28 +972,22 @@ const StandardFieldsLibrary: React.FC = () => {
                   </div>
                   
                   <div className="fields-table-container">
-                    <table className="fields-table">
-                      <thead>
-                        <tr>
-                          <th style={{ width: '20%' }}>名称</th>
-                          <th style={{ width: '15%' }}>代码</th>
-                          <th style={{ width: '15%' }}>类型</th>
-                          <th style={{ width: '10%' }}>主键</th>
-                          <th style={{ width: '10%' }}>非空</th>
-                          <th style={{ width: '10%' }}>自增</th>
-                          <th style={{ width: '20%' }}>备注</th>
-                          <th style={{ width: '10%' }}>操作</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeGroup.fields.length === 0 ? (
+                    {currentActiveGroup.fields.length > 0 ? (
+                      <table className="fields-table">
+                        <thead>
                           <tr>
-                            <td colSpan={8} style={{textAlign: 'center', padding: '20px'}}>
-                              暂无字段，请添加
-                            </td>
+                            <th style={{ width: '20%' }}>名称</th>
+                            <th style={{ width: '15%' }}>代码</th>
+                            <th style={{ width: '15%' }}>类型</th>
+                            <th style={{ width: '10%' }}>主键</th>
+                            <th style={{ width: '10%' }}>非空</th>
+                            <th style={{ width: '10%' }}>自增</th>
+                            <th style={{ width: '20%' }}>备注</th>
+                            <th style={{ width: '10%' }}>操作</th>
                           </tr>
-                        ) : (
-                          activeGroup.fields.map(field => (
+                        </thead>
+                        <tbody>
+                          {currentActiveGroup.fields.map(field => (
                             <tr key={field.id}>
                               <td>{field.name}</td>
                               <td>{field.code}</td>
@@ -815,34 +1005,62 @@ const StandardFieldsLibrary: React.FC = () => {
                               <td>
                                 <div className="table-actions">
                                   <button
+                                    className="edit-btn"
                                     title="编辑"
-                                    onClick={() => {
-                                      setSelectedGroupId(activeGroup.id);
-                                      setSelectedField(field);
-                                      setIsEditingField(true);
-                                      setIsFieldModalOpen(true);
+                                    onClick={(e) => {
+                                      setEditingGroup(currentActiveGroup);
+                                      setEditingField(field);
+                                      setIsAddFieldModalOpen(true);
                                     }}
                                   >
                                     <EditOutlined />
                                   </button>
                                   <button
+                                    className="delete-btn"
                                     title="删除"
-                                    onClick={() => handleDeleteField(activeGroup.id, field.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm(`确定要删除字段 "${field.name}" 吗？`)) {
+                                        handleDeleteField(currentActiveGroup.id, field.id);
+                                      }
+                                    }}
                                   >
                                     <DeleteOutlined />
                                   </button>
                                 </div>
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="no-fields-message">
+                        <p>该分组暂无字段</p>
+                        <button 
+                          className="add-group-btn"
+                          onClick={() => {
+                            setEditingGroup(currentActiveGroup);
+                            setEditingField(null);
+                            setIsAddFieldModalOpen(true);
+                          }}
+                        >
+                          <PlusOutlined />
+                          添加字段
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
                 <div className="no-group-selected">
                   <p>请选择或创建一个字段分组</p>
+                  <button 
+                    className="add-group-btn"
+                    onClick={() => setIsAddGroupModalOpen(true)}
+                  >
+                    <PlusOutlined />
+                    添加新分组
+                  </button>
                 </div>
               )}
             </div>
@@ -855,60 +1073,91 @@ const StandardFieldsLibrary: React.FC = () => {
         </div>
       </div>
     );
+    
+    // 使用ReactDOM.createPortal将模态框渲染到body
+    return ReactDOM.createPortal(
+      modalContent,
+      document.body
+    );
   };
 
+  // 确保组件加载时执行一次初始化，关闭所有模态框
+  useEffect(() => {
+    // 关闭所有模态框
+    setIsAddFieldModalOpen(false);
+    setIsAddGroupModalOpen(false);
+    setIsManagementModalOpen(false);
+    setShowAdvancedOptions(false);
+    
+    // 重置编辑状态
+    setEditingField(null);
+    setEditingGroup(null);
+  }, []);
+
   return (
-    <>
-      <div className={`standard-fields-library ${collapsed ? 'collapsed' : ''}`}>
-        <button 
-          className="toggle-button"
-          onClick={toggleCollapsed}
-          title={collapsed ? '展开标准字段库' : '收起标准字段库'}
-        >
-          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          {!collapsed && <span>标准字段库</span>}
-        </button>
-        
-        {!collapsed && (
-          <div className="library-content">
-            <div className="library-header">
-              <h2>标准字段库</h2>
-              <div className="header-actions">
-                <button title="管理字段库" onClick={openManagementModal}>
-                  <SettingOutlined />
-                  管理
-                </button>
-                <button title="添加分组" onClick={() => setIsAddGroupModalOpen(true)}>
-                  <PlusOutlined />
-                  添加分组
-                </button>
-              </div>
-            </div>
-            
-            <div className="search-container">
-              <div className="search-box">
-                <SearchOutlined />
-                <input
-                  type="text"
-                  placeholder="搜索字段..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <div className="field-groups-container">
-              {renderFieldGroups()}
-            </div>
-          </div>
-        )}
+    <div className={`standard-fields-library ${collapsed ? 'collapsed' : ''}`}>
+      <div className="toggle-button" onClick={() => setCollapsed(!collapsed)}>
+        {collapsed ? <RightOutlined /> : <LeftOutlined />}
       </div>
       
-      {/* 模态框放在组件外部，避免受组件布局影响 */}
-      {renderAddGroupModal()}
-      {renderFieldModal()}
+      <div className="library-content">
+        <div className="library-header">
+          <h2>标准字段库</h2>
+          <div className="header-actions">
+            <button onClick={exportStandardFields} title="导出字段库">
+              <ExportOutlined />
+            </button>
+            <button onClick={() => setIsManagementModalOpen(true)} title="管理字段库">
+              <SettingOutlined />
+              <span>管理</span>
+            </button>
+          </div>
+        </div>
+        
+        <div className="search-container">
+          <div className="search-box">
+            <SearchOutlined />
+            <input
+              type="text"
+              placeholder="搜索字段..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button className="clear-search" onClick={() => setSearchTerm('')}>
+                <CloseOutlined />
+              </button>
+            )}
+          </div>
+          <div className="drag-tip">
+            <InfoCircleOutlined />
+            <span>拖拽字段到设计器中使用</span>
+          </div>
+        </div>
+        
+        <div className="field-groups-container">
+          {renderFieldGroups()}
+        </div>
+      </div>
+      
+      {/* 管理模态框 */}
       {renderManagementModal()}
-    </>
+      
+      {/* 添加分组模态框 */}
+      {renderAddGroupModal()}
+      
+      {/* 添加/编辑字段模态框 */}
+      {renderFieldModal()}
+      
+      {/* 文件导入输入 */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        accept=".json"
+        onChange={importStandardFields}
+      />
+    </div>
   );
 };
 
