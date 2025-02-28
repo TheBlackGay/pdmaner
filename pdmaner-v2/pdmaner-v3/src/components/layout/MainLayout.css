@@ -162,6 +162,7 @@
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
   z-index: 10;
   border-right: 1px solid rgba(86, 204, 242, 0.15);
+  position: relative;
 }
 
 .menu-panel.collapsed {
@@ -265,6 +266,11 @@
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  z-index: 100;
+}
+
+.collapsed .collapse-btn {
+  margin-left: 0;
 }
 
 .collapse-btn::before {

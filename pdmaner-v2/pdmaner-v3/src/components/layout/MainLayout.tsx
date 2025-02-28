@@ -95,7 +95,7 @@ const MainLayout: React.FC = () => {
   const [isNewTableModalOpen, setIsNewTableModalOpen] = useState(false);
   const [newTableDomainId, setNewTableDomainId] = useState('');
   const [newTableDomainName, setNewTableDomainName] = useState('');
-  
+
   // 添加重命名表模态框状态
   const [isRenameTableModalOpen, setIsRenameTableModalOpen] = useState(false);
   const [tableToRename, setTableToRename] = useState<{id: string, name: string} | null>(null);
@@ -304,7 +304,7 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     const path = location.pathname;
     console.log('路由变化:', path);
-    
+
     if (path === '/app') {
       navigate('/app/entity/tables');
     } else if (path.startsWith('/app/table/')) {
@@ -312,7 +312,7 @@ const MainLayout: React.FC = () => {
       const tableId = path.split('/').pop();
       if (tableId) {
         console.log('当前是表详情页，tableId:', tableId);
-        
+
         // 查找对应的表数据
         if (currentProject && currentProject.tables) {
           const tableData = currentProject.tables.find(t => t.id === tableId);
@@ -320,7 +320,7 @@ const MainLayout: React.FC = () => {
             // 创建表详情标签
             const tabKey = `table_${tableId}`;
             const tabExists = tabs.find(tab => tab.type === tabKey);
-            
+
             if (!tabExists) {
               let newTab = {
                 id: `${tabKey}-${Date.now()}`,
@@ -328,10 +328,10 @@ const MainLayout: React.FC = () => {
                 type: tabKey,
                 icon: <TableOutlined />
               };
-              
+
               setTabs(prevTabs => [...prevTabs, newTab]);
             }
-            
+
             setActiveTab(tabKey);
           }
         }
@@ -791,7 +791,7 @@ const MainLayout: React.FC = () => {
               // 生成新的唯一ID
               const newTableId = generateUUID();
               const now = Date.now();
-              
+
               // 创建新表的复制品
               const newTable = {
                 ...tableToCopy,
@@ -801,23 +801,23 @@ const MainLayout: React.FC = () => {
                 createTime: now,
                 lastModified: now
               };
-              
+
               // 更新项目表数据
               const updatedTables = [...currentProject.tables, newTable];
-              
+
               // 创建更新后的项目对象
               const updatedProject = {
                 ...currentProject,
                 tables: updatedTables,
                 lastModified: now
               };
-              
+
               // 更新Redux状态
               dispatch(setCurrentProject(updatedProject));
-              
+
               // 保存到localStorage
               saveProject(updatedProject);
-              
+
               // 创建新表菜单项
               const newTableMenuItem: MenuItem = {
                 key: `table_${newTableId}`,
@@ -828,7 +828,7 @@ const MainLayout: React.FC = () => {
                 icon: <TableOutlined />,
                 parentDomainId: newTable.domainId
               };
-              
+
               // 更新tableItems，添加复制的表
               setTableItems(prev => {
                 const newTableItems = {...prev};
@@ -838,10 +838,10 @@ const MainLayout: React.FC = () => {
                 newTableItems[newTable.domainId] = [...newTableItems[newTable.domainId], newTableMenuItem];
                 return newTableItems;
               });
-              
+
               // 确保对应的"数据表"菜单是展开的
               toggleMenuExpand(`tables_${newTable.domainId}`);
-              
+
               console.log(`表 ${tableId} 已复制为 ${newTableId}`);
             }
           }
@@ -855,20 +855,20 @@ const MainLayout: React.FC = () => {
             if (tableId && currentProject) {
               // 过滤掉要删除的表
               const updatedTables = currentProject.tables.filter(table => table.id !== tableId);
-              
+
               // 创建更新后的项目对象
               const updatedProject = {
                 ...currentProject,
                 tables: updatedTables,
                 lastModified: Date.now()
               };
-              
+
               // 更新Redux状态
               dispatch(setCurrentProject(updatedProject));
-              
+
               // 保存到localStorage
               saveProject(updatedProject);
-              
+
               // 更新tableItems，移除被删除的表
               setTableItems(prev => {
                 const newTableItems = {...prev};
@@ -877,7 +877,7 @@ const MainLayout: React.FC = () => {
                 }
                 return newTableItems;
               });
-              
+
               // 如果当前在该表的详情页，则返回到实体列表页
               if (location.pathname.includes(`/app/table/${tableId}`)) {
                 const tableInfo = getSelectedTable();
@@ -887,7 +887,7 @@ const MainLayout: React.FC = () => {
                   navigate('/app/entity/tables');
                 }
               }
-              
+
               console.log(`表 ${tableId} 已删除`);
             }
           }
@@ -1272,24 +1272,24 @@ const MainLayout: React.FC = () => {
       if (match && match[1]) {
         const tableId = match[1];
         console.log('当前URL是表详情页，tableId:', tableId);
-        
+
         // 找到对应的表菜单项
         for (const domainId in tablesByDomain) {
           const foundTable = tablesByDomain[domainId].find(item => item.id === tableId);
           if (foundTable) {
             console.log('找到当前表的菜单项:', foundTable);
             setSelectedTableKey(foundTable.key);
-            
+
             // 确保主题域和表列表被展开
             setTimeout(() => {
               const domainKey = `domain_${domainId}`;
               const tablesKey = `tables_${domainId}`;
-              
+
               console.log('自动展开菜单:', domainKey, tablesKey);
               toggleMenuExpand(domainKey);
               toggleMenuExpand(tablesKey);
             }, 100);
-            
+
             break;
           }
         }
@@ -1445,50 +1445,50 @@ const MainLayout: React.FC = () => {
   // 添加处理重命名表确认的函数
   const handleRenameTableConfirm = (newName: string) => {
     if (!tableToRename || !currentProject) return;
-    
+
     // 创建更新后的表对象
     const tableId = tableToRename.id;
     const tableData = currentProject.tables.find(table => table.id === tableId);
-    
+
     if (tableData) {
       const updatedTable = {
         ...tableData,
         name: newName.trim(),
         lastModified: Date.now()
       };
-      
+
       // 更新项目表数据
-      const updatedTables = currentProject.tables.map(table => 
+      const updatedTables = currentProject.tables.map(table =>
         table.id === tableId ? updatedTable : table
       );
-      
+
       // 创建更新后的项目对象
       const updatedProject = {
         ...currentProject,
         tables: updatedTables,
         lastModified: Date.now()
       };
-      
+
       // 更新Redux状态
       dispatch(setCurrentProject(updatedProject));
-      
+
       // 保存到localStorage
       saveProject(updatedProject);
-      
+
       // 更新tableItems中的表名
       setTableItems(prev => {
         const newTableItems = {...prev};
         for (const domainId in newTableItems) {
-          newTableItems[domainId] = newTableItems[domainId].map(item => 
+          newTableItems[domainId] = newTableItems[domainId].map(item =>
             item.id === tableId ? {...item, title: newName.trim()} : item
           );
         }
         return newTableItems;
       });
-      
+
       console.log(`表 ${tableId} 已重命名为 ${newName}`);
     }
-    
+
     // 重置状态
     setTableToRename(null);
   };
@@ -1540,10 +1540,8 @@ const MainLayout: React.FC = () => {
         {/* 左侧菜单面板 */}
         <aside className={`menu-panel ${collapsed ? 'collapsed' : ''}`}>
           <div className="panel-header">
-            <h3>PDManer</h3>
+            <h3>{collapsed ? '' : 'PDManer'}</h3>
             <div className="panel-actions">
-              <button className="action-btn" title="搜索"><SearchOutlined /></button>
-              <button className="action-btn" title="刷新"><ReloadOutlined /></button>
               <button className="collapse-btn" onClick={toggleCollapsed}>
                 {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               </button>
