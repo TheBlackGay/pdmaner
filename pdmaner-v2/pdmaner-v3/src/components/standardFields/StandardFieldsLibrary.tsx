@@ -22,7 +22,11 @@ import {
   LeftOutlined,
   RightOutlined,
   CloseOutlined,
-  MenuOutlined
+  MenuOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  VerticalAlignTopOutlined,
+  VerticalAlignBottomOutlined
 } from '@ant-design/icons';
 import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
@@ -170,18 +174,26 @@ const StandardFieldsLibrary: React.FC = () => {
     const saveTimeout = setTimeout(() => {
       // 保存到项目
       if (currentProject && dispatch) {
-        dispatch(setCurrentProject({
-          ...currentProject,
-          standardFields: fieldGroups
-        }));
-        // 可选：添加保存成功提示
-        // success('标准字段库已自动保存');
+        const currentStandardFields = currentProject.standardFields || [];
+        
+        // 对比当前字段组和项目中的字段组是否有实质变化
+        const isEqual = JSON.stringify(currentStandardFields) === JSON.stringify(fieldGroups);
+        
+        // 只有当有变化时才更新
+        if (!isEqual) {
+          dispatch(setCurrentProject({
+            ...currentProject,
+            standardFields: fieldGroups
+          }));
+          // 可选：添加保存成功提示
+          // success('标准字段库已自动保存');
+        }
       }
     }, 2000);
 
     // 清除上一次的定时器
     return () => clearTimeout(saveTimeout);
-  }, [fieldGroups, currentProject, dispatch]);
+  }, [fieldGroups]); // 移除currentProject和dispatch依赖，只在fieldGroups变化时触发
 
   // 收起/展开标准字段库
   const toggleCollapsed = () => {
@@ -526,6 +538,59 @@ const StandardFieldsLibrary: React.FC = () => {
     setDraggingField(null);
   };
 
+  // 添加字段顺序调整函数
+  const handleMoveField = (groupId: string, fieldId: string, direction: 'top' | 'up' | 'down' | 'bottom') => {
+    const groupIndex = fieldGroups.findIndex(g => g.id === groupId);
+    if (groupIndex === -1) return;
+    
+    const group = fieldGroups[groupIndex];
+    const fieldIndex = group.fields.findIndex(f => f.id === fieldId);
+    if (fieldIndex === -1) return;
+    
+    const newFields = [...group.fields];
+    const fieldToMove = newFields[fieldIndex];
+    
+    // 根据方向移动字段
+    switch (direction) {
+      case 'top':
+        // 移动到顶部
+        newFields.splice(fieldIndex, 1);
+        newFields.unshift(fieldToMove);
+        break;
+      case 'up':
+        // 如果不是第一个，向上移动
+        if (fieldIndex > 0) {
+          newFields.splice(fieldIndex, 1);
+          newFields.splice(fieldIndex - 1, 0, fieldToMove);
+        }
+        break;
+      case 'down':
+        // 如果不是最后一个，向下移动
+        if (fieldIndex < newFields.length - 1) {
+          newFields.splice(fieldIndex, 1);
+          newFields.splice(fieldIndex + 1, 0, fieldToMove);
+        }
+        break;
+      case 'bottom':
+        // 移动到底部
+        newFields.splice(fieldIndex, 1);
+        newFields.push(fieldToMove);
+        break;
+    }
+    
+    // 更新字段组
+    const updatedGroups = [...fieldGroups];
+    updatedGroups[groupIndex] = {
+      ...group,
+      fields: newFields
+    };
+    
+    setFieldGroups(updatedGroups);
+    
+    // 显示成功提示
+    success(`字段 "${fieldToMove.name}" 位置已调整`);
+  };
+
   // 渲染字段分组
   const renderFieldGroups = () => {
     const filteredGroups = getFilteredGroups();
@@ -596,11 +661,12 @@ const StandardFieldsLibrary: React.FC = () => {
     ));
   };
 
-  // 渲染添加分组模态框
+  // 渲染添加分组的模态框
   const renderAddGroupModal = () => {
+    // 使用与字段模态框相同的模式，不再使用条件渲染
     if (!isAddGroupModalOpen) return null;
     
-    const modalContent = (
+    return ReactDOM.createPortal(
       <div className="modal-backdrop visible" onClick={() => setIsAddGroupModalOpen(false)}>
         <div className="modal-container" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
@@ -611,12 +677,11 @@ const StandardFieldsLibrary: React.FC = () => {
             <form onSubmit={(e) => {
               e.preventDefault();
               const form = e.target as HTMLFormElement;
-              const formData = new FormData(form);
-              const name = formData.get('name') as string;
-              const code = formData.get('code') as string;
+              const name = form.groupName.value;
+              const code = form.groupCode.value;
               
               if (!name.trim() || !code.trim()) {
-                alert('名称和代码不能为空');
+                alert('分组名称和代码不能为空');
                 return;
               }
               
@@ -626,7 +691,7 @@ const StandardFieldsLibrary: React.FC = () => {
                 <label>分组名称 <span className="required">*</span></label>
                 <input 
                   type="text" 
-                  name="name" 
+                  name="groupName" 
                   className="cyber-input" 
                   placeholder="例如：基础字段" 
                   required 
@@ -637,7 +702,7 @@ const StandardFieldsLibrary: React.FC = () => {
                 <label>分组代码 <span className="required">*</span></label>
                 <input 
                   type="text" 
-                  name="code" 
+                  name="groupCode" 
                   className="cyber-input" 
                   placeholder="例如：base" 
                   required 
@@ -651,11 +716,7 @@ const StandardFieldsLibrary: React.FC = () => {
             </form>
           </div>
         </div>
-      </div>
-    );
-    
-    return ReactDOM.createPortal(
-      modalContent,
+      </div>,
       document.body
     );
   };
@@ -669,11 +730,27 @@ const StandardFieldsLibrary: React.FC = () => {
     setEditingGroup(null);
   };
 
+  // 修复编辑字段按钮
+  const handleEditFieldClick = (e: React.MouseEvent, group: FieldGroup, field: StandardField) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    e.preventDefault(); // 阻止默认行为
+    
+    // 设置编辑状态
+    setEditingGroup(group);
+    setEditingField(field);
+    
+    // 打开编辑模态框
+    setIsAddFieldModalOpen(true);
+    
+    // 提供用户反馈
+    console.log('编辑字段:', field.name);
+  };
+
   // 渲染字段编辑/添加模态框
   const renderFieldModal = () => {
     if (!isAddFieldModalOpen) return null;
     
-    const modalContent = (
+    return ReactDOM.createPortal(
       <div className="modal-backdrop visible" onClick={closeFieldModal}>
         <div className="modal-container" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
@@ -865,19 +942,17 @@ const StandardFieldsLibrary: React.FC = () => {
             </form>
           </div>
         </div>
-      </div>
-    );
-    
-    return ReactDOM.createPortal(
-      modalContent,
+      </div>,
       document.body
     );
   };
 
   // 打开管理模态框
   const openManagementModal = () => {
+    console.log('打开管理模态框');
     setIsManagementModalOpen(true);
     setActiveGroup(fieldGroups.length > 0 ? fieldGroups[0] : null);
+    console.log('管理模态框状态设置为:', true);
   };
 
   // 关闭管理模态框
@@ -886,25 +961,42 @@ const StandardFieldsLibrary: React.FC = () => {
     setActiveGroup(null);
   };
 
-  // 渲染字段库管理模态框
+  // 渲染管理模态框
   const renderManagementModal = () => {
+    // 使用与其他模态框相同的模式，不再使用条件渲染
+    const currentActiveGroup = activeGroup;
+    
+    // 使用Portal将模态框渲染到body上，避免嵌套上下文限制
     if (!isManagementModalOpen) return null;
     
-    // 找到当前选中的分组
-    const currentActiveGroup = activeGroup ? fieldGroups.find(group => group.id === activeGroup.id) : null;
-    
-    // 模态框内容
-    const modalContent = (
-      <div className="modal-backdrop visible" onClick={closeManagementModal}>
+    return ReactDOM.createPortal(
+      <div className="modal-backdrop visible" onClick={(e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        closeManagementModal(); // 关闭模态框
+      }}>
         <div className="management-modal" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
             <h3>标准字段库管理</h3>
             <div className="modal-header-actions">
-              <button className="import-export-btn" onClick={exportStandardFields} title="导出字段库">
-                <ExportOutlined />
-              </button>
-              <button className="import-export-btn" onClick={triggerImportDialog} title="导入字段库">
+              <button 
+                className="import-export-btn" 
+                title="导入字段库" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerImportDialog();
+                }}
+              >
                 <ImportOutlined />
+              </button>
+              <button 
+                className="import-export-btn" 
+                title="导出字段库" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  exportStandardFields();
+                }}
+              >
+                <ExportOutlined />
               </button>
               <button className="close-btn" onClick={closeManagementModal}>×</button>
             </div>
@@ -960,10 +1052,25 @@ const StandardFieldsLibrary: React.FC = () => {
                     <div className="fields-actions">
                       <button 
                         className="add-field-btn"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation(); // 阻止事件冒泡
+                          console.log('添加字段按钮点击');
+                          
+                          // 确保有选中的分组
+                          if (!currentActiveGroup) {
+                            alert('请先选择一个字段分组');
+                            return;
+                          }
+                          
+                          console.log('当前活动分组:', currentActiveGroup.name);
+                          
                           setEditingGroup(currentActiveGroup);
                           setEditingField(null);
+                          
+                          // 直接将模态框设置为可见
                           setIsAddFieldModalOpen(true);
+                          
+                          console.log('添加字段模态框状态设置为:', true);
                         }}
                       >
                         <PlusOutlined /> 添加字段
@@ -973,16 +1080,16 @@ const StandardFieldsLibrary: React.FC = () => {
                   
                   <div className="fields-table-container">
                     {currentActiveGroup.fields.length > 0 ? (
-                      <table className="fields-table">
+                      <table className="fields-table" id="standard-fields-table">
                         <thead>
                           <tr>
                             <th style={{ width: '20%' }}>名称</th>
                             <th style={{ width: '15%' }}>代码</th>
                             <th style={{ width: '15%' }}>类型</th>
-                            <th style={{ width: '10%' }}>主键</th>
-                            <th style={{ width: '10%' }}>非空</th>
-                            <th style={{ width: '10%' }}>自增</th>
-                            <th style={{ width: '20%' }}>备注</th>
+                            <th style={{ width: '8%' }}>主键</th>
+                            <th style={{ width: '8%' }}>非空</th>
+                            <th style={{ width: '8%' }}>自增</th>
+                            <th style={{ width: '16%' }}>备注</th>
                             <th style={{ width: '10%' }}>操作</th>
                           </tr>
                         </thead>
@@ -1007,11 +1114,7 @@ const StandardFieldsLibrary: React.FC = () => {
                                   <button
                                     className="edit-btn"
                                     title="编辑"
-                                    onClick={(e) => {
-                                      setEditingGroup(currentActiveGroup);
-                                      setEditingField(field);
-                                      setIsAddFieldModalOpen(true);
-                                    }}
+                                    onClick={(e) => handleEditFieldClick(e, currentActiveGroup, field)}
                                   >
                                     <EditOutlined />
                                   </button>
@@ -1038,10 +1141,25 @@ const StandardFieldsLibrary: React.FC = () => {
                         <p>该分组暂无字段</p>
                         <button 
                           className="add-group-btn"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation(); // 阻止事件冒泡
+                            console.log('添加字段按钮点击');
+                            
+                            // 确保有选中的分组
+                            if (!currentActiveGroup) {
+                              alert('请先选择一个字段分组');
+                              return;
+                            }
+                            
+                            console.log('当前活动分组:', currentActiveGroup.name);
+                            
                             setEditingGroup(currentActiveGroup);
                             setEditingField(null);
+                            
+                            // 直接将模态框设置为可见
                             setIsAddFieldModalOpen(true);
+                            
+                            console.log('添加字段模态框状态设置为:', true);
                           }}
                         >
                           <PlusOutlined />
@@ -1071,27 +1189,19 @@ const StandardFieldsLibrary: React.FC = () => {
             <button className="confirm-btn save-btn" onClick={handleSaveStandardFields}>保存</button>
           </div>
         </div>
-      </div>
-    );
-    
-    // 使用ReactDOM.createPortal将模态框渲染到body
-    return ReactDOM.createPortal(
-      modalContent,
+      </div>,
       document.body
     );
   };
 
-  // 确保组件加载时执行一次初始化，关闭所有模态框
+  // 组件加载时确保所有模态框都是关闭状态
   useEffect(() => {
-    // 关闭所有模态框
-    setIsAddFieldModalOpen(false);
-    setIsAddGroupModalOpen(false);
     setIsManagementModalOpen(false);
-    setShowAdvancedOptions(false);
-    
-    // 重置编辑状态
+    setIsAddGroupModalOpen(false);
+    setIsAddFieldModalOpen(false);
     setEditingField(null);
     setEditingGroup(null);
+    setShowAdvancedOptions(false);
   }, []);
 
   return (
@@ -1107,7 +1217,21 @@ const StandardFieldsLibrary: React.FC = () => {
             <button onClick={exportStandardFields} title="导出字段库">
               <ExportOutlined />
             </button>
-            <button onClick={() => setIsManagementModalOpen(true)} title="管理字段库">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation(); // 阻止事件冒泡
+                console.log('管理按钮被点击，准备打开管理模态框');
+                // 确保即使有可能的闭包问题也能正确设置状态
+                setIsManagementModalOpen(true);
+                setActiveGroup(fieldGroups.length > 0 ? fieldGroups[0] : null);
+                // 使用timeout确保DOM更新
+                setTimeout(() => {
+                  console.log('管理模态框状态应该已经设置为:', true);
+                  console.log('当前模态框状态:', document.querySelector('.modal-backdrop.visible') ? '可见' : '不可见');
+                }, 100);
+              }} 
+              title="管理字段库"
+            >
               <SettingOutlined />
               <span>管理</span>
             </button>

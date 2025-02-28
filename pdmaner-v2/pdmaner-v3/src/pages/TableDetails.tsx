@@ -177,9 +177,11 @@ const TableDetails: React.FC = () => {
 
   // 添加新字段
   const handleAddField = () => {
+    console.log('添加字段按钮被点击'); // 添加调试输出
     setSelectedField(null);
     setIsEditing(false);
     setIsFieldModalOpen(true);
+    console.log('isFieldModalOpen 设置为:', true); // 添加调试输出
   };
 
   // 编辑字段
@@ -804,18 +806,18 @@ const TableDetails: React.FC = () => {
                       <td className="default-value-cell">{field.defaultValue || '-'}</td>
                       <td className="comment-cell">{field.comment || '-'}</td>
                       <td className="actions-cell">
-                        <button title="向上移动" className="table-action-btn" onClick={(e) => {
-                          e.stopPropagation();
-                          handleMoveField(field.id, 'up');
-                        }}>
-                          <UpOutlined />
-                        </button>
-                        <button title="向下移动" className="table-action-btn" onClick={(e) => {
-                          e.stopPropagation();
-                          handleMoveField(field.id, 'down');
-                        }}>
-                          <DownOutlined />
-                        </button>
+                        {/*<button title="向上移动" className="table-action-btn" onClick={(e) => {*/}
+                        {/*  e.stopPropagation();*/}
+                        {/*  handleMoveField(field.id, 'up');*/}
+                        {/*}}>*/}
+                        {/*  <UpOutlined />*/}
+                        {/*</button>*/}
+                        {/*<button title="向下移动" className="table-action-btn" onClick={(e) => {*/}
+                        {/*  e.stopPropagation();*/}
+                        {/*  handleMoveField(field.id, 'down');*/}
+                        {/*}}>*/}
+                        {/*  <DownOutlined />*/}
+                        {/*</button>*/}
                         <button title="编辑" className="table-action-btn" onClick={(e) => {
                           e.stopPropagation();
                           handleEditField(field);
@@ -1143,8 +1145,8 @@ const TableDetails: React.FC = () => {
 
       {/* 字段编辑模态框 */}
       {isFieldModalOpen && (
-        <div className="modal-backdrop">
-          <div className="modal-container cyber-card">
+        <div className="modal-backdrop" onClick={e => e.stopPropagation()}>
+          <div className="modal-container cyber-card" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="cyber-title">{isEditing ? '编辑字段' : '新建字段'}</h2>
               <button className="close-btn" onClick={() => setIsFieldModalOpen(false)}>×</button>
