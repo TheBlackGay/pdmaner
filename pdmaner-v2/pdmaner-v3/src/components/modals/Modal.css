@@ -1,16 +1,17 @@
-/* 弹窗背景 */
+/* 弹窗背景 - 赛博朋克风格 */
 .modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(10, 12, 26, 0.85);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.25s ease-out;
 }
 
 @keyframes fadeIn {
@@ -20,12 +21,29 @@
 
 /* 弹窗容器 */
 .modal-container {
-  background-color: white;
+  background-color: #12152d;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(5, 217, 232, 0.3);
   width: 100%;
   max-width: 480px;
-  animation: slideIn 0.2s ease-out;
+  animation: slideIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  border: 1px solid rgba(5, 217, 232, 0.2);
+  overflow: hidden;
+}
+
+.modal-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    #05d9e8 20%, 
+    #a239ca 80%, 
+    transparent 100%);
 }
 
 @keyframes slideIn {
@@ -35,117 +53,220 @@
 
 /* 弹窗头部 */
 .modal-header {
-  padding: 16px 24px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(5, 217, 232, 0.15);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: rgba(10, 12, 26, 0.5);
+  position: relative;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 15%;
+  width: 70%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(5, 217, 232, 0.5) 20%, 
+    rgba(5, 217, 232, 0.5) 80%, 
+    transparent 100%);
 }
 
 .modal-header h2 {
   margin: 0;
   font-size: 18px;
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: #05d9e8;
+  text-shadow: 0 0 10px rgba(5, 217, 232, 0.4);
+  letter-spacing: 0.5px;
 }
 
 /* 关闭按钮 */
 .close-btn {
   background: none;
   border: none;
-  font-size: 16px;
-  color: #999;
+  font-size: 20px;
+  color: #c8c8ff;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
 }
 
 .close-btn:hover {
-  color: #666;
+  color: #ff2a6d;
+  text-shadow: 0 0 8px rgba(255, 42, 109, 0.6);
+  background-color: rgba(255, 42, 109, 0.1);
 }
 
 /* 弹窗内容 */
 .modal-body {
   padding: 24px;
+  color: #e0e0ff;
 }
 
 /* 错误消息 */
 .error-message {
-  color: #ff4d4f;
-  margin-bottom: 16px;
-  padding: 8px 12px;
-  background-color: #fff1f0;
-  border: 1px solid #ffccc7;
+  color: #ff2a6d;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background-color: rgba(255, 42, 109, 0.1);
+  border: 1px solid rgba(255, 42, 109, 0.3);
   border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.error-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #ff2a6d, #a239ca);
 }
 
 /* 表单组 */
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-size: 14px;
-  color: #555;
+  color: #c8c8ff;
+  font-weight: 500;
 }
 
 .required {
-  color: #ff4d4f;
+  color: #ff2a6d;
   margin-right: 4px;
+  text-shadow: 0 0 4px rgba(255, 42, 109, 0.6);
 }
 
 .form-group input {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d9d9d9;
+  padding: 10px 14px;
+  border: 1px solid rgba(5, 217, 232, 0.3);
   border-radius: 4px;
   font-size: 14px;
+  background-color: rgba(10, 12, 26, 0.7);
+  color: #e0e0ff;
   transition: all 0.3s;
 }
 
 .form-group input:focus {
-  border-color: #40a9ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  border-color: #05d9e8;
+  box-shadow: 0 0 0 2px rgba(5, 217, 232, 0.2), 0 0 8px rgba(5, 217, 232, 0.4);
   outline: none;
 }
 
 /* 弹窗底部 */
 .modal-footer {
   padding: 16px 24px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid rgba(5, 217, 232, 0.15);
   text-align: right;
+  background-color: rgba(10, 12, 26, 0.3);
+  position: relative;
+}
+
+.modal-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  width: 70%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(5, 217, 232, 0.3) 20%, 
+    rgba(5, 217, 232, 0.3) 80%, 
+    transparent 100%);
 }
 
 .modal-footer button {
-  margin-left: 8px;
-  padding: 8px 16px;
+  margin-left: 12px;
+  padding: 8px 20px;
   border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-footer button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: all 0.6s;
+}
+
+.modal-footer button:hover::before {
+  left: 100%;
 }
 
 .cancel-btn {
-  background-color: white;
-  border: 1px solid #d9d9d9;
-  color: #666;
+  background-color: rgba(10, 12, 26, 0.3);
+  border: 1px solid rgba(200, 200, 255, 0.3);
+  color: #c8c8ff;
 }
 
 .cancel-btn:hover {
-  color: #40a9ff;
-  border-color: #40a9ff;
+  color: #e0e0ff;
+  border-color: rgba(200, 200, 255, 0.5);
+  box-shadow: 0 0 10px rgba(200, 200, 255, 0.2);
 }
 
 .confirm-btn {
-  background-color: #1890ff;
-  border: 1px solid #1890ff;
-  color: white;
+  background-color: rgba(5, 217, 232, 0.2);
+  border: 1px solid rgba(5, 217, 232, 0.4);
+  color: #05d9e8;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
 }
 
 .confirm-btn:hover {
-  background-color: #40a9ff;
-  border-color: #40a9ff;
+  background-color: rgba(5, 217, 232, 0.3);
+  border-color: #05d9e8;
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.3);
+}
+
+/* 新增样式：字段标签 */
+.field-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 8px;
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(162, 57, 202, 0.2));
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  color: #05d9e8;
+}
+
+/* 新增样式：输入框焦点动画 */
+@keyframes input-glow {
+  0% { box-shadow: 0 0 5px rgba(5, 217, 232, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(5, 217, 232, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(5, 217, 232, 0.3); }
+}
+
+.form-group input:focus {
+  animation: input-glow 2s infinite;
 }
 
 /* 暗黑模式 */

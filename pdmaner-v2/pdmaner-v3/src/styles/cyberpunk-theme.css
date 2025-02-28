@@ -1,0 +1,230 @@
+/**
+ * Cyberpunk Theme Variables
+ * 提供整个应用程序统一的赛博朋克风格变量
+ */
+
+:root {
+  /* 主要颜色 */
+  --cyber-bg-dark: #0c0c14;
+  --cyber-bg-medium: #131d32;
+  --cyber-bg-light: #1a2a44;
+  
+  /* 霓虹颜色 */
+  --cyber-neon-blue: #05d9e8;
+  --cyber-neon-purple: #a239ca;
+  --cyber-neon-pink: #ff2a6d;
+  --cyber-neon-yellow: #fee838;
+  
+  /* 文本颜色 */
+  --cyber-text-primary: #e0e0ff;
+  --cyber-text-secondary: #c8c8ff;
+  --cyber-text-muted: #8d8dba;
+  
+  /* 渐变 */
+  --cyber-gradient-blue-purple: linear-gradient(135deg, rgba(5, 217, 232, 0.8), rgba(162, 57, 202, 0.8));
+  --cyber-gradient-pink-purple: linear-gradient(135deg, rgba(255, 42, 109, 0.8), rgba(162, 57, 202, 0.8));
+  --cyber-gradient-blue-pink: linear-gradient(135deg, rgba(5, 217, 232, 0.8), rgba(255, 42, 109, 0.8));
+  
+  /* 透明渐变（用于背景和卡片） */
+  --cyber-gradient-blue-purple-trans: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(162, 57, 202, 0.2));
+  --cyber-gradient-pink-purple-trans: linear-gradient(135deg, rgba(255, 42, 109, 0.2), rgba(162, 57, 202, 0.2));
+  
+  /* 水平线条渐变 */
+  --cyber-line-gradient: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(5, 217, 232, 0.8) 30%, 
+    rgba(162, 57, 202, 0.8) 70%, 
+    transparent 100%);
+  
+  /* 阴影 */
+  --cyber-shadow-sm: 0 0 10px rgba(5, 217, 232, 0.3);
+  --cyber-shadow-md: 0 0 15px rgba(5, 217, 232, 0.4), 0 5px 15px rgba(0, 0, 0, 0.2);
+  --cyber-shadow-lg: 0 0 25px rgba(5, 217, 232, 0.5), 0 10px 20px rgba(0, 0, 0, 0.3);
+  
+  /* 文本阴影 */
+  --cyber-text-shadow-sm: 0 0 5px rgba(5, 217, 232, 0.3);
+  --cyber-text-shadow-md: 0 0 8px rgba(5, 217, 232, 0.5);
+  --cyber-text-shadow-lg: 0 0 15px rgba(5, 217, 232, 0.7);
+  
+  /* 边框 */
+  --cyber-border-light: 1px solid rgba(5, 217, 232, 0.2);
+  --cyber-border-medium: 1px solid rgba(5, 217, 232, 0.4);
+  --cyber-border-heavy: 1px solid rgba(5, 217, 232, 0.6);
+  
+  /* 圆角 */
+  --cyber-radius-sm: 4px;
+  --cyber-radius-md: 6px;
+  --cyber-radius-lg: 8px;
+  
+  /* 动画时间 */
+  --cyber-transition-fast: 0.2s;
+  --cyber-transition-medium: 0.3s;
+  --cyber-transition-slow: 0.6s;
+  
+  /* Z-index层级 */
+  --cyber-z-tooltip: 800;
+  --cyber-z-popover: 900;
+  --cyber-z-modal: 1000;
+  --cyber-z-dropdown: 950;
+}
+
+/* 通用发光动画 */
+@keyframes cyber-glow {
+  0% { box-shadow: 0 0 5px rgba(5, 217, 232, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(5, 217, 232, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(5, 217, 232, 0.3); }
+}
+
+/* 脉冲动画 */
+@keyframes cyber-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 霓虹文字闪烁动画 */
+@keyframes cyber-text-flicker {
+  0% { text-shadow: 0 0 5px rgba(5, 217, 232, 0.5); }
+  5% { text-shadow: 0 0 15px rgba(5, 217, 232, 0.7); }
+  10% { text-shadow: 0 0 5px rgba(5, 217, 232, 0.5); }
+  15% { text-shadow: 0 0 15px rgba(5, 217, 232, 0.7); }
+  25% { text-shadow: 0 0 5px rgba(5, 217, 232, 0.5); }
+  50% { text-shadow: 0 0 5px rgba(5, 217, 232, 0.5); }
+  70% { text-shadow: 0 0 15px rgba(5, 217, 232, 0.7); }
+  80% { text-shadow: 0 0 5px rgba(5, 217, 232, 0.5); }
+  100% { text-shadow: 0 0 5px rgba(5, 217, 232, 0.5); }
+}
+
+/* 闪光扫描动画 */
+@keyframes cyber-scan {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 边框闪烁动画 */
+@keyframes cyber-border-pulse {
+  0% { border-color: rgba(5, 217, 232, 0.3); }
+  50% { border-color: rgba(5, 217, 232, 0.8); }
+  100% { border-color: rgba(5, 217, 232, 0.3); }
+}
+
+/* 常用工具类 */
+.cyber-bg-dark {
+  background-color: var(--cyber-bg-dark);
+}
+
+.cyber-text-glow {
+  color: var(--cyber-neon-blue);
+  text-shadow: var(--cyber-text-shadow-md);
+}
+
+.cyber-border {
+  border: var(--cyber-border-light);
+  border-radius: var(--cyber-radius-md);
+}
+
+.cyber-card {
+  background-color: var(--cyber-bg-medium);
+  border: var(--cyber-border-light);
+  border-radius: var(--cyber-radius-md);
+  box-shadow: var(--cyber-shadow-md);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--cyber-line-gradient);
+}
+
+.cyber-button {
+  background: rgba(5, 217, 232, 0.1);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  color: var(--cyber-neon-blue);
+  padding: 8px 16px;
+  border-radius: var(--cyber-radius-md);
+  cursor: pointer;
+  transition: all var(--cyber-transition-medium);
+  position: relative;
+  overflow: hidden;
+  text-shadow: var(--cyber-text-shadow-sm);
+}
+
+.cyber-button:hover {
+  background: rgba(5, 217, 232, 0.2);
+  box-shadow: var(--cyber-shadow-sm);
+  text-shadow: var(--cyber-text-shadow-md);
+}
+
+.cyber-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: all var(--cyber-transition-slow);
+}
+
+.cyber-button:hover::before {
+  left: 100%;
+}
+
+.cyber-scanner-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.cyber-scanner-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(5, 217, 232, 0.1) 45%, 
+    rgba(5, 217, 232, 0.3) 50%, 
+    rgba(5, 217, 232, 0.1) 55%, 
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: cyber-scan 3s linear infinite;
+  pointer-events: none;
+}
+
+.cyber-title {
+  color: var(--cyber-neon-blue);
+  text-shadow: var(--cyber-text-shadow-md);
+  font-weight: 600;
+  letter-spacing: 1px;
+  position: relative;
+  display: inline-block;
+}
+
+.cyber-title::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--cyber-line-gradient);
+}
+
+.cyber-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: var(--cyber-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--cyber-gradient-blue-purple-trans);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  color: var(--cyber-neon-blue);
+} 
