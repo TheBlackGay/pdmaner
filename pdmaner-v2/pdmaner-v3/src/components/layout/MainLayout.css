@@ -129,13 +129,15 @@
 
 /* 左侧菜单面板 */
 .menu-panel {
-  width: 220px;
-  background-color: #2a3f54;
+  width: 250px;
+  background-color: #232F34;
   color: #f5f5f5;
-  transition: width 0.3s;
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.15);
+  z-index: 10;
 }
 
 .menu-panel.collapsed {
@@ -148,16 +150,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  height: 50px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  height: 56px;
+  background-color: #192328;
 }
 
 .panel-header h3 {
   margin: 0;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 16px;
   white-space: nowrap;
-  color: #f5f5f5;
+  color: #ffffff;
+  letter-spacing: 0.5px;
 }
 
 /* 面板动作区 */
@@ -170,19 +174,21 @@
   background: none;
   border: none;
   cursor: pointer;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #f5f5f5;
+  color: rgba(255, 255, 255, 0.85);
   margin-left: 4px;
+  transition: all 0.2s ease;
 }
 
 .action-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.15);
   color: #1890ff;
+  transform: scale(1.1);
 }
 
 /* 折叠按钮 */
@@ -190,19 +196,21 @@
   background: none;
   border: none;
   cursor: pointer;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #f5f5f5;
-  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-left: 6px;
+  transition: all 0.2s ease;
 }
 
 .collapse-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.15);
   color: #1890ff;
+  transform: scale(1.1);
 }
 
 /* 菜单树 */
@@ -210,66 +218,108 @@
   flex: 1;
   overflow-y: auto;
   padding: 0.5rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.menu-tree::-webkit-scrollbar {
+  width: 5px;
+}
+
+.menu-tree::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.menu-tree::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
 }
 
 /* 菜单组 */
 .menu-group {
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.menu-group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .menu-group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.7rem 1rem;
+  padding: 10px 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  margin: 0 4px;
 }
 
 .menu-group-header:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .menu-group-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .menu-group-title span {
   white-space: nowrap;
   font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .expand-icon {
   font-size: 12px;
-  opacity: 0.7;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
 }
 
 /* 菜单项 */
 .menu-items {
-  padding-left: 1rem;
+  padding-left: 6px;
+  overflow: hidden;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0.6rem 1rem;
+  gap: 12px;
+  padding: 8px 16px;
   cursor: pointer;
+  transition: all 0.2s ease;
   border-radius: 4px;
-  margin: 2px 0.5rem;
-  transition: all 0.2s;
-  font-size: 14px;
+  margin: 2px 4px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  position: relative;
 }
 
 .menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
 .menu-item.active {
+  background-color: rgba(24, 144, 255, 0.2);
+  color: #1890ff;
+}
+
+.menu-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
   background-color: #1890ff;
-  color: white;
+  border-radius: 0 2px 2px 0;
 }
 
 .menu-item span {
@@ -666,132 +716,61 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 1rem 0.6rem 1.5rem;
+  padding: 8px 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  font-size: 14px;
+  transition: all 0.2s ease;
+  margin: 2px 4px 2px 8px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.04);
 }
 
 .domain-header:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .domain-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.domain-items {
-  padding-left: 1.5rem;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .expand-icon-small {
   font-size: 10px;
-  opacity: 0.7;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
 }
 
-/* 暗黑模式 */
-.dark-mode .back-btn {
-  color: #f5f5f5;
+.domain-items {
+  padding-left: 12px;
+  margin: 6px 0;
+  border-left: 1px dashed rgba(255, 255, 255, 0.1);
+  margin-left: 22px;
 }
 
-.dark-mode .back-btn:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.dark-mode .domain-header:hover {
-  background-color: #2a2a2a;
-}
-
-/* 上下文菜单分隔线 */
-.context-menu-divider {
-  height: 1px;
-  background-color: #f0f0f0;
+/* 表项相关样式 */
+.table-items {
+  padding-left: 6px;
   margin: 4px 0;
 }
 
-.dark-mode .context-menu-divider {
-  background-color: #303030;
-}
-
-/* 添加字段表格相关样式 */
-.field-list {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.field-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.field-table th, 
-.field-table td {
-  padding: 6px 8px;
-  border: 1px solid #e8e8e8;
-  text-align: left;
-}
-
-.field-table th {
-  background-color: #f5f5f5;
-  font-weight: 500;
-}
-
-.field-table tr:hover {
-  background-color: #fafafa;
-}
-
-.dark-mode .field-table th, 
-.dark-mode .field-table td {
-  border-color: #303030;
-}
-
-.dark-mode .field-table th {
-  background-color: #1f1f1f;
-}
-
-.dark-mode .field-table tr:hover {
-  background-color: #2a2a2a;
-}
-
-/* 表项选中样式 */
 .menu-item.selected {
-  background-color: #e6f7ff;
-  color: #1890ff;
+  background-color: rgba(24, 144, 255, 0.25);
+  color: #40a9ff;
   font-weight: 500;
 }
 
-.dark-mode .menu-item.selected {
-  background-color: #111b26;
-  color: #1890ff;
-}
-
-/* 确保菜单字体大小一致 */
-.menu-panel .menu-group-header,
-.menu-panel .menu-item,
-.menu-panel .domain-header,
-.menu-panel .domain-title,
-.menu-panel .menu-tree {
-  font-size: 14px !important;
-  line-height: 1.5;
-}
-
-.menu-panel .menu-item.active,
-.menu-panel .menu-item.selected,
-.menu-panel .domain-header:hover,
-.menu-panel .menu-item:hover {
-  background-color: rgba(24, 144, 255, 0.1);
-  color: #1890ff;
-  font-size: 14px !important;
-  font-weight: normal !important;
-}
-
-.menu-panel .menu-item.active {
-  background-color: rgba(24, 144, 255, 0.2);
-  color: #1890ff;
-  font-weight: normal !important;
+.menu-item.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #40a9ff;
+  border-radius: 0 2px 2px 0;
 }
 
 /* 项目概览样式 */

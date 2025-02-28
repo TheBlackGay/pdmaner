@@ -11,6 +11,7 @@ import DiagramDesign from './pages/DiagramDesign';
 import DictionaryPage from './pages/Dictionary';
 import CodeGeneration from './pages/CodeGeneration';
 import Welcome from './pages/Welcome';
+import TableDetails from './pages/TableDetails';
 
 import '@assets/styles/index.css';
 
@@ -37,6 +38,7 @@ const App: React.FC = () => {
             <Route path="entity/:domainId?/views" element={<EntityDesign type="views" />} />
             <Route path="diagram/:domainId?" element={<DiagramDesign />} />
             <Route path="dict/:domainId?" element={<DictionaryPage />} />
+            <Route path="table/:tableId" element={<TableDetails />} />
             <Route path="code" element={<CodeGeneration />} />
             <Route path="datatype" element={<div>数据类型页面</div>} />
             <Route path="domains" element={<div>数据域页面</div>} />

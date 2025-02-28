@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  MenuFoldOutlined, 
+import {
+  MenuFoldOutlined,
   MenuUnfoldOutlined,
   HomeOutlined,
   TableOutlined,
@@ -36,7 +36,7 @@ import {
   CaretRightOutlined,
   ArrowLeftOutlined,
   PlusOutlined,
-  EyeOutlined 
+  EyeOutlined
 } from '@ant-design/icons';
 import { toggleDarkMode, setLoading, setCurrentProject, updateCurrentProject } from '@store/slices/appSlice';
 import { RootState } from '@store/index';
@@ -44,6 +44,7 @@ import { ProjectData, DomainData, saveProject, createNewDomain } from '@utils/pr
 import { generateUUID } from '@utils/uuid';
 import NewDomainModal from '@components/modals/NewDomainModal';
 import NewTableModal from '@components/modals/NewTableModal';
+import RenameTableModal from '@components/modals/RenameTableModal';
 import './MainLayout.css';
 
 // 菜单项类型定义
@@ -89,12 +90,16 @@ const MainLayout: React.FC = () => {
   const [isNewDomainModalOpen, setIsNewDomainModalOpen] = useState(false);
   const [tableItems, setTableItems] = useState<{[domainId: string]: MenuItem[]}>({});
   const [selectedTableKey, setSelectedTableKey] = useState<string | null>(null);
-  
+
   // 添加新建表模态框状态
   const [isNewTableModalOpen, setIsNewTableModalOpen] = useState(false);
   const [newTableDomainId, setNewTableDomainId] = useState('');
   const [newTableDomainName, setNewTableDomainName] = useState('');
   
+  // 添加重命名表模态框状态
+  const [isRenameTableModalOpen, setIsRenameTableModalOpen] = useState(false);
+  const [tableToRename, setTableToRename] = useState<{id: string, name: string} | null>(null);
+
   const darkMode = useSelector((state: RootState) => state.app.darkMode);
   const currentProject = useSelector((state: RootState) => state.app.currentProject);
   const dispatch = useDispatch();
@@ -252,22 +257,22 @@ const MainLayout: React.FC = () => {
               }
             ]
           };
-          
+
           // 检查菜单项的展开状态，保持原有状态
           if (existingMenuItems && existingMenuItems.length > 0) {
             const existingDomainItem = existingMenuItems.find(item => item.key === 'model')
               ?.children?.find(item => item.key === `domain_${domain.id}`);
-            
+
             if (existingDomainItem?.expanded) {
               domainItem.expanded = true;
-              
+
               // 同时保持子项的展开状态
               if (existingDomainItem.children && domainItem.children) {
                 for (let i = 0; i < existingDomainItem.children.length; i++) {
                   if (i < domainItem.children.length) {
                     const existingChild = existingDomainItem.children[i];
                     const newChild = domainItem.children[i];
-                    
+
                     if (existingChild?.key === newChild?.key) {
                       newChild.expanded = existingChild.expanded;
                     }
@@ -276,7 +281,7 @@ const MainLayout: React.FC = () => {
               }
             }
           }
-          
+
           return domainItem;
         })
       },
@@ -285,7 +290,7 @@ const MainLayout: React.FC = () => {
 
     return menuItems;
   };
-  
+
   // 生成菜单项
   const [menuItems, setMenuItems] = useState<MenuItem[]>(getMenuItems());
 
@@ -298,13 +303,44 @@ const MainLayout: React.FC = () => {
   // 监听路由变化，更新激活的标签和展开菜单
   useEffect(() => {
     const path = location.pathname;
+    console.log('路由变化:', path);
+    
     if (path === '/app') {
       navigate('/app/entity/tables');
+    } else if (path.startsWith('/app/table/')) {
+      // 处理表详情页路由
+      const tableId = path.split('/').pop();
+      if (tableId) {
+        console.log('当前是表详情页，tableId:', tableId);
+        
+        // 查找对应的表数据
+        if (currentProject && currentProject.tables) {
+          const tableData = currentProject.tables.find(t => t.id === tableId);
+          if (tableData) {
+            // 创建表详情标签
+            const tabKey = `table_${tableId}`;
+            const tabExists = tabs.find(tab => tab.type === tabKey);
+            
+            if (!tabExists) {
+              let newTab = {
+                id: `${tabKey}-${Date.now()}`,
+                title: `${tableData.name} [表]`,
+                type: tabKey,
+                icon: <TableOutlined />
+              };
+              
+              setTabs(prevTabs => [...prevTabs, newTab]);
+            }
+            
+            setActiveTab(tabKey);
+          }
+        }
+      }
     } else {
       // 找到当前路径对应的菜单项
       let activeMenuItem: MenuItem | undefined;
       let activeMenuGroup: MenuItem | undefined;
-      
+
       for (const group of menuItems) {
         if (group.children) {
           for (const item of group.children) {
@@ -336,12 +372,12 @@ const MainLayout: React.FC = () => {
           }
         }
       }
-      
+
       // 如果找到了对应的菜单项，更新tab
       if (activeMenuItem) {
         const tabType = activeMenuItem.key;
         const tabExists = tabs.find(tab => tab.type === tabType);
-        
+
         if (!tabExists) {
           let newTab = {
             id: `${tabType}-${Date.now()}`,
@@ -349,27 +385,27 @@ const MainLayout: React.FC = () => {
             type: tabType,
             icon: activeMenuItem.icon
           };
-          
+
           setTabs([...tabs, newTab]);
         }
-        
+
         // 设置当前激活的标签
         setActiveTab(tabType);
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, currentProject, menuItems]);
 
   // 自动保存功能
   useEffect(() => {
     if (!autoSaveEnabled || !currentProject) return;
-    
+
     const autoSaveInterval = setInterval(() => {
       if (currentProject) {
         console.log('自动保存项目...');
         handleSaveProject(true);
       }
     }, 30000); // 每30秒自动保存一次
-    
+
     return () => clearInterval(autoSaveInterval);
   }, [autoSaveEnabled, currentProject]);
 
@@ -380,7 +416,7 @@ const MainLayout: React.FC = () => {
         setContextMenu(prev => ({...prev, visible: false}));
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -414,18 +450,18 @@ const MainLayout: React.FC = () => {
     setMenuItems(prevItems => {
       // 使用安全的深拷贝函数
       const newItems = deepCloneWithoutReactElements(prevItems);
-      
+
       // 递归处理菜单项
-      const processItems = (items: MenuItem[]) => {
+      const processItems = (items: MenuItem[]): boolean => {
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          
+
           // 如果找到匹配的菜单项，则切换其展开状态
           if (item.key === menuKey) {
             item.expanded = !item.expanded;
             return true;
           }
-          
+
           // 递归处理子菜单项
           if (item.children && item.children.length > 0) {
             if (processItems(item.children)) {
@@ -435,7 +471,7 @@ const MainLayout: React.FC = () => {
         }
         return false;
       };
-      
+
       processItems(newItems);
       return newItems;
     });
@@ -458,7 +494,7 @@ const MainLayout: React.FC = () => {
         }
       }
     }
-    
+
     // 默认图标
     return <HomeOutlined />;
   };
@@ -488,7 +524,7 @@ const MainLayout: React.FC = () => {
   const handleSaveProject = (isAutoSave = false) => {
     console.log(`${isAutoSave ? '自动' : ''}保存项目`);
     if (!isAutoSave) dispatch(setLoading(true));
-    
+
     // 保存项目数据
     if (currentProject) {
       try {
@@ -509,17 +545,17 @@ const MainLayout: React.FC = () => {
         // 检查是否存在相同代码或名称的主题域
         const domainCodeExists = currentProject.domains.some(domain => domain.code === code);
         const domainNameExists = currentProject.domains.some(domain => domain.name === name);
-        
+
         if (domainCodeExists) {
           alert(`主题域代码 "${code}" 已存在，请使用其他代码`);
           return;
         }
-        
+
         if (domainNameExists) {
           alert(`主题域名称 "${name}" 已存在，请使用其他名称`);
           return;
         }
-        
+
         const newDomain = createNewDomain(currentProject.info.id, name, code);
         if (newDomain) {
           // 创建新的项目对象（安全拷贝）
@@ -527,19 +563,19 @@ const MainLayout: React.FC = () => {
             ...currentProject,
             domains: [...currentProject.domains, newDomain]
           };
-          
+
           console.log('添加新主题域:', newDomain);
           console.log('当前主题域数量:', currentProject.domains.length);
           console.log('更新后主题域数量:', updatedProject.domains.length);
-          
+
           // 更新Redux状态
           dispatch(setCurrentProject(updatedProject));
-          
+
           // 保存到localStorage
           saveProject(updatedProject);
           setLastSaved(new Date());
           console.log('保存项目成功，已添加新主题域');
-          
+
           // 关闭模态框
           setIsNewDomainModalOpen(false);
         } else {
@@ -557,13 +593,13 @@ const MainLayout: React.FC = () => {
     event.stopPropagation();
     const newTabs = tabs.filter(tab => tab.id !== id);
     setTabs(newTabs);
-    
+
     // 如果关闭的是当前激活的标签，则激活最后一个标签
     if (tabs.find(tab => tab.id === id)?.type === activeTab) {
       if (newTabs.length > 0) {
         const lastTab = newTabs[newTabs.length - 1];
         setActiveTab(lastTab.type);
-        
+
         // 查找该标签对应的路径并导航
         const path = findPathByTabType(lastTab.type);
         if (path) {
@@ -622,21 +658,21 @@ const MainLayout: React.FC = () => {
       console.error('当前项目为空，无法获取主题域');
       return '';
     }
-    
+
     if (!Array.isArray(currentProject.domains)) {
       console.error('currentProject.domains 不是一个数组:', currentProject.domains);
       return '';
     }
-    
+
     console.log('查找主题域:', id);
     console.log('可用主题域:', currentProject.domains.map(d => `${d.name}(${d.id})`).join(', '));
-    
+
     const domain = currentProject.domains.find(d => d.id === id);
     if (!domain) {
       console.error(`找不到ID为 ${id} 的主题域`);
       return '';
     }
-    
+
     return domain.name;
   };
 
@@ -652,7 +688,7 @@ const MainLayout: React.FC = () => {
       // 生成唯一ID
       const tableId = generateUUID();
       const now = Date.now();
-      
+
       // 创建新表数据
       const newTableData: TableData = {
         id: tableId,
@@ -665,7 +701,7 @@ const MainLayout: React.FC = () => {
         createTime: now,
         lastModified: now
       };
-      
+
       // 创建新表菜单项
       const newTable: MenuItem = {
         key: `table_${tableId}`,
@@ -676,7 +712,7 @@ const MainLayout: React.FC = () => {
         icon: <TableOutlined />,
         parentDomainId: domainId
       };
-      
+
       // 更新tableItems状态
       setTableItems(prev => {
         const newTableItems = { ...prev };
@@ -686,41 +722,41 @@ const MainLayout: React.FC = () => {
         newTableItems[domainId] = [...newTableItems[domainId], newTable];
         return newTableItems;
       });
-      
+
       // 确保对应的"数据表"菜单是展开的
       toggleMenuExpand(`tables_${domainId}`);
-      
+
       // 安全地创建项目更新数据
       const currentTablesCopy = [...(currentProject.tables || [])];
       const updatedTables = [...currentTablesCopy, newTableData];
-      
+
       console.log('添加新表:', newTableData);
       console.log('当前表数量:', currentTablesCopy.length);
       console.log('更新后表数量:', updatedTables.length);
-      
+
       // 更新项目数据
       const updatedProject = {
         ...currentProject,
         tables: updatedTables,
         lastModified: now
       };
-      
+
       // 更新Redux状态
       dispatch(setCurrentProject(updatedProject));
-      
+
       // 保存到localStorage
       saveProject(updatedProject);
       setLastSaved(new Date());
       console.log('保存项目成功，已添加新表');
-      
+
       // 关闭新建表模态框
       setIsNewTableModalOpen(false);
-      
+
       // 等待状态更新后，确保菜单被正确展开
       setTimeout(() => {
         const domainKey = `domain_${domainId}`;
         const tablesKey = `tables_${domainId}`;
-        
+
         // 确保主题域和表菜单都是展开的
         toggleMenuExpand(domainKey);
         toggleMenuExpand(tablesKey);
@@ -735,10 +771,10 @@ const MainLayout: React.FC = () => {
   const handleContextMenuAction = (action: string) => {
     const { type, targetId } = contextMenu;
     console.log(`执行操作: ${action}, 类型: ${type}, 目标ID: ${targetId}`);
-    
+
     // 隐藏上下文菜单
     setContextMenu(prev => ({...prev, visible: false}));
-    
+
     // 根据动作类型执行不同操作
     switch(action) {
       case 'addDomain':
@@ -746,16 +782,145 @@ const MainLayout: React.FC = () => {
         break;
       case 'copy':
         // 复制实体/关系图等
+        if (type === 'table' && targetId) {
+          const tableId = targetId.split('_')[1];
+          if (tableId && currentProject) {
+            // 找到要复制的表
+            const tableToCopy = currentProject.tables.find(table => table.id === tableId);
+            if (tableToCopy) {
+              // 生成新的唯一ID
+              const newTableId = generateUUID();
+              const now = Date.now();
+              
+              // 创建新表的复制品
+              const newTable = {
+                ...tableToCopy,
+                id: newTableId,
+                name: `${tableToCopy.name} (副本)`,
+                code: `${tableToCopy.code}_copy`,
+                createTime: now,
+                lastModified: now
+              };
+              
+              // 更新项目表数据
+              const updatedTables = [...currentProject.tables, newTable];
+              
+              // 创建更新后的项目对象
+              const updatedProject = {
+                ...currentProject,
+                tables: updatedTables,
+                lastModified: now
+              };
+              
+              // 更新Redux状态
+              dispatch(setCurrentProject(updatedProject));
+              
+              // 保存到localStorage
+              saveProject(updatedProject);
+              
+              // 创建新表菜单项
+              const newTableMenuItem: MenuItem = {
+                key: `table_${newTableId}`,
+                id: newTableId,
+                title: newTable.name,
+                code: newTable.code,
+                comment: newTable.comment,
+                icon: <TableOutlined />,
+                parentDomainId: newTable.domainId
+              };
+              
+              // 更新tableItems，添加复制的表
+              setTableItems(prev => {
+                const newTableItems = {...prev};
+                if (!newTableItems[newTable.domainId]) {
+                  newTableItems[newTable.domainId] = [];
+                }
+                newTableItems[newTable.domainId] = [...newTableItems[newTable.domainId], newTableMenuItem];
+                return newTableItems;
+              });
+              
+              // 确保对应的"数据表"菜单是展开的
+              toggleMenuExpand(`tables_${newTable.domainId}`);
+              
+              console.log(`表 ${tableId} 已复制为 ${newTableId}`);
+            }
+          }
+        }
         break;
       case 'delete':
-        // 删除实体/关系图等
+        if (type === 'table' && targetId) {
+          // 删除表
+          if (window.confirm('确定要删除这个表吗？此操作不可恢复。')) {
+            const tableId = targetId.split('_')[1];
+            if (tableId && currentProject) {
+              // 过滤掉要删除的表
+              const updatedTables = currentProject.tables.filter(table => table.id !== tableId);
+              
+              // 创建更新后的项目对象
+              const updatedProject = {
+                ...currentProject,
+                tables: updatedTables,
+                lastModified: Date.now()
+              };
+              
+              // 更新Redux状态
+              dispatch(setCurrentProject(updatedProject));
+              
+              // 保存到localStorage
+              saveProject(updatedProject);
+              
+              // 更新tableItems，移除被删除的表
+              setTableItems(prev => {
+                const newTableItems = {...prev};
+                for (const domainId in newTableItems) {
+                  newTableItems[domainId] = newTableItems[domainId].filter(item => item.id !== tableId);
+                }
+                return newTableItems;
+              });
+              
+              // 如果当前在该表的详情页，则返回到实体列表页
+              if (location.pathname.includes(`/app/table/${tableId}`)) {
+                const tableInfo = getSelectedTable();
+                if (tableInfo && tableInfo.parentDomainId) {
+                  navigate(`/app/entity/${tableInfo.parentDomainId}/tables`);
+                } else {
+                  navigate('/app/entity/tables');
+                }
+              }
+              
+              console.log(`表 ${tableId} 已删除`);
+            }
+          }
+        }
         break;
       case 'rename':
-        // 重命名
+        if (type === 'table' && targetId) {
+          const tableId = targetId.split('_')[1];
+          if (tableId && currentProject) {
+            // 找到要重命名的表
+            const tableToRename = currentProject.tables.find(table => table.id === tableId);
+            if (tableToRename) {
+              // 设置要重命名的表信息并打开模态框
+              setTableToRename({
+                id: tableId,
+                name: tableToRename.name
+              });
+              setIsRenameTableModalOpen(true);
+            }
+          }
+        }
         break;
       case 'edit':
-        // 编辑
-        navigate(`/app/${type}`);
+        if (type === 'table' && targetId) {
+          // 编辑表 - 导航到表详情页
+          const tableId = targetId.split('_')[1];
+          if (tableId) {
+            navigate(`/app/table/${tableId}`);
+          }
+        } else {
+          // 其他类型的编辑
+          navigate(`/app/${type}`);
+        }
         break;
       case 'addSubItem':
         // 新增子项
@@ -774,7 +939,7 @@ const MainLayout: React.FC = () => {
         if (targetId && targetId.includes('_')) {
           console.log('添加表的targetId:', targetId);
           let domainId: string | undefined;
-          
+
           // 处理不同情况的targetId格式
           if (targetId.startsWith('tables_')) {
             // 如果是形如tables_123这样的格式
@@ -789,16 +954,16 @@ const MainLayout: React.FC = () => {
               domainId = parts[1];
             }
           }
-          
+
           if (domainId) {
             const domainName = getDomainNameById(domainId);
-            
+
             if (domainName) {
               console.log(`为主题域 ${domainName}(${domainId}) 添加新表`);
               // 设置新表所属主题域
               setNewTableDomainId(domainId);
               setNewTableDomainName(domainName);
-              
+
               // 打开新建表模态框
               setIsNewTableModalOpen(true);
             } else {
@@ -809,9 +974,6 @@ const MainLayout: React.FC = () => {
             console.error('无法从targetId解析出domainId:', targetId);
             alert('无法识别所选主题域，请尝试刷新页面');
           }
-        } else {
-          console.error('无效的targetId:', targetId);
-          alert('请选择一个主题域再添加数据表');
         }
         break;
       case 'copyTables':
@@ -868,9 +1030,6 @@ const MainLayout: React.FC = () => {
       case 'pasteDiagrams':
         // 粘贴关系图
         break;
-      case 'deleteDiagrams':
-        // 删除关系图
-        break;
       case 'exportDiagramsPNG':
         // 导出为PNG关系图
         break;
@@ -900,7 +1059,7 @@ const MainLayout: React.FC = () => {
   // 获取当前路径对应的面包屑文本
   const getBreadcrumbText = () => {
     const path = location.pathname;
-    
+
     for (const group of menuItems) {
       if (group.children) {
         for (const item of group.children) {
@@ -917,17 +1076,17 @@ const MainLayout: React.FC = () => {
         }
       }
     }
-    
+
     return '未知页面';
   };
 
   // 格式化最后保存时间
   const formattedLastSaved = () => {
     if (!lastSaved) return '尚未保存';
-    
+
     const now = new Date();
     const diff = now.getTime() - lastSaved.getTime();
-    
+
     if (diff < 60000) { // 小于1分钟
       return '刚刚保存';
     } else if (diff < 3600000) { // 小于1小时
@@ -942,7 +1101,7 @@ const MainLayout: React.FC = () => {
   // 渲染三级菜单项
   const renderMenuItems = (items: MenuItem[], parentKey?: string) => {
     return items.map(item => (
-      <div 
+      <div
         key={item.key}
         className={`menu-item ${activeTab === item.key ? 'active' : ''}`}
         onClick={() => navigateToMenuItem(item)}
@@ -955,21 +1114,36 @@ const MainLayout: React.FC = () => {
 
   // 添加处理表项点击的函数
   const handleTableItemClick = (tableKey: string) => {
+    console.log('表格点击事件:', tableKey);
     setSelectedTableKey(tableKey);
     // 显示右侧属性面板
     setRightPanelVisible(true);
+
+    // 从tableKey中提取tableId，tableKey格式为table_xxx
+    const tableId = tableKey.split('_')[1];
+    if (tableId) {
+      console.log('提取到表ID:', tableId);
+      // 添加一个延迟以确保状态更新完成
+      setTimeout(() => {
+        // 导航到表设计详情页面
+        console.log('导航到表详情页:', `/app/table/${tableId}`);
+        navigate(`/app/table/${tableId}`);
+      }, 10);
+    } else {
+      console.error('无法从tableKey中提取tableId:', tableKey);
+    }
   };
 
   // 从tableItems中获取选中表的信息
   const getSelectedTable = (): MenuItem | null => {
     if (!selectedTableKey) return null;
-    
+
     // 遍历所有主题域下的表项
     for (const domainId in tableItems) {
       const foundTable = tableItems[domainId].find(table => table.key === selectedTableKey);
       if (foundTable) return foundTable;
     }
-    
+
     return null;
   };
 
@@ -977,7 +1151,7 @@ const MainLayout: React.FC = () => {
   const renderTableProperties = () => {
     const selectedTable = getSelectedTable();
     if (!selectedTable) return null;
-    
+
     return (
       <div className="properties-content">
         <div className="property-group">
@@ -995,7 +1169,7 @@ const MainLayout: React.FC = () => {
             <input type="text" value={selectedTable.comment || ''} onChange={() => {}} />
           </div>
         </div>
-        
+
         <div className="property-group">
           <h4>字段信息</h4>
           <div className="field-list">
@@ -1018,7 +1192,7 @@ const MainLayout: React.FC = () => {
               </tbody>
             </table>
             <div className="add-field-button" style={{marginTop: '10px', textAlign: 'center'}}>
-              <button 
+              <button
                 style={{
                   padding: '5px 10px',
                   backgroundColor: '#1890ff',
@@ -1041,33 +1215,33 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     if (currentProject) {
       console.log('初始化项目数据: ', currentProject.info.name);
-      
+
       // 确保tables数组存在
       if (!currentProject.tables) {
         const updatedProject = {...currentProject, tables: []};
         dispatch(setCurrentProject(updatedProject));
         return; // 等待下一次渲染循环
       }
-      
+
       // 确保diagrams数组存在
       if (!currentProject.diagrams) {
         const updatedProject = {...currentProject, diagrams: []};
         dispatch(setCurrentProject(updatedProject));
         return; // 等待下一次渲染循环
       }
-      
+
       // 确保dictionaries数组存在
       if (!currentProject.dictionaries) {
         const updatedProject = {...currentProject, dictionaries: []};
         dispatch(setCurrentProject(updatedProject));
         return; // 等待下一次渲染循环
       }
-      
+
       // 将项目中的表按主题域分组
       const tablesByDomain: {[domainId: string]: MenuItem[]} = {};
-      
+
       console.log('项目表数据:', currentProject.tables?.length || 0);
-      
+
       if (currentProject.tables && currentProject.tables.length > 0) {
         currentProject.tables.forEach(table => {
           const menuItem: MenuItem = {
@@ -1079,39 +1253,68 @@ const MainLayout: React.FC = () => {
             icon: <TableOutlined />,
             parentDomainId: table.domainId
           };
-          
+
           if (!tablesByDomain[table.domainId]) {
             tablesByDomain[table.domainId] = [];
           }
-          
+
           tablesByDomain[table.domainId].push(menuItem);
         });
-        
+
         console.log('按主题域分组后的表:', Object.keys(tablesByDomain).map(k => `${k}: ${tablesByDomain[k].length}表`));
       }
-      
+
       setTableItems(tablesByDomain);
-      
+
+      // 检查当前URL是否为表详情页
+      const path = location.pathname;
+      const match = path.match(/\/app\/table\/([^\/]+)/);
+      if (match && match[1]) {
+        const tableId = match[1];
+        console.log('当前URL是表详情页，tableId:', tableId);
+        
+        // 找到对应的表菜单项
+        for (const domainId in tablesByDomain) {
+          const foundTable = tablesByDomain[domainId].find(item => item.id === tableId);
+          if (foundTable) {
+            console.log('找到当前表的菜单项:', foundTable);
+            setSelectedTableKey(foundTable.key);
+            
+            // 确保主题域和表列表被展开
+            setTimeout(() => {
+              const domainKey = `domain_${domainId}`;
+              const tablesKey = `tables_${domainId}`;
+              
+              console.log('自动展开菜单:', domainKey, tablesKey);
+              toggleMenuExpand(domainKey);
+              toggleMenuExpand(tablesKey);
+            }, 100);
+            
+            break;
+          }
+        }
+      }
+
       // 使用setTimeout确保在下一个渲染周期执行
       setTimeout(() => {
         // 更新菜单项并默认展开"模型"和第一个主题域
         setMenuItems(prevItems => {
           // 创建一个安全的深拷贝
           const newItems = deepCloneWithoutReactElements(prevItems);
-          
+
           // 找到并展开模型菜单
           const modelItem = newItems.find(item => item.key === 'model');
           if (modelItem) {
             modelItem.expanded = true;
-            
+
             // 如果有主题域，默认展开第一个
             if (currentProject.domains.length > 0 && modelItem.children) {
               const firstDomain = currentProject.domains[0];
               const domainItem = modelItem.children.find(item => item.key === `domain_${firstDomain.id}`);
-              
+
               if (domainItem) {
                 domainItem.expanded = true;
-                
+
                 // 展开数据表节点
                 if (domainItem.children) {
                   const tablesItem = domainItem.children.find(item => item.key === `tables_${firstDomain.id}`);
@@ -1123,24 +1326,24 @@ const MainLayout: React.FC = () => {
               }
             }
           }
-          
+
           return newItems;
         });
       }, 100);
     }
-  }, [currentProject?.info.id, currentProject?.tables]); // 添加tables作为依赖项，确保表数据更新时重新执行
+  }, [currentProject?.info.id, currentProject?.tables, location.pathname]); // 添加location.pathname作为依赖项
 
   // 获取已经存在的表代码列表
   const getExistingTableCodes = (domainId?: string): string[] => {
     if (!currentProject || !currentProject.tables) return [];
-    
+
     // 如果指定了domainId，则只返回该域下的表代码
     if (domainId) {
       return currentProject.tables
         .filter(table => table.domainId === domainId)
         .map(table => table.code);
     }
-    
+
     // 否则返回所有表代码
     return currentProject.tables.map(table => table.code);
   };
@@ -1148,7 +1351,7 @@ const MainLayout: React.FC = () => {
   // 在点击数据表菜单项时确保展开该项
   const handleTablesMenuClick = (domainId: string) => {
     const tablesKey = `tables_${domainId}`;
-    
+
     // 获取当前菜单项的展开状态
     let isExpanded = false;
     const findAndCheckExpanded = (items: MenuItem[]): boolean => {
@@ -1165,14 +1368,14 @@ const MainLayout: React.FC = () => {
       }
       return false;
     };
-    
+
     findAndCheckExpanded(menuItems);
-    
+
     // 如果没有展开，则展开它
     if (!isExpanded) {
       toggleMenuExpand(tablesKey);
     }
-    
+
     // 导航到对应路径
     navigate(`/app/entity/${domainId}/tables`);
   };
@@ -1180,14 +1383,14 @@ const MainLayout: React.FC = () => {
   // 创建默认的项目概览内容
   const renderProjectOverview = () => {
     if (!currentProject) return null;
-    
+
     return (
       <div className="project-overview">
         <div className="overview-header">
           <h2>{currentProject.info.name} - 项目概览</h2>
           <p className="project-description">{currentProject.info.description || '无项目描述'}</p>
         </div>
-        
+
         <div className="overview-stats">
           <div className="stat-card">
             <h3>主题域</h3>
@@ -1206,7 +1409,7 @@ const MainLayout: React.FC = () => {
             <div className="stat-value">{currentProject.dictionaries ? currentProject.dictionaries.length : 0}</div>
           </div>
         </div>
-        
+
         <div className="overview-domains">
           <h3>主题域列表</h3>
           <div className="domains-grid">
@@ -1216,8 +1419,8 @@ const MainLayout: React.FC = () => {
                 <h4>{domain.name}</h4>
                 <p>代码: {domain.code}</p>
                 <p>表数量: {
-                  currentProject.tables 
-                    ? currentProject.tables.filter(t => t.domainId === domain.id).length 
+                  currentProject.tables
+                    ? currentProject.tables.filter(t => t.domainId === domain.id).length
                     : 0
                 }</p>
               </div>
@@ -1228,7 +1431,7 @@ const MainLayout: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="overview-recent">
           <h3>最近操作</h3>
           <p>项目创建于: {new Date(currentProject.info.createTime).toLocaleString()}</p>
@@ -1237,6 +1440,57 @@ const MainLayout: React.FC = () => {
         </div>
       </div>
     );
+  };
+
+  // 添加处理重命名表确认的函数
+  const handleRenameTableConfirm = (newName: string) => {
+    if (!tableToRename || !currentProject) return;
+    
+    // 创建更新后的表对象
+    const tableId = tableToRename.id;
+    const tableData = currentProject.tables.find(table => table.id === tableId);
+    
+    if (tableData) {
+      const updatedTable = {
+        ...tableData,
+        name: newName.trim(),
+        lastModified: Date.now()
+      };
+      
+      // 更新项目表数据
+      const updatedTables = currentProject.tables.map(table => 
+        table.id === tableId ? updatedTable : table
+      );
+      
+      // 创建更新后的项目对象
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables,
+        lastModified: Date.now()
+      };
+      
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
+      
+      // 保存到localStorage
+      saveProject(updatedProject);
+      
+      // 更新tableItems中的表名
+      setTableItems(prev => {
+        const newTableItems = {...prev};
+        for (const domainId in newTableItems) {
+          newTableItems[domainId] = newTableItems[domainId].map(item => 
+            item.id === tableId ? {...item, title: newName.trim()} : item
+          );
+        }
+        return newTableItems;
+      });
+      
+      console.log(`表 ${tableId} 已重命名为 ${newName}`);
+    }
+    
+    // 重置状态
+    setTableToRename(null);
   };
 
   return (
@@ -1295,12 +1549,12 @@ const MainLayout: React.FC = () => {
               </button>
             </div>
           </div>
-          
+
           <div className="menu-tree">
             {menuItems.map(menuGroup => (
               <div className="menu-group" key={menuGroup.key}>
-                <div 
-                  className="menu-group-header" 
+                <div
+                  className="menu-group-header"
                   onClick={() => toggleMenuExpand(menuGroup.key)}
                   onContextMenu={menuGroup.key === 'model' ? (e) => {
                     e.preventDefault();
@@ -1318,12 +1572,12 @@ const MainLayout: React.FC = () => {
                     {!collapsed && <span>{menuGroup.title}</span>}
                   </div>
                   {!collapsed && (
-                    menuGroup.expanded ? 
-                    <CaretDownOutlined className="expand-icon" /> : 
+                    menuGroup.expanded ?
+                    <CaretDownOutlined className="expand-icon" /> :
                     <CaretRightOutlined className="expand-icon" />
                   )}
                 </div>
-                
+
                 {!collapsed && menuGroup.expanded && (
                   <div className="menu-items">
                     {menuGroup.children?.map(item => (
@@ -1331,8 +1585,8 @@ const MainLayout: React.FC = () => {
                         {/* 如果是主题域，它也可以展开 */}
                         {item.children ? (
                           <>
-                            <div 
-                              className="domain-header" 
+                            <div
+                              className="domain-header"
                               onClick={(e) => {
                                 // 如果有子项，则切换展开/折叠状态
                                 if (item.children && item.children.length > 0) {
@@ -1350,10 +1604,10 @@ const MainLayout: React.FC = () => {
                                 else if (item.key.startsWith('views_')) menuType = 'views';
                                 else if (item.key.startsWith('diagrams_')) menuType = 'diagrams';
                                 else if (item.key.startsWith('dictionaries_')) menuType = 'dictionaries';
-                                
+
                                 // 确保将完整的item.key作为targetId
                                 console.log('子菜单右键点击:', item.key, menuType);
-                                
+
                                 setContextMenu({
                                   visible: true,
                                   x: e.clientX,
@@ -1367,17 +1621,17 @@ const MainLayout: React.FC = () => {
                                 {React.isValidElement(item.icon) ? item.icon : null}
                                 <span>{item.title}</span>
                               </div>
-                              {item.expanded ? 
-                                <CaretDownOutlined className="expand-icon-small" /> : 
+                              {item.expanded ?
+                                <CaretDownOutlined className="expand-icon-small" /> :
                                 <CaretRightOutlined className="expand-icon-small" />
                               }
                             </div>
                             {item.expanded && (
-                              <div 
+                              <div
                                 className="domain-items">
                                 {item.children.map(subItem => (
                                   <div key={subItem.key}>
-                                    <div 
+                                    <div
                                       className={`menu-item ${activeTab === subItem.key ? 'active' : ''}`}
                                       onClick={(e) => {
                                         // 如果有子项，则切换展开/折叠状态
@@ -1396,10 +1650,10 @@ const MainLayout: React.FC = () => {
                                         else if (subItem.key.startsWith('views_')) menuType = 'views';
                                         else if (subItem.key.startsWith('diagrams_')) menuType = 'diagrams';
                                         else if (subItem.key.startsWith('dictionaries_')) menuType = 'dictionaries';
-                                        
+
                                         // 确保将完整的subItem.key作为targetId
                                         console.log('子菜单右键点击:', subItem.key, menuType);
-                                        
+
                                         setContextMenu({
                                           visible: true,
                                           x: e.clientX,
@@ -1412,17 +1666,17 @@ const MainLayout: React.FC = () => {
                                       {React.isValidElement(subItem.icon) ? subItem.icon : null}
                                       <span>{subItem.title}</span>
                                       {subItem.children && subItem.children.length > 0 && (
-                                        subItem.expanded ? 
-                                        <CaretDownOutlined className="expand-icon-small" style={{marginLeft: 'auto'}} /> : 
+                                        subItem.expanded ?
+                                        <CaretDownOutlined className="expand-icon-small" style={{marginLeft: 'auto'}} /> :
                                         <CaretRightOutlined className="expand-icon-small" style={{marginLeft: 'auto'}} />
                                       )}
                                     </div>
-                                    
+
                                     {/* 子菜单项的子项 */}
                                     {subItem.expanded && subItem.children && subItem.children.length > 0 && (
                                       <div className="table-items" style={{paddingLeft: '20px'}}>
                                         {subItem.children.map(tableItem => (
-                                          <div 
+                                          <div
                                             key={tableItem.key}
                                             className={`menu-item ${selectedTableKey === tableItem.key ? 'selected' : ''}`}
                                             onClick={() => handleTableItemClick(tableItem.key)}
@@ -1450,7 +1704,7 @@ const MainLayout: React.FC = () => {
                           </>
                         ) : (
                           // 普通菜单项
-                          <div 
+                          <div
                             className={`menu-item ${activeTab === item.key ? 'active' : ''}`}
                             onClick={() => navigateToMenuItem(item)}
                           >
@@ -1473,12 +1727,12 @@ const MainLayout: React.FC = () => {
           <div className="breadcrumb">
             {getBreadcrumbText()}
           </div>
-          
+
           {/* 标签页栏 */}
           <div className="tabs-bar">
             {tabs.map(tab => (
-              <div 
-                key={tab.id} 
+              <div
+                key={tab.id}
                 className={`tab ${tab.type === activeTab ? 'active' : ''}`}
                 onClick={() => {
                   setActiveTab(tab.type);
@@ -1502,22 +1756,9 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* 右侧属性面板 - 仅在需要时显示 */}
-        {rightPanelVisible && (
-          <aside className="properties-panel">
-            <div className="panel-header">
-              <h3>表属性</h3>
-              <button className="collapse-btn" onClick={toggleRightPanel}>
-                <MenuFoldOutlined />
-              </button>
-            </div>
-            {renderTableProperties()}
-          </aside>
-        )}
-
         {/* 上下文菜单 */}
         {contextMenu.visible && (
-          <div 
+          <div
             ref={contextMenuRef}
             className="context-menu"
             style={{ top: contextMenu.y, left: contextMenu.x }}
@@ -1528,7 +1769,7 @@ const MainLayout: React.FC = () => {
                 <PlusOutlined /> 新增主题域
               </div>
             )}
-            
+
             {/* 主题域右键菜单 */}
             {contextMenu.type === 'domain' && (
               <>
@@ -1546,7 +1787,7 @@ const MainLayout: React.FC = () => {
                 </div>
               </>
             )}
-            
+
             {/* 数据表右键菜单 */}
             {contextMenu.type === 'tables' && (
               <>
@@ -1567,7 +1808,7 @@ const MainLayout: React.FC = () => {
                 </div>
               </>
             )}
-            
+
             {/* 逻辑实体右键菜单 */}
             {contextMenu.type === 'entities' && (
               <>
@@ -1588,7 +1829,7 @@ const MainLayout: React.FC = () => {
                 </div>
               </>
             )}
-            
+
             {/* 多表透视右键菜单 */}
             {contextMenu.type === 'views' && (
               <>
@@ -1609,7 +1850,7 @@ const MainLayout: React.FC = () => {
                 </div>
               </>
             )}
-            
+
             {/* 关系图右键菜单 */}
             {contextMenu.type === 'diagrams' && (
               <>
@@ -1637,7 +1878,7 @@ const MainLayout: React.FC = () => {
                 </div>
               </>
             )}
-            
+
             {/* 数据字典右键菜单 */}
             {contextMenu.type === 'dictionaries' && (
               <>
@@ -1658,9 +1899,27 @@ const MainLayout: React.FC = () => {
                 </div>
               </>
             )}
-            
-            {/* 其他类型的菜单 */}
-            {!['model', 'domain', 'tables', 'entities', 'views', 'diagrams', 'dictionaries'].includes(contextMenu.type) && (
+
+            {/* 表类型的菜单 */}
+            {contextMenu.type === 'table' && (
+              <>
+                <div className="context-menu-item" onClick={() => handleContextMenuAction('edit')}>
+                  <EditOutlined /> 编辑表
+                </div>
+                <div className="context-menu-item" onClick={() => handleContextMenuAction('rename')}>
+                  <EditOutlined /> 重命名
+                </div>
+                <div className="context-menu-item" onClick={() => handleContextMenuAction('copy')}>
+                  <CopyOutlined /> 复制表
+                </div>
+                <div className="context-menu-item danger" onClick={() => handleContextMenuAction('delete')}>
+                  <DeleteOutlined /> 删除表
+                </div>
+              </>
+            )}
+
+            {/* 其他类型的菜单 - 仅在不是前面任何类型时显示 */}
+            {!['model', 'domain', 'tables', 'entities', 'views', 'diagrams', 'dictionaries', 'table'].includes(contextMenu.type) && (
               <>
                 <div className="context-menu-item" onClick={() => handleContextMenuAction('edit')}>
                   <EditOutlined /> 编辑
@@ -1696,7 +1955,7 @@ const MainLayout: React.FC = () => {
       </footer>
 
       {/* 新增主题域弹窗 */}
-      <NewDomainModal 
+      <NewDomainModal
         isOpen={isNewDomainModalOpen}
         onClose={() => setIsNewDomainModalOpen(false)}
         onConfirm={handleAddDomain}
@@ -1711,8 +1970,16 @@ const MainLayout: React.FC = () => {
         domainName={newTableDomainName}
         existingTableCodes={getExistingTableCodes(newTableDomainId)}
       />
+
+      {/* 重命名表弹窗 */}
+      <RenameTableModal
+        isOpen={isRenameTableModalOpen}
+        onClose={() => setIsRenameTableModalOpen(false)}
+        onConfirm={handleRenameTableConfirm}
+        currentName={tableToRename?.name || ''}
+      />
     </div>
   );
 };
 
-export default MainLayout; 
+export default MainLayout;
