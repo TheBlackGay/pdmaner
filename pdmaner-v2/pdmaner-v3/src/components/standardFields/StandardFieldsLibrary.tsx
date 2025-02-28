@@ -272,6 +272,12 @@ const StandardFieldsLibrary: React.FC = () => {
         : group
     ));
     
+    // 确保分组是展开的，以便立即显示新添加的字段
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: true
+    }));
+    
     closeFieldModal();
     
     // 显示成功提示
@@ -298,19 +304,37 @@ const StandardFieldsLibrary: React.FC = () => {
   };
 
   // 删除字段
-  const handleDeleteField = (groupId: string, fieldId: string) => {
+  const handleDeleteField = (groupId: string, fieldId: string, skipConfirm = false) => {
     // 找到要删除的字段名称，用于提示
     const fieldToDelete = fieldGroups.find(g => g.id === groupId)?.fields.find(f => f.id === fieldId);
     
-    if (window.confirm(`确定要删除字段 "${fieldToDelete?.name || ''}" 吗？`)) {
-      setFieldGroups(fieldGroups.map(group => 
-        group.id === groupId 
-          ? { 
-              ...group, 
-              fields: group.fields.filter(field => field.id !== fieldId) 
-            } 
-          : group
-      ));
+    console.log(`删除字段操作触发：字段名="${fieldToDelete?.name || '未知'}", ID=${fieldId}, 分组ID=${groupId}`);
+    
+    // 如果skipConfirm为true，则跳过确认对话框直接删除
+    if (skipConfirm || window.confirm(`确定要删除字段 "${fieldToDelete?.name || ''}" 吗？`)) {
+      console.log(`确认删除字段: 字段名="${fieldToDelete?.name || '未知'}", ID=${fieldId}, 分组ID=${groupId}`);
+      
+      // 使用函数式更新确保拿到最新状态
+      setFieldGroups(prevGroups => {
+        // 找到当前分组和当前字段
+        const targetGroup = prevGroups.find(g => g.id === groupId);
+        const targetField = targetGroup?.fields.find(f => f.id === fieldId);
+        
+        console.log(`目标分组: ${targetGroup?.name || '未找到'}, 目标字段: ${targetField?.name || '未找到'}`);
+        
+        // 过滤掉要删除的字段
+        const updatedGroups = prevGroups.map(group => 
+          group.id === groupId 
+            ? { 
+                ...group, 
+                fields: group.fields.filter(field => field.id !== fieldId) 
+              } 
+            : group
+        );
+        
+        console.log(`更新后的字段数: ${updatedGroups.find(g => g.id === groupId)?.fields.length || 0}`);
+        return updatedGroups;
+      });
       
       // 显示成功提示
       success(`字段 "${fieldToDelete?.name || ''}" 已删除`);
@@ -1124,7 +1148,7 @@ const StandardFieldsLibrary: React.FC = () => {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       if (confirm(`确定要删除字段 "${field.name}" 吗？`)) {
-                                        handleDeleteField(currentActiveGroup.id, field.id);
+                                        handleDeleteField(currentActiveGroup.id, field.id, true);
                                       }
                                     }}
                                   >
