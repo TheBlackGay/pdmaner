@@ -12,7 +12,11 @@ import {
   UpOutlined,
   DownOutlined,
   SearchOutlined,
-  QuestionCircleOutlined
+  QuestionCircleOutlined,
+  SettingOutlined,
+  CodeOutlined,
+  CheckCircleOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
@@ -34,6 +38,15 @@ interface FieldData {
   comment?: string;    // 备注
 }
 
+// 索引定义
+interface IndexData {
+  id: string;
+  name: string;       // 索引名称
+  fields: string[];   // 字段ID数组
+  unique: boolean;    // 是否唯一索引
+  comment?: string;   // 索引备注
+}
+
 // 表数据接口定义
 interface TableData {
   id: string;
@@ -43,9 +56,13 @@ interface TableData {
   domainId: string;    // 所属主题域ID
   type: string;        // 表类型
   fields: FieldData[]; // 字段数组
+  indexes: IndexData[]; // 索引数组
   createTime: number;
   lastModified: number;
 }
+
+// 表标签页类型
+type TableTabType = 'fields' | 'indexes' | 'sql' | 'code' | 'check';
 
 const TableDetails: React.FC = () => {
   const { tableId } = useParams<{ tableId: string }>();
@@ -55,10 +72,20 @@ const TableDetails: React.FC = () => {
   const { success, error: showError } = useNotificationContext();
 
   const [tableData, setTableData] = useState<TableData | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
   const [selectedField, setSelectedField] = useState<FieldData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  
+  // 当前激活的表标签页
+  const [activeTableTab, setActiveTableTab] = useState<TableTabType>('fields');
+  
+  // 是否显示更多设置
+  const [showMoreSettings, setShowMoreSettings] = useState(false);
+
+  // 添加索引相关状态
+  const [isIndexModalOpen, setIsIndexModalOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<IndexData | null>(null);
+  const [isEditingIndex, setIsEditingIndex] = useState(false);
 
   // 数据类型选项
   const dataTypeOptions = [
@@ -77,39 +104,31 @@ const TableDetails: React.FC = () => {
 
   // 加载表数据
   useEffect(() => {
-    console.log('TableDetails 组件加载/更新，尝试获取表数据，tableId:', tableId);
-
     if (currentProject && tableId) {
-      console.log('当前项目:', currentProject.info.name);
-      console.log('项目表数量:', currentProject.tables?.length || 0);
-
       const table = currentProject.tables?.find(t => t.id === tableId);
       if (table) {
-        console.log('找到表数据:', table.name);
+        // 创建一个新的表对象，确保有索引数组
+        const tableWithIndexes = {
+          ...table,
+          indexes: table.indexes || []
+        };
+        
         // 把tableData设置为新的表数据前先清除旧状态，避免UI闪烁
         setTableData(null);
         setTimeout(() => {
-          setTableData(table);
+          setTableData(tableWithIndexes);
         }, 0);
       } else {
-        console.error(`找不到ID为 ${tableId} 的表`);
+        showError(`找不到ID为 ${tableId} 的表`);
         // 如果找不到表，返回到实体列表页
         navigate('/app/entity/tables');
       }
-    } else {
-      if (!currentProject) {
-        console.error('当前项目为空');
-      }
-      if (!tableId) {
-        console.error('tableId参数为空');
-      }
     }
-  }, [currentProject, tableId, navigate]);
+  }, [currentProject, tableId, navigate, showError]);
 
   // 定制success通知的显示时间为1秒
   const successNotification = (message: string) => {
     success(message);
-    // 不需要设置超时，因为useNotification内部已经有计时器
   };
 
   // 保存表数据
@@ -117,9 +136,19 @@ const TableDetails: React.FC = () => {
     if (!tableData || !currentProject) return;
 
     try {
+      // 创建更新后的表数据对象
+      const updatedTableData = {
+        ...tableData,
+        // 确保code字段作为表名，name字段作为表备注
+        code: tableData.code,
+        name: tableData.name,
+        comment: tableData.comment,
+        lastModified: Date.now()
+      };
+
       // 更新项目中的表数据
       const updatedTables = currentProject.tables.map(table =>
-        table.id === tableData.id ? tableData : table
+        table.id === tableData.id ? updatedTableData : table
       );
 
       const updatedProject = {
@@ -299,6 +328,8 @@ const TableDetails: React.FC = () => {
   // 过滤字段
   const getFilteredFields = () => {
     if (!tableData) return [];
+    
+    // 直接返回所有字段，不再进行搜索过滤
     return tableData.fields;
   };
 
@@ -367,137 +398,497 @@ const TableDetails: React.FC = () => {
     return domain ? domain.name : '未知主题域';
   };
 
+  // 切换表详情页标签
+  const handleTableTabChange = (tabType: TableTabType) => {
+    setActiveTableTab(tabType);
+  };
+
+  // 添加新索引
+  const handleAddIndex = () => {
+    setSelectedIndex(null);
+    setIsEditingIndex(false);
+    setIsIndexModalOpen(true);
+  };
+
+  // 编辑索引
+  const handleEditIndex = (index: IndexData) => {
+    setSelectedIndex(index);
+    setIsEditingIndex(true);
+    setIsIndexModalOpen(true);
+  };
+
+  // 删除索引
+  const handleDeleteIndex = (indexId: string) => {
+    if (!tableData || !currentProject) return;
+
+    if (window.confirm('确定要删除这个索引吗？')) {
+      const updatedIndexes = tableData.indexes.filter(index => index.id !== indexId);
+
+      // 更新本地表数据
+      const updatedTableData = {
+        ...tableData,
+        indexes: updatedIndexes,
+        lastModified: Date.now()
+      };
+
+      setTableData(updatedTableData);
+
+      // 自动保存到项目信息
+      try {
+        // 更新项目中的表数据
+        const updatedTables = currentProject.tables.map(table =>
+          table.id === updatedTableData.id ? updatedTableData : table
+        );
+
+        const updatedProject = {
+          ...currentProject,
+          tables: updatedTables,
+          lastModified: Date.now()
+        };
+
+        // 更新Redux状态
+        dispatch(setCurrentProject(updatedProject));
+
+        // 保存到localStorage
+        saveProject(updatedProject);
+
+        successNotification('索引删除成功，项目已自动更新');
+      } catch (error) {
+        console.error('删除索引并保存项目失败:', error);
+        showError('删除索引失败，请检查控制台错误日志');
+      }
+    }
+  };
+
+  // 保存索引信息
+  const handleSaveIndex = (index: IndexData) => {
+    if (!tableData || !currentProject) return;
+
+    let updatedIndexes: IndexData[];
+
+    if (isEditingIndex && selectedIndex) {
+      // 更新现有索引
+      updatedIndexes = tableData.indexes.map(idx =>
+        idx.id === selectedIndex.id ? { ...index, id: selectedIndex.id } : idx
+      );
+    } else {
+      // 添加新索引
+      const newIndex = {
+        ...index,
+        id: Date.now().toString() // 简单的ID生成
+      };
+      updatedIndexes = [...tableData.indexes, newIndex];
+    }
+
+    // 更新本地表数据状态
+    const updatedTableData = {
+      ...tableData,
+      indexes: updatedIndexes,
+      lastModified: Date.now()
+    };
+
+    setTableData(updatedTableData);
+
+    // 自动保存到项目信息
+    try {
+      // 更新项目中的表数据
+      const updatedTables = currentProject.tables.map(table =>
+        table.id === updatedTableData.id ? updatedTableData : table
+      );
+
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables,
+        lastModified: Date.now()
+      };
+
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
+
+      // 保存到localStorage
+      saveProject(updatedProject);
+
+      successNotification('索引保存成功，项目已自动更新');
+    } catch (error) {
+      console.error('保存索引到项目失败:', error);
+      showError('保存索引失败，但索引已添加到表编辑器中，请手动点击"保存表"按钮进行保存');
+    }
+
+    setIsIndexModalOpen(false);
+  };
+
+  // 处理索引排序
+  const handleMoveIndex = (indexId: string, direction: 'up' | 'down') => {
+    if (!tableData || !currentProject) return;
+
+    const indexIndex = tableData.indexes.findIndex(index => index.id === indexId);
+    if (indexIndex === -1) return;
+
+    const newIndexes = [...tableData.indexes];
+
+    if (direction === 'up' && indexIndex > 0) {
+      [newIndexes[indexIndex], newIndexes[indexIndex - 1]] = [newIndexes[indexIndex - 1], newIndexes[indexIndex]];
+    } else if (direction === 'down' && indexIndex < newIndexes.length - 1) {
+      [newIndexes[indexIndex], newIndexes[indexIndex + 1]] = [newIndexes[indexIndex + 1], newIndexes[indexIndex]];
+    }
+
+    // 更新本地表数据
+    const updatedTableData = {
+      ...tableData,
+      indexes: newIndexes,
+      lastModified: Date.now()
+    };
+
+    setTableData(updatedTableData);
+
+    // 自动保存到项目信息
+    try {
+      // 更新项目中的表数据
+      const updatedTables = currentProject.tables.map(table =>
+        table.id === updatedTableData.id ? updatedTableData : table
+      );
+
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables,
+        lastModified: Date.now()
+      };
+
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
+
+      // 保存到localStorage
+      saveProject(updatedProject);
+
+      successNotification('索引排序成功，项目已自动更新');
+    } catch (error) {
+      console.error('更新索引排序并保存项目失败:', error);
+    }
+  };
+
+  // 渲染表详情标签内容
+  const renderTabContent = () => {
+    switch (activeTableTab) {
+      case 'fields':
+        return renderFieldsTab();
+      case 'indexes':
+        return renderIndexesTab();
+      case 'sql':
+        return (
+          <div className="tab-placeholder">
+            <CodeOutlined />
+            <p>SQL代码预览功能正在开发中...</p>
+          </div>
+        );
+      case 'code':
+        return (
+          <div className="tab-placeholder">
+            <FileTextOutlined />
+            <p>程序代码生成功能正在开发中...</p>
+          </div>
+        );
+      case 'check':
+        return (
+          <div className="tab-placeholder">
+            <CheckCircleOutlined />
+            <p>规范检查功能正在开发中...</p>
+          </div>
+        );
+      default:
+        return renderFieldsTab();
+    }
+  };
+
+  // 渲染字段管理标签页内容
+  const renderFieldsTab = () => {
+    return (
+      <div className="fields-panel">
+        <div className="fields-toolbar">
+          <button className="add-button" onClick={handleAddField}>
+            <PlusOutlined /> 添加字段
+          </button>
+        </div>
+
+        <div className="fields-table-wrapper">
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>名称</th>
+                  <th>数据类型</th>
+                  <th>长度/精度</th>
+                  <th>小数位</th>
+                  <th>主键</th>
+                  <th>不为空</th>
+                  <th>自增</th>
+                  <th>默认值</th>
+                  <th>备注</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {getFilteredFields().length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="empty-message">
+                      <InfoCircleOutlined /> 暂无字段，请添加
+                    </td>
+                  </tr>
+                ) : (
+                  getFilteredFields().map((field, index) => (
+                    <tr key={field.id} className={field.primaryKey ? 'primary-key-row' : ''}>
+                      <td>{index + 1}</td>
+                      <td>{field.name}</td>
+                      <td><span className="type-badge">{field.type}</span></td>
+                      <td>{field.length || '-'}</td>
+                      <td>{field.scale || '-'}</td>
+                      <td>{field.primaryKey ? <span className="pk-badge"><KeyOutlined /></span> : '-'}</td>
+                      <td>{field.notNull ? '√' : '-'}</td>
+                      <td>{field.autoIncrement ? '√' : '-'}</td>
+                      <td className="default-value-cell">{field.defaultValue || '-'}</td>
+                      <td className="comment-cell">{field.comment || '-'}</td>
+                      <td className="actions-cell">
+                        <button title="向上移动" className="table-action-btn" onClick={() => handleMoveField(field.id, 'up')}>
+                          <UpOutlined />
+                        </button>
+                        <button title="向下移动" className="table-action-btn" onClick={() => handleMoveField(field.id, 'down')}>
+                          <DownOutlined />
+                        </button>
+                        <button title="编辑" className="table-action-btn" onClick={() => handleEditField(field)}>
+                          <EditOutlined />
+                        </button>
+                        <button title="复制" className="table-action-btn" onClick={() => handleCopyField(field)}>
+                          <CopyOutlined />
+                        </button>
+                        <button
+                          title="删除"
+                          className="table-action-btn delete-btn"
+                          onClick={() => handleDeleteField(field.id)}
+                        >
+                          <DeleteOutlined />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 渲染索引管理标签页内容
+  const renderIndexesTab = () => {
+    return (
+      <div className="indexes-panel">
+        <div className="indexes-toolbar">
+          <button className="add-button" onClick={handleAddIndex}>
+            <PlusOutlined /> 添加索引
+          </button>
+        </div>
+
+        <div className="indexes-table-wrapper">
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>索引名称</th>
+                  <th>类型</th>
+                  <th>包含字段</th>
+                  <th>备注</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tableData?.indexes?.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="empty-message">
+                      <InfoCircleOutlined /> 暂无索引，请添加
+                    </td>
+                  </tr>
+                ) : (
+                  tableData?.indexes?.map((index, idx) => (
+                    <tr key={index.id}>
+                      <td>{idx + 1}</td>
+                      <td>{index.name}</td>
+                      <td>{index.unique ? '唯一索引' : '普通索引'}</td>
+                      <td>
+                        {index.fields.map(fieldId => {
+                          const field = tableData.fields.find(f => f.id === fieldId);
+                          return field ? field.name : '';
+                        }).join(', ')}
+                      </td>
+                      <td className="comment-cell">{index.comment || '-'}</td>
+                      <td className="actions-cell">
+                        <button title="向上移动" className="table-action-btn" onClick={() => handleMoveIndex(index.id, 'up')}>
+                          <UpOutlined />
+                        </button>
+                        <button title="向下移动" className="table-action-btn" onClick={() => handleMoveIndex(index.id, 'down')}>
+                          <DownOutlined />
+                        </button>
+                        <button title="编辑" className="table-action-btn" onClick={() => handleEditIndex(index)}>
+                          <EditOutlined />
+                        </button>
+                        <button
+                          title="删除"
+                          className="table-action-btn delete-btn"
+                          onClick={() => handleDeleteIndex(index.id)}
+                        >
+                          <DeleteOutlined />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (!tableData) {
     return <div className="loading-container">加载表信息中...</div>;
   }
 
   return (
     <div className="table-details-container">
-      <div className="table-details-header">
-        <div className="table-title-section">
-          <div className="editable-field">
-            <label>表名:</label>
-            <input
-              type="text"
-              className="cyber-input"
-              value={tableData.name}
-              onChange={(e) => setTableData({...tableData, name: e.target.value})}
-            />
+      {/* 表顶部标签切换区域 */}
+      <div className="table-tabs-container">
+        <div className="table-function-tabs">
+          <div 
+            className={`tab-item ${activeTableTab === 'fields' ? 'active' : ''}`} 
+            onClick={() => handleTableTabChange('fields')}
+          >
+            <span>字段</span>
           </div>
-          <div className="table-info">
-            <div className="editable-field">
-              <label>表代码:</label>
+          <div 
+            className={`tab-item ${activeTableTab === 'indexes' ? 'active' : ''}`} 
+            onClick={() => handleTableTabChange('indexes')}
+          >
+            <span>索引</span>
+          </div>
+          <div 
+            className={`tab-item ${activeTableTab === 'sql' ? 'active' : ''}`} 
+            onClick={() => handleTableTabChange('sql')}
+          >
+            <span>SQL代码</span>
+          </div>
+          <div 
+            className={`tab-item ${activeTableTab === 'code' ? 'active' : ''}`} 
+            onClick={() => handleTableTabChange('code')}
+          >
+            <span>程序代码</span>
+          </div>
+          <div 
+            className={`tab-item ${activeTableTab === 'check' ? 'active' : ''}`} 
+            onClick={() => handleTableTabChange('check')}
+          >
+            <span>规范检查</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 表信息和操作区域，只在字段标签页下显示 */}
+      {activeTableTab === 'fields' && (
+        <div className="table-info-container">
+          <div className="table-basic-info">
+            <div className="info-group code-group">
+              <label>代码:</label>
               <input
                 type="text"
                 className="cyber-input"
                 value={tableData.code}
                 onChange={(e) => setTableData({...tableData, code: e.target.value})}
+                placeholder="输入表代码（表名）"
               />
             </div>
-            <span className="info-item">主题域: <strong>{getDomainName(tableData.domainId)}</strong></span>
-            <span className="info-item">字段数: <strong>{tableData.fields.length}</strong></span>
-          </div>
-          <div className="editable-field comment-field">
-            <label>表备注:</label>
-            <textarea
-              className="cyber-textarea"
-              value={tableData.comment || ''}
-              onChange={(e) => setTableData({...tableData, comment: e.target.value})}
-              placeholder="输入表备注..."
-            ></textarea>
-          </div>
-        </div>
-
-        <div className="actions-bar">
-          <button className="action-button" onClick={handleSaveTable}>
-            <SaveOutlined /> 保存表
-          </button>
-        </div>
-      </div>
-
-      <div className="tabs-container">
-        <div className="tabs-header">
-          <div className="tab active">字段</div>
-          <div className="tab">索引</div>
-          <div className="tab">关系</div>
-          <div className="tab">SQL预览</div>
-        </div>
-      </div>
-
-      <div className="tab-content">
-        <div className="fields-panel">
-          <div className="fields-toolbar">
-            <button className="add-button" onClick={handleAddField}>
-              <PlusOutlined /> 添加字段
-            </button>
-          </div>
-
-          <div className="fields-table-wrapper">
-            <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>序号</th>
-                    <th>名称</th>
-                    <th>数据类型</th>
-                    <th>长度/精度</th>
-                    <th>小数位</th>
-                    <th>主键</th>
-                    <th>不为空</th>
-                    <th>自增</th>
-                    <th>默认值</th>
-                    <th>备注</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getFilteredFields().length === 0 ? (
-                    <tr>
-                    </tr>
-                  ) : (
-                    getFilteredFields().map((field, index) => (
-                      <tr key={field.id} className={field.primaryKey ? 'primary-key-row' : ''}>
-                        <td>{index + 1}</td>
-                        <td>{field.name}</td>
-                        <td><span className="type-badge">{field.type}</span></td>
-                        <td>{field.length || '-'}</td>
-                        <td>{field.scale || '-'}</td>
-                        <td>{field.primaryKey ? <span className="pk-badge"><KeyOutlined /></span> : '-'}</td>
-                        <td>{field.notNull ? '√' : '-'}</td>
-                        <td>{field.autoIncrement ? '√' : '-'}</td>
-                        <td className="default-value-cell">{field.defaultValue || '-'}</td>
-                        <td className="comment-cell">{field.comment || '-'}</td>
-                        <td className="actions-cell">
-                          <button title="向上移动" className="table-action-btn" onClick={() => handleMoveField(field.id, 'up')}>
-                            <UpOutlined />
-                          </button>
-                          <button title="向下移动" className="table-action-btn" onClick={() => handleMoveField(field.id, 'down')}>
-                            <DownOutlined />
-                          </button>
-                          <button title="编辑" className="table-action-btn" onClick={() => handleEditField(field)}>
-                            <EditOutlined />
-                          </button>
-                          <button title="复制" className="table-action-btn" onClick={() => handleCopyField(field)}>
-                            <CopyOutlined />
-                          </button>
-                          <button
-                            title="删除"
-                            className="table-action-btn delete-btn"
-                            onClick={() => handleDeleteField(field.id)}
-                          >
-                            <DeleteOutlined />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="info-group name-group">
+              <label>显示名称:</label>
+              <input
+                type="text"
+                className="cyber-input"
+                value={tableData.name}
+                onChange={(e) => setTableData({...tableData, name: e.target.value})}
+                placeholder="输入表显示名称（备注）"
+              />
+            </div>
+            <div className="info-group domain-group">
+              <label>所属主题域:</label>
+              <span>{getDomainName(tableData.domainId)}</span>
+            </div>
+            <div className="more-settings-toggle" onClick={() => setShowMoreSettings(!showMoreSettings)}>
+              {showMoreSettings ? '收起设置' : '更多设置'} <SettingOutlined />
+            </div>
+            <div className="save-button-container">
+              <button className="action-button" onClick={handleSaveTable}>
+                <SaveOutlined /> 保存表
+              </button>
             </div>
           </div>
+          
+          {/* 更多设置区域 */}
+          {showMoreSettings && (
+            <div className="table-more-settings">
+              <div className="settings-row">
+                <div className="setting-group">
+                  <label>表备注:</label>
+                  <textarea
+                    className="cyber-textarea"
+                    value={tableData.comment || ''}
+                    onChange={(e) => setTableData({...tableData, comment: e.target.value})}
+                    placeholder="输入表备注..."
+                  />
+                </div>
+                <div className="setting-group">
+                  <label>表类型:</label>
+                  <select 
+                    className="cyber-select"
+                    value={tableData.type || 'table'}
+                    onChange={(e) => setTableData({...tableData, type: e.target.value})}
+                  >
+                    <option value="table">普通表</option>
+                    <option value="view">视图</option>
+                    <option value="dimension">维度表</option>
+                    <option value="fact">事实表</option>
+                  </select>
+                </div>
+                <div className="setting-group">
+                  <label>创建时间:</label>
+                  <span>{new Date(tableData.createTime).toLocaleString()}</span>
+                </div>
+                <div className="setting-group">
+                  <label>修改时间:</label>
+                  <span>{new Date(tableData.lastModified).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* 非字段标签页下显示简化的表头信息 */}
+      {activeTableTab !== 'fields' && (
+        <div className="table-header-simple">
+          <h2>{tableData.name || tableData.code}</h2>
+          <div className="save-button-container">
+            <button className="action-button" onClick={handleSaveTable}>
+              <SaveOutlined /> 保存表
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 标签页内容区域 */}
+      <div className="table-content-container">
+        {renderTabContent()}
       </div>
 
+      {/* 字段编辑模态框 */}
       {isFieldModalOpen && (
         <div className="modal-backdrop">
           <div className="modal-container cyber-card">
@@ -657,6 +1048,123 @@ const TableDetails: React.FC = () => {
                   </button>
                   <button type="submit" className="confirm-btn">
                     {isEditing ? '保存修改' : '添加字段'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 索引编辑模态框 */}
+      {isIndexModalOpen && (
+        <div className="modal-backdrop">
+          <div className="modal-container cyber-card">
+            <div className="modal-header">
+              <h2 className="cyber-title">{isEditingIndex ? '编辑索引' : '新建索引'}</h2>
+              <button className="close-btn" onClick={() => setIsIndexModalOpen(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                // 获取表单数据
+                const formData = new FormData(e.currentTarget);
+                const indexName = formData.get('name') as string;
+
+                // 检查索引名是否已存在（仅限于添加新索引时）
+                if (!isEditingIndex && tableData?.indexes.some(i => i.name === indexName)) {
+                  showError(`索引名 "${indexName}" 已存在，请使用其他名称`);
+                  return;
+                }
+
+                // 获取选中的字段IDs
+                const selectedFieldIds: string[] = [];
+                tableData?.fields.forEach(field => {
+                  if (formData.get(`field_${field.id}`)) {
+                    selectedFieldIds.push(field.id);
+                  }
+                });
+
+                if (selectedFieldIds.length === 0) {
+                  showError('请至少选择一个字段');
+                  return;
+                }
+
+                const index: IndexData = {
+                  id: selectedIndex?.id || '',
+                  name: indexName,
+                  fields: selectedFieldIds,
+                  unique: !!formData.get('unique'),
+                  comment: formData.get('comment') as string || undefined
+                };
+                handleSaveIndex(index);
+              }}>
+                <div className="form-section">
+                  <h3 className="section-title">基本信息</h3>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>索引名称 <span className="required">*</span></label>
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        className="cyber-input"
+                        defaultValue={selectedIndex?.name || ''}
+                        placeholder="输入索引名称"
+                      />
+                    </div>
+                    <div className="cyber-checkbox">
+                      <input
+                        type="checkbox"
+                        id="unique"
+                        name="unique"
+                        defaultChecked={selectedIndex?.unique || false}
+                      />
+                      <label htmlFor="unique">
+                        <span className="checkbox-icon"></span>
+                        <span className="checkbox-text">唯一索引</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>备注</label>
+                    <textarea
+                      name="comment"
+                      rows={2}
+                      className="cyber-textarea"
+                      defaultValue={selectedIndex?.comment || ''}
+                      placeholder="索引说明（可选）"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h3 className="section-title">选择字段</h3>
+                  <div className="fields-selection">
+                    {tableData?.fields.map(field => (
+                      <div key={field.id} className="cyber-checkbox">
+                        <input
+                          type="checkbox"
+                          id={`field_${field.id}`}
+                          name={`field_${field.id}`}
+                          defaultChecked={selectedIndex?.fields.includes(field.id) || false}
+                        />
+                        <label htmlFor={`field_${field.id}`}>
+                          <span className="checkbox-icon"></span>
+                          <span className="checkbox-text">{field.name}</span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button type="button" className="cancel-btn" onClick={() => setIsIndexModalOpen(false)}>
+                    取消
+                  </button>
+                  <button type="submit" className="confirm-btn">
+                    {isEditingIndex ? '保存修改' : '添加索引'}
                   </button>
                 </div>
               </form>

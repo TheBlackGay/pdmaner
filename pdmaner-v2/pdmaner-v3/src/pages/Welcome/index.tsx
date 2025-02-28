@@ -72,7 +72,7 @@ const Welcome: React.FC = () => {
       
       // 关闭弹窗并跳转
       setIsProjectModalOpen(false);
-      navigate('/app/entity/tables');
+      navigate('/app');
     } catch (error) {
       console.error('创建项目失败', error);
     } finally {
@@ -89,7 +89,7 @@ const Welcome: React.FC = () => {
       const projectData = getProjectById(project.id);
       if (projectData) {
         dispatch(setCurrentProject(projectData));
-        navigate('/app/entity/tables');
+        navigate('/app');
       } else {
         console.error('项目数据不存在');
         // 删除失效的项目引用
