@@ -324,38 +324,54 @@ const MainLayout: React.FC = () => {
           
           // 设置选中的表
           const tableKey = `table_${tableId}`;
-          setSelectedTableKey(tableKey);
           
-          // 创建对应的标签页
-          const tabExists = tabs.some(t => t.type === tableKey);
-          if (!tabExists) {
-            const newTab = {
-              id: `tab_${Date.now()}`,
-              title: table.name,
-              type: tableKey,
-              icon: <TableOutlined />
-            };
-            setTabs(prev => [...prev, newTab]);
-            setActiveTab(tableKey);
+          // 只有表项发生变化时才更新选中状态和创建新标签页
+          if (selectedTableKey !== tableKey) {
+            console.log('选中表项变化，更新状态', selectedTableKey, '->', tableKey);
+            setSelectedTableKey(tableKey);
+          
+            // 创建对应的标签页
+            const tabExists = tabs.some(t => t.type === tableKey);
+            if (!tabExists) {
+              const newTab = {
+                id: `tab_${Date.now()}`,
+                title: table.name,
+                type: tableKey,
+                icon: <TableOutlined />
+              };
+              setTabs(prev => [...prev, newTab]);
+              setActiveTab(tableKey);
+            } else {
+              // 切换到已有标签页
+              setActiveTab(tableKey);
+            }
+            
+            // 展开对应的菜单项（仅在表发生变化时执行）
+            const domainId = table.domainId;
+            if (domainId) {
+              // 使用setTimeout避免菜单重复展开导致的闪烁
+              setTimeout(() => {
+                // 展开模型菜单
+                const modelKey = 'model';
+                if (!isMenuItemExpanded(modelKey)) {
+                  toggleMenuExpand(modelKey);
+                }
+                
+                // 展开主题域菜单
+                const domainKey = `domain_${domainId}`;
+                if (!isMenuItemExpanded(domainKey)) {
+                  toggleMenuExpand(domainKey);
+                }
+                
+                // 展开表菜单
+                const tablesKey = `tables_${domainId}`;
+                if (!isMenuItemExpanded(tablesKey)) {
+                  toggleMenuExpand(tablesKey);
+                }
+              }, 50);
+            }
           } else {
-            // 切换到已有标签页
-            setActiveTab(tableKey);
-          }
-          
-          // 展开对应的菜单项
-          const domainId = table.domainId;
-          if (domainId) {
-            // 展开模型菜单
-            const modelKey = 'model';
-            toggleMenuExpand(modelKey);
-            
-            // 展开主题域菜单
-            const domainKey = `domain_${domainId}`;
-            toggleMenuExpand(domainKey);
-            
-            // 展开表菜单
-            const tablesKey = `tables_${domainId}`;
-            toggleMenuExpand(tablesKey);
+            console.log('表项未变化，不更新菜单状态');
           }
         } else {
           console.error(`找不到ID为 ${tableId} 的表`);
@@ -364,7 +380,27 @@ const MainLayout: React.FC = () => {
         }
       }
     }
-  }, [location.pathname, currentProject]); // 当路由或项目数据变化时触发
+  }, [location.pathname]); // 只在路径变化时触发，不再依赖currentProject
+
+  // 判断菜单项是否已展开
+  const isMenuItemExpanded = (menuKey: string): boolean => {
+    // 递归查找菜单项
+    const findMenuItem = (items: MenuItem[]): boolean => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.key === menuKey) {
+          return !!item.expanded;
+        }
+        if (item.children) {
+          const found = findMenuItem(item.children);
+          if (found) return true;
+        }
+      }
+      return false;
+    };
+    
+    return findMenuItem(menuItems);
+  };
 
   // 自动保存功能
   useEffect(() => {
@@ -1096,6 +1132,11 @@ const MainLayout: React.FC = () => {
 
   // 添加处理表项点击的函数
   const handleTableItemClick = (tableKey: string) => {
+    // 如果点击的是已经选中的表，不需要执行后续操作
+    if (selectedTableKey === tableKey) {
+      return;
+    }
+    
     console.log('表格点击事件:', tableKey);
     setSelectedTableKey(tableKey);
     // 显示右侧属性面板
@@ -1748,11 +1789,6 @@ const MainLayout: React.FC = () => {
 
         {/* 内容区域 */}
         <div className="content-area">
-          {/* 面包屑导航 */}
-          <div className="breadcrumb">
-            {getBreadcrumbText()}
-          </div>
-
           {/* 标签页栏 */}
           <div className="tabs-bar">
             {tabs.map(tab => (
@@ -1760,11 +1796,21 @@ const MainLayout: React.FC = () => {
                 key={tab.id}
                 className={`tab ${tab.type === activeTab ? 'active' : ''}`}
                 onClick={() => {
+                  // 设置当前活动标签页
                   setActiveTab(tab.type);
-                  // 查找对应的菜单项并导航
-                  const path = findPathByTabType(tab.type);
-                  if (path) {
-                    navigate(path);
+                  
+                  // 如果是表类型的标签页，提取tableId并导航到对应的表详情页
+                  if (tab.type.startsWith('table_')) {
+                    const tableId = tab.type.split('_')[1];
+                    if (tableId) {
+                      navigate(`/app/table/${tableId}`);
+                    }
+                  } else {
+                    // 其他类型的标签页，查找对应的路径并导航
+                    const path = findPathByTabType(tab.type);
+                    if (path) {
+                      navigate(path);
+                    }
                   }
                 }}
               >
