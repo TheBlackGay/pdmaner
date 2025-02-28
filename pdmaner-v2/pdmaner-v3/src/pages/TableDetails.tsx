@@ -18,7 +18,8 @@ import {
   CheckCircleOutlined,
   FileTextOutlined,
   VerticalAlignTopOutlined,
-  VerticalAlignBottomOutlined
+  VerticalAlignBottomOutlined,
+  DatabaseOutlined
 } from '@ant-design/icons';
 import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
@@ -1239,38 +1240,45 @@ const TableDetails: React.FC = () => {
 
       {/* 字段编辑模态框 */}
       {isFieldModalOpen && (
-        <div className="modal-backdrop" onClick={e => e.stopPropagation()}>
-          <div className="modal-container cyber-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={e => {
+          // 仅当点击背景时关闭
+          if (e.target === e.currentTarget) {
+            setIsFieldModalOpen(false);
+          }
+        }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="cyber-title">{isEditing ? '编辑字段' : '新建字段'}</h2>
+              <h2>{isEditing ? '编辑字段' : '新建字段'}</h2>
               <button className="close-btn" onClick={() => setIsFieldModalOpen(false)}>×</button>
             </div>
             <div className="modal-body">
               <form onSubmit={(e) => {
                 e.preventDefault();
-                // 获取表单数据
-                const formData = new FormData(e.currentTarget);
-                const fieldName = formData.get('name') as string;
-                const fieldCode = formData.get('code') as string;
-
+                
+                // 验证
+                if (!selectedField?.name || !selectedField?.code) {
+                  showError('字段名称和代码不能为空');
+                  return;
+                }
+                
                 // 检查字段名是否已存在（仅限于添加新字段时）
-                if (!isEditing && tableData?.fields.some(f => f.name === fieldName)) {
-                  showError(`字段名 "${fieldName}" 已存在，请使用其他名称`);
+                if (!isEditing && tableData?.fields.some(f => f.name === selectedField?.name)) {
+                  showError(`字段名 "${selectedField?.name}" 已存在，请使用其他名称`);
                   return;
                 }
 
                 // 检查字段代码是否已存在（仅限于添加新字段时）
-                if (!isEditing && tableData?.fields.some(f => f.code === fieldCode)) {
-                  showError(`字段代码 "${fieldCode}" 已存在，请使用其他代码`);
+                if (!isEditing && tableData?.fields.some(f => f.code === selectedField?.code)) {
+                  showError(`字段代码 "${selectedField?.code}" 已存在，请使用其他代码`);
                   return;
                 }
-
-                // 创建新字段对象
-                const newField: FieldData = {
-                  id: Date.now().toString(),
-                  name: fieldName,
-                  code: fieldCode,
-                  type: selectedField?.type || '',
+                
+                // 创建字段对象
+                const fieldData = {
+                  id: selectedField?.id || Date.now().toString(),
+                  name: selectedField?.name || '',
+                  code: selectedField?.code || '',
+                  type: selectedField?.type || 'VARCHAR',
                   length: selectedField?.length,
                   scale: selectedField?.scale,
                   primaryKey: selectedField?.primaryKey || false,
@@ -1279,142 +1287,155 @@ const TableDetails: React.FC = () => {
                   defaultValue: selectedField?.defaultValue,
                   comment: selectedField?.comment
                 };
-
-                // 添加字段到表中
-                if (tableData) {
-                  const updatedFields = [...tableData.fields, newField];
-                  const updatedTableData = {
-                    ...tableData,
-                    fields: updatedFields,
-                    lastModified: Date.now()
-                  };
-
-                  setTableData(updatedTableData);
-
-                  // 自动更新到项目
-                  if (currentProject) {
-                    const updatedTables = currentProject.tables.map(table =>
-                      table.id === updatedTableData.id ? updatedTableData : table
-                    );
-
-                    const updatedProject = {
-                      ...currentProject,
-                      tables: updatedTables,
-                      lastModified: Date.now()
-                    };
-
-                    // 更新Redux状态
-                    dispatch(setCurrentProject(updatedProject));
-
-                    // 保存到localStorage
-                    saveProject(updatedProject);
-
-                    successNotification(`字段 "${fieldName}" 添加成功`);
-                  }
-                }
+                
+                // 保存字段
+                handleSaveField(fieldData);
+                setIsFieldModalOpen(false);
               }}>
-                <div className="form-group">
-                  <label>名称:</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={selectedField?.name || ''}
-                    onChange={(e) => setSelectedField({...selectedField, name: e.target.value})}
-                    placeholder="输入字段名称"
-                  />
+                {/* 基本信息部分 */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <InfoCircleOutlined /> 基本信息
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>
+                        <span className="required">*</span> 字段名称:
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedField?.name || ''}
+                        onChange={(e) => setSelectedField({...selectedField, name: e.target.value})}
+                        placeholder="请输入字段名称"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>
+                        <span className="required">*</span> 字段代码:
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedField?.code || ''}
+                        onChange={(e) => setSelectedField({...selectedField, code: e.target.value})}
+                        placeholder="请输入字段代码"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>代码:</label>
-                  <input
-                    type="text"
-                    name="code"
-                    value={selectedField?.code || ''}
-                    onChange={(e) => setSelectedField({...selectedField, code: e.target.value})}
-                    placeholder="输入字段代码"
-                  />
+                
+                {/* 数据类型部分 */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <DatabaseOutlined /> 数据类型
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>数据类型:</label>
+                      <select
+                        value={selectedField?.type || 'VARCHAR'}
+                        onChange={(e) => setSelectedField({...selectedField, type: e.target.value})}
+                      >
+                        {dataTypeOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>长度:</label>
+                      <input
+                        type="number"
+                        value={selectedField?.length || ''}
+                        onChange={(e) => setSelectedField({...selectedField, length: Number(e.target.value) || undefined})}
+                        placeholder="字段长度"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>小数位:</label>
+                      <input
+                        type="number"
+                        value={selectedField?.scale || ''}
+                        onChange={(e) => setSelectedField({...selectedField, scale: Number(e.target.value) || undefined})}
+                        placeholder="小数位数"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>默认值:</label>
+                      <input
+                        type="text"
+                        value={selectedField?.defaultValue || ''}
+                        onChange={(e) => setSelectedField({...selectedField, defaultValue: e.target.value})}
+                        placeholder="默认值"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>数据类型:</label>
-                  <select
-                    name="type"
-                    value={selectedField?.type || ''}
-                    onChange={(e) => setSelectedField({...selectedField, type: e.target.value})}
-                  >
-                    {dataTypeOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                
+                {/* 约束与设置部分 */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <SettingOutlined /> 约束与设置
+                  </div>
+                  <div className="checkbox-group">
+                    <label className="custom-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedField?.primaryKey || false}
+                        onChange={(e) => setSelectedField({...selectedField, primaryKey: e.target.checked})}
+                      />
+                      <div className="checkbox-display"></div>
+                      <span className="checkbox-label">主键</span>
+                    </label>
+                    
+                    <label className="custom-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedField?.notNull || false}
+                        onChange={(e) => setSelectedField({...selectedField, notNull: e.target.checked})}
+                      />
+                      <div className="checkbox-display"></div>
+                      <span className="checkbox-label">不为空</span>
+                    </label>
+                    
+                    <label className="custom-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedField?.autoIncrement || false}
+                        onChange={(e) => setSelectedField({...selectedField, autoIncrement: e.target.checked})}
+                      />
+                      <div className="checkbox-display"></div>
+                      <span className="checkbox-label">自增</span>
+                    </label>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>长度:</label>
-                  <input
-                    type="number"
-                    name="length"
-                    value={selectedField?.length}
-                    onChange={(e) => setSelectedField({...selectedField, length: Number(e.target.value)})}
-                    placeholder="输入字段长度"
-                  />
+                
+                {/* 备注部分 */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <FileTextOutlined /> 备注说明
+                  </div>
+                  <div className="form-row full-width">
+                    <div className="form-group">
+                      <label>备注:</label>
+                      <textarea
+                        value={selectedField?.comment || ''}
+                        onChange={(e) => setSelectedField({...selectedField, comment: e.target.value})}
+                        placeholder="输入字段备注说明"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>小数位:</label>
-                  <input
-                    type="number"
-                    name="scale"
-                    value={selectedField?.scale}
-                    onChange={(e) => setSelectedField({...selectedField, scale: Number(e.target.value)})}
-                    placeholder="输入小数位"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>主键:</label>
-                  <input
-                    type="checkbox"
-                    name="primaryKey"
-                    checked={selectedField?.primaryKey || false}
-                    onChange={(e) => setSelectedField({...selectedField, primaryKey: e.target.checked})}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>不为空:</label>
-                  <input
-                    type="checkbox"
-                    name="notNull"
-                    checked={selectedField?.notNull || false}
-                    onChange={(e) => setSelectedField({...selectedField, notNull: e.target.checked})}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>自增:</label>
-                  <input
-                    type="checkbox"
-                    name="autoIncrement"
-                    checked={selectedField?.autoIncrement || false}
-                    onChange={(e) => setSelectedField({...selectedField, autoIncrement: e.target.checked})}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>默认值:</label>
-                  <input
-                    type="text"
-                    name="defaultValue"
-                    value={selectedField?.defaultValue || ''}
-                    onChange={(e) => setSelectedField({...selectedField, defaultValue: e.target.value})}
-                    placeholder="输入默认值"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>备注:</label>
-                  <textarea
-                    name="comment"
-                    value={selectedField?.comment || ''}
-                    onChange={(e) => setSelectedField({...selectedField, comment: e.target.value})}
-                    placeholder="输入字段备注"
-                  />
-                </div>
-                <div className="form-group">
-                  <button type="submit">保存</button>
+                
+                {/* 底部按钮 */}
+                <div className="form-actions">
+                  <button type="button" className="btn-cancel" onClick={() => setIsFieldModalOpen(false)}>取消</button>
+                  <button type="submit" className="btn-save">
+                    <SaveOutlined /> 保存
+                  </button>
                 </div>
               </form>
             </div>
