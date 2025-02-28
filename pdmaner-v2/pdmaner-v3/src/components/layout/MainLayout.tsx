@@ -27,6 +27,7 @@ import SideMenu, { MenuItem } from './sideMenu/SideMenu';
 import StatusBar from './statusBar/StatusBar';
 import ContextMenu, { ContextMenuPosition } from './contextMenu/ContextMenu';
 import ProjectOverview, { ProjectStats, ProjectDetails } from './projectOverview/ProjectOverview';
+import StandardFieldsLibrary from '../standardFields/StandardFieldsLibrary';
 
 // 导入模态框组件
 import NewDomainModal from '@components/modals/NewDomainModal';
@@ -108,6 +109,9 @@ const MainLayout: React.FC = () => {
   const [tableItems, setTableItems] = useState<{[domainId: string]: MenuItem[]}>({});
   const [selectedTableKey, setSelectedTableKey] = useState<string>('');
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]); // 添加展开的组状态
+  
+  // 标准字段库显示状态
+  const [showStandardFields, setShowStandardFields] = useState(false);
 
   // 添加新建表模态框状态
   const [isNewTableModalOpen, setIsNewTableModalOpen] = useState(false);
@@ -546,11 +550,22 @@ const MainLayout: React.FC = () => {
     }
   };
 
-  // 导航到菜单项
+  // 菜单项点击导航
   const navigateToMenuItem = (item: MenuItem) => {
+    // 如果是首页，直接导航到/app
+    if (item.key === 'home') {
+      navigate('/app');
+      setActiveTab(item.key);
+      setTabs([]);
+      setShowProjectOverview(true); // 显示项目概览
+      return;
+    }
+    
+    // 如果有path属性，导航到指定路径
     if (item.path) {
       navigate(item.path);
       setActiveTab(item.key);
+      setShowProjectOverview(false); // 隐藏项目概览
       
       // 检查标签页是否已存在
       const existingTab = tabs.find(tab => tab.type === item.key);
@@ -753,6 +768,18 @@ const MainLayout: React.FC = () => {
     }
   };
 
+  // 检查当前是否在数据模型相关页面
+  const isDataModelPage = () => {
+    // 检查路径是否包含 entity, table, diagram 等数据模型相关路径
+    const modelRelatedPaths = ['/app/entity', '/app/table', '/app/diagram'];
+    return modelRelatedPaths.some(path => location.pathname.startsWith(path));
+  };
+
+  // 根据当前路径判断是否显示标准字段库
+  useEffect(() => {
+    setShowStandardFields(isDataModelPage());
+  }, [location.pathname]);
+
   return (
     <div className={`app-layout ${darkMode ? 'dark-mode' : ''}`}>
       {/* 头部组件 */}
@@ -833,6 +860,11 @@ const MainLayout: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 标准字段库 */}
+      {currentProject && showStandardFields && (
+        <StandardFieldsLibrary />
+      )}
 
       {/* 状态栏 */}
       <StatusBar 

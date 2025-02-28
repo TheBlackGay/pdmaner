@@ -21,6 +21,7 @@ import {
 import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
 import { saveProject } from '@utils/projectStorage';
+import { generateUUID } from '@utils/uuid';
 import './TableDetails.css';
 import { useNotificationContext } from '../contexts/NotificationContext';
 
@@ -28,6 +29,7 @@ import { useNotificationContext } from '../contexts/NotificationContext';
 interface FieldData {
   id: string;
   name: string;        // 字段名
+  code: string;        // 字段代码
   type: string;        // 数据类型
   length?: number;     // 长度
   scale?: number;      // 小数位数
@@ -75,12 +77,15 @@ const TableDetails: React.FC = () => {
   const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
   const [selectedField, setSelectedField] = useState<FieldData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  
+
   // 当前激活的表标签页
   const [activeTableTab, setActiveTableTab] = useState<TableTabType>('fields');
-  
+
   // 是否显示更多设置
   const [showMoreSettings, setShowMoreSettings] = useState(false);
+
+  // 搜索状态
+  const [searchTerm, setSearchTerm] = useState('');
 
   // 添加索引相关状态
   const [isIndexModalOpen, setIsIndexModalOpen] = useState(false);
@@ -112,7 +117,7 @@ const TableDetails: React.FC = () => {
           ...table,
           indexes: table.indexes || []
         };
-        
+
         // 把tableData设置为新的表数据前先清除旧状态，避免UI闪烁
         setTableData(null);
         setTimeout(() => {
@@ -328,7 +333,7 @@ const TableDetails: React.FC = () => {
   // 过滤字段
   const getFilteredFields = () => {
     if (!tableData) return [];
-    
+
     // 直接返回所有字段，不再进行搜索过滤
     return tableData.fields;
   };
@@ -566,6 +571,142 @@ const TableDetails: React.FC = () => {
     }
   };
 
+  // 生成唯一的字段代码
+  const generateUniqueFieldCode = (baseCode: string): string => {
+    if (!tableData) return baseCode;
+
+    let code = baseCode;
+    let counter = 1;
+
+    // 检查代码是否存在，如果存在则添加数字后缀
+    while (tableData.fields.some(f => f.code === code)) {
+      code = `${baseCode}_${counter}`;
+      counter++;
+    }
+
+    return code;
+  };
+
+  // 接收拖拽的字段，添加到当前表
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+
+    // 移除拖拽指示样式
+    const fieldsContainer = document.querySelector('.fields-panel');
+    if (fieldsContainer) {
+      fieldsContainer.classList.remove('drop-target');
+    }
+
+    try {
+      // 获取拖拽数据
+      const data = e.dataTransfer.getData('application/json');
+      if (!data) return;
+
+      const standardField = JSON.parse(data);
+      if (!standardField || !standardField.id) return;
+
+      // 检查字段名是否已存在
+      let fieldName = standardField.name;
+      let fieldCode = standardField.code;
+      const nameExists = tableData?.fields.some(f => f.name === fieldName);
+      const codeExists = tableData?.fields.some(f => f.code === fieldCode);
+
+      // 如果名称或代码已存在，生成唯一的版本
+      if (nameExists || codeExists) {
+        if (nameExists) {
+          // 从名称中提取基础名称（去掉括号中的内容）
+          const baseNameMatch = fieldName.match(/^(.*?)(\(.*\))?$/);
+          const baseName = baseNameMatch ? baseNameMatch[1].trim() : fieldName;
+          fieldName = `${baseName} (复制)`;
+        }
+
+        if (codeExists) {
+          fieldCode = generateUniqueFieldCode(fieldCode);
+        }
+
+        success(`字段名称或代码已存在，已自动调整为 "${fieldName}" (${fieldCode})`);
+      }
+
+      // 创建新字段对象
+      const newField: FieldData = {
+        id: Date.now().toString(),
+        name: fieldName,
+        code: fieldCode,
+        type: standardField.type,
+        length: standardField.length,
+        scale: standardField.scale,
+        primaryKey: standardField.primaryKey || false,
+        notNull: standardField.notNull || false,
+        autoIncrement: standardField.autoIncrement || false,
+        defaultValue: standardField.defaultValue,
+        comment: standardField.comment
+      };
+
+      // 添加字段到表中
+      if (tableData) {
+        const updatedFields = [...tableData.fields, newField];
+        const updatedTableData = {
+          ...tableData,
+          fields: updatedFields,
+          lastModified: Date.now()
+        };
+
+        setTableData(updatedTableData);
+
+        // 自动更新到项目
+        if (currentProject) {
+          const updatedTables = currentProject.tables.map(table =>
+            table.id === updatedTableData.id ? updatedTableData : table
+          );
+
+          const updatedProject = {
+            ...currentProject,
+            tables: updatedTables,
+            lastModified: Date.now()
+          };
+
+          // 更新Redux状态
+          dispatch(setCurrentProject(updatedProject));
+
+          // 保存到localStorage
+          saveProject(updatedProject);
+
+          success(`字段 "${fieldName}" 添加成功`);
+        }
+      }
+    } catch (error) {
+      console.error('处理拖拽数据失败:', error);
+      showError('添加字段失败，请检查控制台错误日志');
+    }
+  };
+
+  // 处理拖拽进入
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+
+    // 添加拖拽指示样式
+    const fieldsContainer = document.querySelector('.fields-panel');
+    if (fieldsContainer) {
+      fieldsContainer.classList.add('drop-target');
+    }
+  };
+
+  // 处理拖拽离开
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+
+    // 移除拖拽指示样式
+    const fieldsContainer = document.querySelector('.fields-panel');
+    if (fieldsContainer) {
+      fieldsContainer.classList.remove('drop-target');
+    }
+  };
+
+  // 处理行点击，选择字段
+  const handleRowClick = (field: FieldData) => {
+    setSelectedField(field);
+  };
+
   // 渲染表详情标签内容
   const renderTabContent = () => {
     switch (activeTableTab) {
@@ -602,10 +743,21 @@ const TableDetails: React.FC = () => {
   // 渲染字段管理标签页内容
   const renderFieldsTab = () => {
     return (
-      <div className="fields-panel">
+      <div
+        className="fields-panel"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
         <div className="fields-toolbar">
-          <button className="add-button" onClick={handleAddField}>
+          <button
+            className="add-button"
+            onClick={handleAddField}
+          >
             <PlusOutlined /> 添加字段
+          </button>
+          <button className="add-to-library-button" onClick={handleAddToLibrary} title="将选中的字段添加到标准字段库">
+            <SaveOutlined /> 字段入库
           </button>
         </div>
 
@@ -631,12 +783,16 @@ const TableDetails: React.FC = () => {
                 {getFilteredFields().length === 0 ? (
                   <tr>
                     <td colSpan={11} className="empty-message">
-                      <InfoCircleOutlined /> 暂无字段，请添加
+                      <InfoCircleOutlined /> 暂无字段，请添加或从标准字段库拖拽字段
                     </td>
                   </tr>
                 ) : (
                   getFilteredFields().map((field, index) => (
-                    <tr key={field.id} className={field.primaryKey ? 'primary-key-row' : ''}>
+                    <tr
+                      key={field.id}
+                      className={`${field.primaryKey ? 'primary-key-row' : ''} ${selectedField?.id === field.id ? 'selected-row' : ''}`}
+                      onClick={() => handleRowClick(field)}
+                    >
                       <td>{index + 1}</td>
                       <td>{field.name}</td>
                       <td><span className="type-badge">{field.type}</span></td>
@@ -648,22 +804,37 @@ const TableDetails: React.FC = () => {
                       <td className="default-value-cell">{field.defaultValue || '-'}</td>
                       <td className="comment-cell">{field.comment || '-'}</td>
                       <td className="actions-cell">
-                        <button title="向上移动" className="table-action-btn" onClick={() => handleMoveField(field.id, 'up')}>
+                        <button title="向上移动" className="table-action-btn" onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveField(field.id, 'up');
+                        }}>
                           <UpOutlined />
                         </button>
-                        <button title="向下移动" className="table-action-btn" onClick={() => handleMoveField(field.id, 'down')}>
+                        <button title="向下移动" className="table-action-btn" onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveField(field.id, 'down');
+                        }}>
                           <DownOutlined />
                         </button>
-                        <button title="编辑" className="table-action-btn" onClick={() => handleEditField(field)}>
+                        <button title="编辑" className="table-action-btn" onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditField(field);
+                        }}>
                           <EditOutlined />
                         </button>
-                        <button title="复制" className="table-action-btn" onClick={() => handleCopyField(field)}>
+                        <button title="复制" className="table-action-btn" onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyField(field);
+                        }}>
                           <CopyOutlined />
                         </button>
                         <button
                           title="删除"
                           className="table-action-btn delete-btn"
-                          onClick={() => handleDeleteField(field.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteField(field.id);
+                          }}
                         >
                           <DeleteOutlined />
                         </button>
@@ -723,19 +894,31 @@ const TableDetails: React.FC = () => {
                       </td>
                       <td className="comment-cell">{index.comment || '-'}</td>
                       <td className="actions-cell">
-                        <button title="向上移动" className="table-action-btn" onClick={() => handleMoveIndex(index.id, 'up')}>
+                        <button title="向上移动" className="table-action-btn" onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveIndex(index.id, 'up');
+                        }}>
                           <UpOutlined />
                         </button>
-                        <button title="向下移动" className="table-action-btn" onClick={() => handleMoveIndex(index.id, 'down')}>
+                        <button title="向下移动" className="table-action-btn" onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveIndex(index.id, 'down');
+                        }}>
                           <DownOutlined />
                         </button>
-                        <button title="编辑" className="table-action-btn" onClick={() => handleEditIndex(index)}>
+                        <button title="编辑" className="table-action-btn" onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditIndex(index);
+                        }}>
                           <EditOutlined />
                         </button>
                         <button
                           title="删除"
                           className="table-action-btn delete-btn"
-                          onClick={() => handleDeleteIndex(index.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteIndex(index.id);
+                          }}
                         >
                           <DeleteOutlined />
                         </button>
@@ -751,6 +934,76 @@ const TableDetails: React.FC = () => {
     );
   };
 
+  // 将选中的字段添加到标准字段库
+  const handleAddToLibrary = () => {
+    if (!selectedField) {
+      showError('请先选择一个字段');
+      return;
+    }
+
+    // 将字段数据格式化为标准字段格式
+    const standardField = {
+      id: generateUUID(),
+      name: selectedField.name,
+      code: selectedField.code,
+      type: selectedField.type,
+      length: selectedField.length,
+      scale: selectedField.scale,
+      primaryKey: selectedField.primaryKey,
+      notNull: selectedField.notNull,
+      autoIncrement: selectedField.autoIncrement,
+      defaultValue: selectedField.defaultValue,
+      comment: selectedField.comment
+    };
+
+    // 通过localStorage获取已保存的标准字段库数据
+    const savedLibrary = localStorage.getItem('pdmaner_standard_fields');
+    let libraryData = savedLibrary ? JSON.parse(savedLibrary) : [];
+
+    // 如果没有默认分组，创建一个
+    if (libraryData.length === 0) {
+      libraryData.push({
+        id: 'default',
+        name: '默认分组',
+        code: 'default',
+        expanded: true,
+        fields: []
+      });
+    }
+
+    // 将字段添加到默认分组
+    // 确保对数组进行深拷贝，避免直接修改冻结对象
+    libraryData = JSON.parse(JSON.stringify(libraryData));
+    libraryData[0].fields.push(standardField);
+
+    // 保存回localStorage
+    localStorage.setItem('pdmaner_standard_fields', JSON.stringify(libraryData));
+
+    // 如果当前项目中存在standardFields，也更新它
+    if (currentProject) {
+      // 创建项目数据的深拷贝
+      const updatedProject = JSON.parse(JSON.stringify(currentProject));
+      if (!updatedProject.standardFields) {
+        updatedProject.standardFields = libraryData;
+      } else {
+        // 找到默认分组
+        const defaultGroup = updatedProject.standardFields.find(g => g.id === 'default');
+        if (defaultGroup) {
+          // 确保对数组进行深拷贝
+          defaultGroup.fields = [...defaultGroup.fields, standardField];
+        } else {
+          updatedProject.standardFields.push(libraryData[0]);
+        }
+      }
+
+      // 更新项目数据
+      dispatch(setCurrentProject(updatedProject));
+    }
+
+    // 显示成功消息
+    successNotification(`字段 "${selectedField.name}" 已成功添加到标准字段库`);
+  };
+
   if (!tableData) {
     return <div className="loading-container">加载表信息中...</div>;
   }
@@ -760,32 +1013,32 @@ const TableDetails: React.FC = () => {
       {/* 表顶部标签切换区域 */}
       <div className="table-tabs-container">
         <div className="table-function-tabs">
-          <div 
-            className={`tab-item ${activeTableTab === 'fields' ? 'active' : ''}`} 
+          <div
+            className={`tab-item ${activeTableTab === 'fields' ? 'active' : ''}`}
             onClick={() => handleTableTabChange('fields')}
           >
             <span>字段</span>
           </div>
-          <div 
-            className={`tab-item ${activeTableTab === 'indexes' ? 'active' : ''}`} 
+          <div
+            className={`tab-item ${activeTableTab === 'indexes' ? 'active' : ''}`}
             onClick={() => handleTableTabChange('indexes')}
           >
             <span>索引</span>
           </div>
-          <div 
-            className={`tab-item ${activeTableTab === 'sql' ? 'active' : ''}`} 
+          <div
+            className={`tab-item ${activeTableTab === 'sql' ? 'active' : ''}`}
             onClick={() => handleTableTabChange('sql')}
           >
             <span>SQL代码</span>
           </div>
-          <div 
-            className={`tab-item ${activeTableTab === 'code' ? 'active' : ''}`} 
+          <div
+            className={`tab-item ${activeTableTab === 'code' ? 'active' : ''}`}
             onClick={() => handleTableTabChange('code')}
           >
             <span>程序代码</span>
           </div>
-          <div 
-            className={`tab-item ${activeTableTab === 'check' ? 'active' : ''}`} 
+          <div
+            className={`tab-item ${activeTableTab === 'check' ? 'active' : ''}`}
             onClick={() => handleTableTabChange('check')}
           >
             <span>规范检查</span>
@@ -830,7 +1083,7 @@ const TableDetails: React.FC = () => {
               </button>
             </div>
           </div>
-          
+
           {/* 更多设置区域 */}
           {showMoreSettings && (
             <div className="table-more-settings">
@@ -846,7 +1099,7 @@ const TableDetails: React.FC = () => {
                 </div>
                 <div className="setting-group">
                   <label>表类型:</label>
-                  <select 
+                  <select
                     className="cyber-select"
                     value={tableData.type || 'table'}
                     onChange={(e) => setTableData({...tableData, type: e.target.value})}
@@ -902,6 +1155,7 @@ const TableDetails: React.FC = () => {
                 // 获取表单数据
                 const formData = new FormData(e.currentTarget);
                 const fieldName = formData.get('name') as string;
+                const fieldCode = formData.get('code') as string;
 
                 // 检查字段名是否已存在（仅限于添加新字段时）
                 if (!isEditing && tableData?.fields.some(f => f.name === fieldName)) {
@@ -909,9 +1163,16 @@ const TableDetails: React.FC = () => {
                   return;
                 }
 
+                // 检查字段代码是否已存在（仅限于添加新字段时）
+                if (!isEditing && tableData?.fields.some(f => f.code === fieldCode)) {
+                  showError(`字段代码 "${fieldCode}" 已存在，请使用其他代码`);
+                  return;
+                }
+
                 const field: FieldData = {
                   id: selectedField?.id || '',
                   name: fieldName,
+                  code: fieldCode,
                   type: formData.get('type') as string,
                   length: parseInt(formData.get('length') as string) || undefined,
                   scale: parseInt(formData.get('scale') as string) || undefined,
@@ -937,6 +1198,20 @@ const TableDetails: React.FC = () => {
                         placeholder="输入字段名称"
                       />
                     </div>
+                    <div className="form-group">
+                      <label>字段代码 <span className="required">*</span></label>
+                      <input
+                        type="text"
+                        name="code"
+                        required
+                        className="cyber-input"
+                        defaultValue={selectedField?.code || ''}
+                        placeholder="输入字段代码"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
                     <div className="form-group">
                       <label>数据类型 <span className="required">*</span></label>
                       <select
