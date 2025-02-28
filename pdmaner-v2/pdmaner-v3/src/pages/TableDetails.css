@@ -222,9 +222,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(10, 12, 26, 0.5), rgba(10, 12, 26, 0.3));
   border-bottom: 1px solid rgba(5, 217, 232, 0.15);
-  background-color: rgba(10, 12, 24, 0.8);
+  position: relative;
 }
 
 .search-box {
@@ -657,9 +658,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(5, 217, 232, 0.2);
+  padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(10, 12, 26, 0.5), rgba(10, 12, 26, 0.3));
+  border-bottom: 1px solid rgba(5, 217, 232, 0.15);
   position: relative;
 }
 
@@ -1174,4 +1175,218 @@
     transform: translateY(0); 
     opacity: 1;
   }
+}
+
+/* 工具栏统一按钮样式 */
+.fields-toolbar .toolbar-left button,
+.fields-toolbar .toolbar-right button {
+  background: linear-gradient(135deg, rgba(16, 20, 40, 0.8), rgba(10, 15, 35, 0.8));
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 4px;
+  color: #e0e0ff;
+  padding: 6px 12px;
+  margin-right: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fields-toolbar .toolbar-left button:hover,
+.fields-toolbar .toolbar-right button:hover {
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.15), rgba(10, 15, 35, 0.9));
+  border-color: rgba(5, 217, 232, 0.5);
+  color: #05d9e8;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.fields-toolbar .toolbar-left button:disabled,
+.fields-toolbar .toolbar-right button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  background: rgba(16, 20, 40, 0.5);
+  border-color: rgba(5, 217, 232, 0.15);
+}
+
+/* 添加分隔线样式 */
+.button-divider {
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(to bottom, transparent, rgba(5, 217, 232, 0.5), transparent);
+  margin: 0 8px;
+}
+
+/* 移动按钮样式 */
+.move-button {
+  font-size: 14px;
+  padding: 6px 8px !important;
+  min-width: 32px;
+}
+
+/* 修改添加按钮样式 */
+.add-button {
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(0, 123, 255, 0.2)) !important;
+  border: 1px solid rgba(5, 217, 232, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(5, 217, 232, 0.1) !important;
+  border-radius: 6px !important;
+  padding: 7px 12px !important;
+  color: #05d9e8 !important;
+  font-weight: 500 !important;
+}
+
+.add-button:hover {
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.25), rgba(0, 123, 255, 0.25)) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(5, 217, 232, 0.2) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 优化工具栏按钮组 */
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* 减小按钮间距 */
+  flex-wrap: nowrap; /* 确保按钮在一行 */
+}
+
+/* 为每组功能相似的按钮添加分组 */
+.button-group {
+  display: flex;
+  align-items: center;
+  background: rgba(5, 217, 232, 0.05);
+  border-radius: 6px;
+  padding: 3px;
+  border: 1px solid rgba(5, 217, 232, 0.2);
+  margin-right: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.button-group::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(5, 217, 232, 0.5), 
+    transparent);
+}
+
+.button-group::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(5, 217, 232, 0.3), 
+    transparent);
+}
+
+/* 调整按钮组内部的按钮样式 */
+.button-group button {
+  min-width: auto;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: none;
+  border-right: 1px solid rgba(5, 217, 232, 0.1);
+  margin: 0;
+  background: transparent;
+  color: #05d9e8;
+  transition: all 0.2s ease;
+}
+
+.button-group button:hover {
+  background: rgba(5, 217, 232, 0.1);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.button-group button:last-child {
+  border-right: none;
+}
+
+/* 优化图标按钮样式 */
+.button-group .icon-only {
+  width: 32px;
+  padding: 6px 0;
+}
+
+/* 添加更细腻的过渡动画 */
+.fields-toolbar button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 美化添加按钮 */
+.add-button {
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(0, 123, 255, 0.2)) !important;
+  border: 1px solid rgba(5, 217, 232, 0.4) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(5, 217, 232, 0.1) !important;
+  border-radius: 6px !important;
+  padding: 7px 12px !important;
+  color: #05d9e8 !important;
+  font-weight: 500 !important;
+}
+
+.add-button:hover {
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.25), rgba(0, 123, 255, 0.25)) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(5, 217, 232, 0.2) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 禁用状态的按钮样式 */
+.fields-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+  transform: none !important;
+  background: rgba(10, 12, 24, 0.3) !important;
+  border-color: rgba(5, 217, 232, 0.1) !important;
+}
+
+/* 优化按钮图标 */
+.fields-toolbar button svg {
+  font-size: 14px;
+  margin-right: 4px;
+  transition: all 0.2s;
+}
+
+.fields-toolbar button:hover svg {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 2px rgba(5, 217, 232, 0.5));
+}
+
+.fields-toolbar button.icon-only svg {
+  margin-right: 0;
+}
+
+/* 添加工具栏阴影和边框效果 */
+.fields-toolbar {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.fields-toolbar::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 5%;
+  width: 90%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(5, 217, 232, 0.3),
+    rgba(5, 217, 232, 0.3), 
+    transparent);
 } 

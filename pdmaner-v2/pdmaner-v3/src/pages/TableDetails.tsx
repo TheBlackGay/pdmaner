@@ -16,7 +16,9 @@ import {
   SettingOutlined,
   CodeOutlined,
   CheckCircleOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  VerticalAlignTopOutlined,
+  VerticalAlignBottomOutlined
 } from '@ant-design/icons';
 import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
@@ -234,19 +236,46 @@ const TableDetails: React.FC = () => {
     }
   };
 
-  // 处理字段排序
-  const handleMoveField = (fieldId: string, direction: 'up' | 'down') => {
+  // 修改 handleMoveField 函数支持更多操作类型
+  const handleMoveField = (fieldId: string, direction: 'up' | 'down' | 'top' | 'bottom') => {
     if (!tableData || !currentProject) return;
 
     const fieldIndex = tableData.fields.findIndex(field => field.id === fieldId);
     if (fieldIndex === -1) return;
 
     const newFields = [...tableData.fields];
+    const fieldToMove = newFields[fieldIndex];
 
-    if (direction === 'up' && fieldIndex > 0) {
-      [newFields[fieldIndex], newFields[fieldIndex - 1]] = [newFields[fieldIndex - 1], newFields[fieldIndex]];
-    } else if (direction === 'down' && fieldIndex < newFields.length - 1) {
-      [newFields[fieldIndex], newFields[fieldIndex + 1]] = [newFields[fieldIndex + 1], newFields[fieldIndex]];
+    // 根据移动方向处理
+    switch (direction) {
+      case 'up':
+        // 上移一位，如果不是第一个
+        if (fieldIndex > 0) {
+          newFields.splice(fieldIndex, 1);
+          newFields.splice(fieldIndex - 1, 0, fieldToMove);
+        }
+        break;
+      case 'down':
+        // 下移一位，如果不是最后一个
+        if (fieldIndex < newFields.length - 1) {
+          newFields.splice(fieldIndex, 1);
+          newFields.splice(fieldIndex + 1, 0, fieldToMove);
+        }
+        break;
+      case 'top':
+        // 置顶，移到数组第一位
+        if (fieldIndex > 0) {
+          newFields.splice(fieldIndex, 1);
+          newFields.unshift(fieldToMove);
+        }
+        break;
+      case 'bottom':
+        // 置底，移到数组最后一位
+        if (fieldIndex < newFields.length - 1) {
+          newFields.splice(fieldIndex, 1);
+          newFields.push(fieldToMove);
+        }
+        break;
     }
 
     // 更新本地表数据
@@ -277,7 +306,13 @@ const TableDetails: React.FC = () => {
       // 保存到localStorage
       saveProject(updatedProject);
 
-      successNotification('字段排序成功，项目已自动更新');
+      const moveTypeText = {
+        'up': '上移',
+        'down': '下移',
+        'top': '置顶',
+        'bottom': '置底'
+      };
+      successNotification(`字段${moveTypeText[direction]}成功，项目已自动更新`);
     } catch (error) {
       console.error('更新字段排序并保存项目失败:', error);
     }
@@ -752,15 +787,111 @@ const TableDetails: React.FC = () => {
         onDragLeave={handleDragLeave}
       >
         <div className="fields-toolbar">
-          <button
-            className="add-button"
-            onClick={handleAddField}
-          >
-            <PlusOutlined /> 添加字段
-          </button>
-          <button className="add-to-library-button" onClick={handleAddToLibrary} title="将选中的字段添加到标准字段库">
-            <SaveOutlined /> 字段入库
-          </button>
+          <div className="toolbar-left">
+            <button
+              className="add-button"
+              onClick={handleAddField}
+            >
+              <PlusOutlined /> 添加字段
+            </button>
+            
+            <div className="button-group">
+              <button 
+                className="edit-button" 
+                disabled={!selectedField}
+                onClick={() => {
+                  if (selectedField) {
+                    handleEditField(selectedField);
+                  }
+                }}
+              >
+                <EditOutlined /> 编辑
+              </button>
+              <button 
+                className="copy-button" 
+                disabled={!selectedField}
+                onClick={() => {
+                  if (selectedField) {
+                    handleCopyField(selectedField);
+                  }
+                }}
+              >
+                <CopyOutlined /> 复制
+              </button>
+              <button
+                className="delete-button"
+                disabled={!selectedField}
+                onClick={() => {
+                  if (selectedField) {
+                    handleDeleteField(selectedField.id);
+                  }
+                }}
+              >
+                <DeleteOutlined /> 删除
+              </button>
+            </div>
+            
+            <div className="button-group">
+              <button 
+                className="move-button icon-only"
+                title="置顶"
+                disabled={!selectedField}
+                onClick={() => {
+                  if (selectedField) {
+                    handleMoveField(selectedField.id, 'top');
+                  }
+                }}
+              >
+                <VerticalAlignTopOutlined />
+              </button>
+              <button 
+                className="move-button icon-only"
+                title="上移一位"
+                disabled={!selectedField}
+                onClick={() => {
+                  if (selectedField) {
+                    handleMoveField(selectedField.id, 'up');
+                  }
+                }}
+              >
+                <UpOutlined />
+              </button>
+              <button 
+                className="move-button icon-only"
+                title="下移一位"
+                disabled={!selectedField}
+                onClick={() => {
+                  if (selectedField) {
+                    handleMoveField(selectedField.id, 'down');
+                  }
+                }}
+              >
+                <DownOutlined />
+              </button>
+              <button 
+                className="move-button icon-only"
+                title="置底"
+                disabled={!selectedField}
+                onClick={() => {
+                  if (selectedField) {
+                    handleMoveField(selectedField.id, 'bottom');
+                  }
+                }}
+              >
+                <VerticalAlignBottomOutlined />
+              </button>
+            </div>
+          </div>
+          <div className="toolbar-right">
+            <button 
+              className="add-to-library-button" 
+              onClick={handleAddToLibrary} 
+              title="将选中的字段添加到标准字段库"
+              disabled={!selectedField}
+            >
+              <SaveOutlined /> 字段入库
+            </button>
+          </div>
         </div>
 
         <div className="fields-table-wrapper">
@@ -778,13 +909,12 @@ const TableDetails: React.FC = () => {
                   <th>自增</th>
                   <th>默认值</th>
                   <th>备注</th>
-                  <th>操作</th>
                 </tr>
               </thead>
               <tbody>
                 {getFilteredFields().length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="empty-message">
+                    <td colSpan={10} className="empty-message">
                       <InfoCircleOutlined /> 暂无字段，请添加或从标准字段库拖拽字段
                     </td>
                   </tr>
@@ -805,42 +935,6 @@ const TableDetails: React.FC = () => {
                       <td>{field.autoIncrement ? '√' : '-'}</td>
                       <td className="default-value-cell">{field.defaultValue || '-'}</td>
                       <td className="comment-cell">{field.comment || '-'}</td>
-                      <td className="actions-cell">
-                        {/*<button title="向上移动" className="table-action-btn" onClick={(e) => {*/}
-                        {/*  e.stopPropagation();*/}
-                        {/*  handleMoveField(field.id, 'up');*/}
-                        {/*}}>*/}
-                        {/*  <UpOutlined />*/}
-                        {/*</button>*/}
-                        {/*<button title="向下移动" className="table-action-btn" onClick={(e) => {*/}
-                        {/*  e.stopPropagation();*/}
-                        {/*  handleMoveField(field.id, 'down');*/}
-                        {/*}}>*/}
-                        {/*  <DownOutlined />*/}
-                        {/*</button>*/}
-                        <button title="编辑" className="table-action-btn" onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditField(field);
-                        }}>
-                          <EditOutlined />
-                        </button>
-                        <button title="复制" className="table-action-btn" onClick={(e) => {
-                          e.stopPropagation();
-                          handleCopyField(field);
-                        }}>
-                          <CopyOutlined />
-                        </button>
-                        <button
-                          title="删除"
-                          className="table-action-btn delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteField(field.id);
-                          }}
-                        >
-                          <DeleteOutlined />
-                        </button>
-                      </td>
                     </tr>
                   ))
                 )}
@@ -1171,278 +1265,156 @@ const TableDetails: React.FC = () => {
                   return;
                 }
 
-                const field: FieldData = {
-                  id: selectedField?.id || '',
+                // 创建新字段对象
+                const newField: FieldData = {
+                  id: Date.now().toString(),
                   name: fieldName,
                   code: fieldCode,
-                  type: formData.get('type') as string,
-                  length: parseInt(formData.get('length') as string) || undefined,
-                  scale: parseInt(formData.get('scale') as string) || undefined,
-                  primaryKey: !!formData.get('primaryKey'),
-                  notNull: !!formData.get('notNull'),
-                  autoIncrement: !!formData.get('autoIncrement'),
-                  defaultValue: formData.get('defaultValue') as string || undefined,
-                  comment: formData.get('comment') as string || undefined
+                  type: selectedField?.type || '',
+                  length: selectedField?.length,
+                  scale: selectedField?.scale,
+                  primaryKey: selectedField?.primaryKey || false,
+                  notNull: selectedField?.notNull || false,
+                  autoIncrement: selectedField?.autoIncrement || false,
+                  defaultValue: selectedField?.defaultValue,
+                  comment: selectedField?.comment
                 };
-                handleSaveField(field);
-              }}>
-                <div className="form-section">
-                  <h3 className="section-title">基本信息</h3>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>字段名 <span className="required">*</span></label>
-                      <input
-                        type="text"
-                        name="name"
-                        required
-                        className="cyber-input"
-                        defaultValue={selectedField?.name || ''}
-                        placeholder="输入字段名称"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>字段代码 <span className="required">*</span></label>
-                      <input
-                        type="text"
-                        name="code"
-                        required
-                        className="cyber-input"
-                        defaultValue={selectedField?.code || ''}
-                        placeholder="输入字段代码"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>数据类型 <span className="required">*</span></label>
-                      <select
-                        name="type"
-                        required
-                        className="cyber-select"
-                        defaultValue={selectedField?.type || 'VARCHAR'}
-                      >
-                        {dataTypeOptions.map(option => (
-                          <option key={option.value} value={option.value}>{option.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                // 添加字段到表中
+                if (tableData) {
+                  const updatedFields = [...tableData.fields, newField];
+                  const updatedTableData = {
+                    ...tableData,
+                    fields: updatedFields,
+                    lastModified: Date.now()
+                  };
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>长度/精度</label>
-                      <input
-                        type="number"
-                        name="length"
-                        min="0"
-                        className="cyber-input"
-                        defaultValue={selectedField?.length || ''}
-                        placeholder="字段长度"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>小数位数</label>
-                      <input
-                        type="number"
-                        name="scale"
-                        min="0"
-                        className="cyber-input"
-                        defaultValue={selectedField?.scale || ''}
-                        placeholder="小数位数"
-                      />
-                    </div>
-                  </div>
-                </div>
+                  setTableData(updatedTableData);
 
-                <div className="form-section">
-                  <h3 className="section-title">属性设置</h3>
-                  <div className="cyber-checkbox-group">
-                    <div className="cyber-checkbox">
-                      <input
-                        type="checkbox"
-                        id="primaryKey"
-                        name="primaryKey"
-                        defaultChecked={selectedField?.primaryKey || false}
-                      />
-                      <label htmlFor="primaryKey">
-                        <span className="checkbox-icon"></span>
-                        <span className="checkbox-text">主键</span>
-                      </label>
-                    </div>
-                    <div className="cyber-checkbox">
-                      <input
-                        type="checkbox"
-                        id="notNull"
-                        name="notNull"
-                        defaultChecked={selectedField?.notNull || false}
-                      />
-                      <label htmlFor="notNull">
-                        <span className="checkbox-icon"></span>
-                        <span className="checkbox-text">不为空</span>
-                      </label>
-                    </div>
-                    <div className="cyber-checkbox">
-                      <input
-                        type="checkbox"
-                        id="autoIncrement"
-                        name="autoIncrement"
-                        defaultChecked={selectedField?.autoIncrement || false}
-                      />
-                      <label htmlFor="autoIncrement">
-                        <span className="checkbox-icon"></span>
-                        <span className="checkbox-text">自增</span>
-                      </label>
-                    </div>
-                  </div>
+                  // 自动更新到项目
+                  if (currentProject) {
+                    const updatedTables = currentProject.tables.map(table =>
+                      table.id === updatedTableData.id ? updatedTableData : table
+                    );
 
-                  <div className="form-group">
-                    <label>默认值</label>
-                    <input
-                      type="text"
-                      name="defaultValue"
-                      className="cyber-input"
-                      defaultValue={selectedField?.defaultValue || ''}
-                      placeholder="字段默认值（可选）"
-                    />
-                  </div>
+                    const updatedProject = {
+                      ...currentProject,
+                      tables: updatedTables,
+                      lastModified: Date.now()
+                    };
 
-                  <div className="form-group">
-                    <label>备注</label>
-                    <textarea
-                      name="comment"
-                      rows={3}
-                      className="cyber-textarea"
-                      defaultValue={selectedField?.comment || ''}
-                      placeholder="字段说明（可选）"
-                    ></textarea>
-                  </div>
-                </div>
+                    // 更新Redux状态
+                    dispatch(setCurrentProject(updatedProject));
 
-                <div className="modal-footer">
-                  <button type="button" className="cancel-btn" onClick={() => setIsFieldModalOpen(false)}>
-                    取消
-                  </button>
-                  <button type="submit" className="confirm-btn">
-                    {isEditing ? '保存修改' : '添加字段'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+                    // 保存到localStorage
+                    saveProject(updatedProject);
 
-      {/* 索引编辑模态框 */}
-      {isIndexModalOpen && (
-        <div className="modal-backdrop">
-          <div className="modal-container cyber-card">
-            <div className="modal-header">
-              <h2 className="cyber-title">{isEditingIndex ? '编辑索引' : '新建索引'}</h2>
-              <button className="close-btn" onClick={() => setIsIndexModalOpen(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                // 获取表单数据
-                const formData = new FormData(e.currentTarget);
-                const indexName = formData.get('name') as string;
-
-                // 检查索引名是否已存在（仅限于添加新索引时）
-                if (!isEditingIndex && tableData?.indexes.some(i => i.name === indexName)) {
-                  showError(`索引名 "${indexName}" 已存在，请使用其他名称`);
-                  return;
-                }
-
-                // 获取选中的字段IDs
-                const selectedFieldIds: string[] = [];
-                tableData?.fields.forEach(field => {
-                  if (formData.get(`field_${field.id}`)) {
-                    selectedFieldIds.push(field.id);
+                    successNotification(`字段 "${fieldName}" 添加成功`);
                   }
-                });
-
-                if (selectedFieldIds.length === 0) {
-                  showError('请至少选择一个字段');
-                  return;
                 }
-
-                const index: IndexData = {
-                  id: selectedIndex?.id || '',
-                  name: indexName,
-                  fields: selectedFieldIds,
-                  unique: !!formData.get('unique'),
-                  comment: formData.get('comment') as string || undefined
-                };
-                handleSaveIndex(index);
               }}>
-                <div className="form-section">
-                  <h3 className="section-title">基本信息</h3>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>索引名称 <span className="required">*</span></label>
-                      <input
-                        type="text"
-                        name="name"
-                        required
-                        className="cyber-input"
-                        defaultValue={selectedIndex?.name || ''}
-                        placeholder="输入索引名称"
-                      />
-                    </div>
-                    <div className="cyber-checkbox">
-                      <input
-                        type="checkbox"
-                        id="unique"
-                        name="unique"
-                        defaultChecked={selectedIndex?.unique || false}
-                      />
-                      <label htmlFor="unique">
-                        <span className="checkbox-icon"></span>
-                        <span className="checkbox-text">唯一索引</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>备注</label>
-                    <textarea
-                      name="comment"
-                      rows={2}
-                      className="cyber-textarea"
-                      defaultValue={selectedIndex?.comment || ''}
-                      placeholder="索引说明（可选）"
-                    ></textarea>
-                  </div>
+                <div className="form-group">
+                  <label>名称:</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={selectedField?.name || ''}
+                    onChange={(e) => setSelectedField({...selectedField, name: e.target.value})}
+                    placeholder="输入字段名称"
+                  />
                 </div>
-
-                <div className="form-section">
-                  <h3 className="section-title">选择字段</h3>
-                  <div className="fields-selection">
-                    {tableData?.fields.map(field => (
-                      <div key={field.id} className="cyber-checkbox">
-                        <input
-                          type="checkbox"
-                          id={`field_${field.id}`}
-                          name={`field_${field.id}`}
-                          defaultChecked={selectedIndex?.fields.includes(field.id) || false}
-                        />
-                        <label htmlFor={`field_${field.id}`}>
-                          <span className="checkbox-icon"></span>
-                          <span className="checkbox-text">{field.name}</span>
-                        </label>
-                      </div>
+                <div className="form-group">
+                  <label>代码:</label>
+                  <input
+                    type="text"
+                    name="code"
+                    value={selectedField?.code || ''}
+                    onChange={(e) => setSelectedField({...selectedField, code: e.target.value})}
+                    placeholder="输入字段代码"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>数据类型:</label>
+                  <select
+                    name="type"
+                    value={selectedField?.type || ''}
+                    onChange={(e) => setSelectedField({...selectedField, type: e.target.value})}
+                  >
+                    {dataTypeOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
                     ))}
-                  </div>
+                  </select>
                 </div>
-
-                <div className="modal-footer">
-                  <button type="button" className="cancel-btn" onClick={() => setIsIndexModalOpen(false)}>
-                    取消
-                  </button>
-                  <button type="submit" className="confirm-btn">
-                    {isEditingIndex ? '保存修改' : '添加索引'}
-                  </button>
+                <div className="form-group">
+                  <label>长度:</label>
+                  <input
+                    type="number"
+                    name="length"
+                    value={selectedField?.length}
+                    onChange={(e) => setSelectedField({...selectedField, length: Number(e.target.value)})}
+                    placeholder="输入字段长度"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>小数位:</label>
+                  <input
+                    type="number"
+                    name="scale"
+                    value={selectedField?.scale}
+                    onChange={(e) => setSelectedField({...selectedField, scale: Number(e.target.value)})}
+                    placeholder="输入小数位"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>主键:</label>
+                  <input
+                    type="checkbox"
+                    name="primaryKey"
+                    checked={selectedField?.primaryKey || false}
+                    onChange={(e) => setSelectedField({...selectedField, primaryKey: e.target.checked})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>不为空:</label>
+                  <input
+                    type="checkbox"
+                    name="notNull"
+                    checked={selectedField?.notNull || false}
+                    onChange={(e) => setSelectedField({...selectedField, notNull: e.target.checked})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>自增:</label>
+                  <input
+                    type="checkbox"
+                    name="autoIncrement"
+                    checked={selectedField?.autoIncrement || false}
+                    onChange={(e) => setSelectedField({...selectedField, autoIncrement: e.target.checked})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>默认值:</label>
+                  <input
+                    type="text"
+                    name="defaultValue"
+                    value={selectedField?.defaultValue || ''}
+                    onChange={(e) => setSelectedField({...selectedField, defaultValue: e.target.value})}
+                    placeholder="输入默认值"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>备注:</label>
+                  <textarea
+                    name="comment"
+                    value={selectedField?.comment || ''}
+                    onChange={(e) => setSelectedField({...selectedField, comment: e.target.value})}
+                    placeholder="输入字段备注"
+                  />
+                </div>
+                <div className="form-group">
+                  <button type="submit">保存</button>
                 </div>
               </form>
             </div>

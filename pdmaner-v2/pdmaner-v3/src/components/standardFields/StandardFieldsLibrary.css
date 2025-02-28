@@ -946,4 +946,41 @@
   padding: 16px;
   background: rgba(10, 12, 24, 0.4);
   border-top: 1px solid rgba(5, 217, 232, 0.15);
+}
+
+/* 添加选中行样式 */
+.fields-table .selected-row {
+  background-color: rgba(5, 217, 232, 0.1);
+  box-shadow: 0 0 0 1px rgba(5, 217, 232, 0.5) inset;
+}
+
+.fields-table tr {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.fields-table tr:hover {
+  background-color: rgba(5, 217, 232, 0.05);
+}
+
+/* 添加禁用按钮样式 */
+.header-actions .edit-btn,
+.header-actions .delete-btn {
+  margin-left: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+}
+
+.header-actions .edit-btn[disabled],
+.header-actions .delete-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.header-actions .edit-btn svg,
+.header-actions .delete-btn svg {
+  margin-right: 4px;
 } 

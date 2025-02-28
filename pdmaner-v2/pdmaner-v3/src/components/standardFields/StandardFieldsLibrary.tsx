@@ -85,6 +85,7 @@ const StandardFieldsLibrary: React.FC = () => {
   const [editingGroup, setEditingGroup] = useState<FieldGroup | null>(null);
   const [draggingField, setDraggingField] = useState<DraggingField | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedField, setSelectedField] = useState<StandardField | null>(null);
 
   // 初始化标准字段库数据
   useEffect(() => {
@@ -752,6 +753,7 @@ const StandardFieldsLibrary: React.FC = () => {
     setShowAdvancedOptions(false);
     setEditingField(null);
     setEditingGroup(null);
+    setSelectedField(null); // 清除选中字段
   };
 
   // 修复编辑字段按钮
@@ -983,6 +985,7 @@ const StandardFieldsLibrary: React.FC = () => {
   const closeManagementModal = () => {
     setIsManagementModalOpen(false);
     setActiveGroup(null);
+    setSelectedField(null); // 清除选中字段
   };
 
   // 渲染管理模态框
@@ -1072,33 +1075,55 @@ const StandardFieldsLibrary: React.FC = () => {
               {currentActiveGroup ? (
                 <>
                   <div className="fields-header">
-                    <h4>{currentActiveGroup.name} 字段列表</h4>
-                    <div className="fields-actions">
-                      <button 
+                    <h4>{currentActiveGroup.name}</h4>
+                    <div className="header-actions">
+                      <button
                         className="add-field-btn"
                         onClick={(e) => {
-                          e.stopPropagation(); // 阻止事件冒泡
-                          console.log('添加字段按钮点击');
-                          
-                          // 确保有选中的分组
-                          if (!currentActiveGroup) {
-                            alert('请先选择一个字段分组');
-                            return;
-                          }
-                          
-                          console.log('当前活动分组:', currentActiveGroup.name);
-                          
+                          e.stopPropagation(); // 防止事件冒泡
+                          console.log("添加字段按钮被点击");
+                          console.log("当前活动组:", currentActiveGroup);
                           setEditingGroup(currentActiveGroup);
                           setEditingField(null);
-                          
-                          // 直接将模态框设置为可见
                           setIsAddFieldModalOpen(true);
-                          
-                          console.log('添加字段模态框状态设置为:', true);
                         }}
                       >
                         <PlusOutlined /> 添加字段
                       </button>
+                      {currentActiveGroup.fields.length > 0 && (
+                        <>
+                          <button
+                            className="edit-btn"
+                            title="编辑选中字段"
+                            disabled={!selectedField}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (selectedField) {
+                                handleEditFieldClick(e, currentActiveGroup, selectedField);
+                              } else {
+                                alert("请先选择一个字段");
+                              }
+                            }}
+                          >
+                            <EditOutlined /> 编辑
+                          </button>
+                          <button
+                            className="delete-btn"
+                            title="删除选中字段"
+                            disabled={!selectedField}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (selectedField) {
+                                handleDeleteField(currentActiveGroup.id, selectedField.id);
+                              } else {
+                                alert("请先选择一个字段");
+                              }
+                            }}
+                          >
+                            <DeleteOutlined /> 删除
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                   
@@ -1108,18 +1133,28 @@ const StandardFieldsLibrary: React.FC = () => {
                         <thead>
                           <tr>
                             <th style={{ width: '20%' }}>名称</th>
-                            <th style={{ width: '15%' }}>代码</th>
+                            <th style={{ width: '20%' }}>代码</th>
                             <th style={{ width: '15%' }}>类型</th>
-                            <th style={{ width: '8%' }}>主键</th>
-                            <th style={{ width: '8%' }}>非空</th>
-                            <th style={{ width: '8%' }}>自增</th>
-                            <th style={{ width: '16%' }}>备注</th>
-                            <th style={{ width: '10%' }}>操作</th>
+                            <th style={{ width: '10%' }}>主键</th>
+                            <th style={{ width: '10%' }}>非空</th>
+                            <th style={{ width: '10%' }}>自增</th>
+                            <th style={{ width: '15%' }}>备注</th>
                           </tr>
                         </thead>
                         <tbody>
                           {currentActiveGroup.fields.map(field => (
-                            <tr key={field.id}>
+                            <tr 
+                              key={field.id} 
+                              className={selectedField && selectedField.id === field.id ? 'selected-row' : ''}
+                              onClick={() => {
+                                // 如果已选中则取消选中，否则选中点击的字段
+                                if (selectedField && selectedField.id === field.id) {
+                                  setSelectedField(null);
+                                } else {
+                                  setSelectedField(field);
+                                }
+                              }}
+                            >
                               <td>{field.name}</td>
                               <td>{field.code}</td>
                               <td>
@@ -1133,29 +1168,6 @@ const StandardFieldsLibrary: React.FC = () => {
                               <td>{field.notNull ? '✓' : '—'}</td>
                               <td>{field.autoIncrement ? '✓' : '—'}</td>
                               <td className="comment-cell">{field.comment || '—'}</td>
-                              <td>
-                                <div className="table-actions">
-                                  <button
-                                    className="edit-btn"
-                                    title="编辑"
-                                    onClick={(e) => handleEditFieldClick(e, currentActiveGroup, field)}
-                                  >
-                                    <EditOutlined />
-                                  </button>
-                                  <button
-                                    className="delete-btn"
-                                    title="删除"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (confirm(`确定要删除字段 "${field.name}" 吗？`)) {
-                                        handleDeleteField(currentActiveGroup.id, field.id, true);
-                                      }
-                                    }}
-                                  >
-                                    <DeleteOutlined />
-                                  </button>
-                                </div>
-                              </td>
                             </tr>
                           ))}
                         </tbody>
