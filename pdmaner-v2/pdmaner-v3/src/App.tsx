@@ -12,6 +12,7 @@ import DictionaryPage from './pages/Dictionary';
 import CodeGeneration from './pages/CodeGeneration';
 import Welcome from './pages/Welcome';
 import TableDetails from './pages/TableDetails';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 import '@assets/styles/index.css';
 
@@ -26,29 +27,31 @@ const App: React.FC = () => {
           <div className="loading-spinner"></div>
         </div>
       )}
-      <Router>
-        <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/app" element={<MainLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="projects" element={<ProjectsPage />} />
-            <Route path="entity" element={<Navigate to="/app/entity/tables" replace />} />
-            <Route path="entity/:domainId?/tables" element={<EntityDesign type="tables" />} />
-            <Route path="entity/:domainId?/entities" element={<EntityDesign type="entities" />} />
-            <Route path="entity/:domainId?/views" element={<EntityDesign type="views" />} />
-            <Route path="diagram/:domainId?" element={<DiagramDesign />} />
-            <Route path="dict/:domainId?" element={<DictionaryPage />} />
-            <Route path="table/:tableId" element={<TableDetails />} />
-            <Route path="code" element={<CodeGeneration />} />
-            <Route path="datatype" element={<div>数据类型页面</div>} />
-            <Route path="domains" element={<div>数据域页面</div>} />
-            <Route path="templates" element={<div>模板管理页面</div>} />
-            <Route path="history" element={<div>历史版本页面</div>} />
-            <Route path="checker" element={<div>规范检查器页面</div>} />
-            <Route path="rules" element={<div>规则管理页面</div>} />
-          </Route>
-        </Routes>
-      </Router>
+      <NotificationProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Welcome />} />
+            <Route path="/app" element={<MainLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="entity" element={<Navigate to="/app/entity/tables" replace />} />
+              <Route path="entity/:domainId?/tables" element={<EntityDesign type="tables" />} />
+              <Route path="entity/:domainId?/entities" element={<EntityDesign type="entities" />} />
+              <Route path="entity/:domainId?/views" element={<EntityDesign type="views" />} />
+              <Route path="diagram/:domainId?" element={<DiagramDesign />} />
+              <Route path="dict/:domainId?" element={<DictionaryPage />} />
+              <Route path="table/:tableId" element={<TableDetails />} />
+              <Route path="code" element={<CodeGeneration />} />
+              <Route path="datatype" element={<div>数据类型页面</div>} />
+              <Route path="domains" element={<div>数据域页面</div>} />
+              <Route path="templates" element={<div>模板管理页面</div>} />
+              <Route path="history" element={<div>历史版本页面</div>} />
+              <Route path="checker" element={<div>规范检查器页面</div>} />
+              <Route path="rules" element={<div>规则管理页面</div>} />
+            </Route>
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </div>
   );
 };

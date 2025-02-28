@@ -18,6 +18,7 @@ import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
 import { saveProject } from '@utils/projectStorage';
 import './TableDetails.css';
+import { useNotificationContext } from '../contexts/NotificationContext';
 
 // 字段接口定义
 interface FieldData {
@@ -51,6 +52,7 @@ const TableDetails: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const currentProject = useSelector((state: RootState) => state.app.currentProject);
+  const { success, error: showError } = useNotificationContext();
 
   const [tableData, setTableData] = useState<TableData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,7 +94,6 @@ const TableDetails: React.FC = () => {
       } else {
         console.error(`找不到ID为 ${tableId} 的表`);
         // 如果找不到表，返回到实体列表页
-        alert(`找不到ID为 ${tableId} 的表，可能已被删除`);
         navigate('/app/entity/tables');
       }
     } else {
@@ -104,6 +105,12 @@ const TableDetails: React.FC = () => {
       }
     }
   }, [currentProject, tableId, navigate]);
+
+  // 定制success通知的显示时间为1秒
+  const successNotification = (message: string) => {
+    success(message);
+    // 不需要设置超时，因为useNotification内部已经有计时器
+  };
 
   // 保存表数据
   const handleSaveTable = () => {
@@ -127,11 +134,10 @@ const TableDetails: React.FC = () => {
       // 保存到localStorage
       saveProject(updatedProject);
 
-      console.log('表保存成功');
-      alert('表保存成功');
+      successNotification('表保存成功');
     } catch (error) {
       console.error('保存表失败:', error);
-      alert('保存表失败，请检查控制台错误日志');
+      showError('保存表失败，请检查控制台错误日志');
     }
   };
 
@@ -184,10 +190,10 @@ const TableDetails: React.FC = () => {
         // 保存到localStorage
         saveProject(updatedProject);
 
-        console.log('字段删除成功，项目已自动更新');
+        successNotification('字段删除成功，项目已自动更新');
       } catch (error) {
         console.error('删除字段并保存项目失败:', error);
-        alert('删除字段失败，请检查控制台错误日志');
+        showError('删除字段失败，请检查控制台错误日志');
       }
     }
   };
@@ -235,7 +241,7 @@ const TableDetails: React.FC = () => {
       // 保存到localStorage
       saveProject(updatedProject);
 
-      console.log('字段排序成功，项目已自动更新');
+      successNotification('字段排序成功，项目已自动更新');
     } catch (error) {
       console.error('更新字段排序并保存项目失败:', error);
     }
@@ -283,10 +289,10 @@ const TableDetails: React.FC = () => {
       // 保存到localStorage
       saveProject(updatedProject);
 
-      console.log('字段复制成功，项目已自动更新');
+      successNotification('字段复制成功，项目已自动更新');
     } catch (error) {
       console.error('复制字段并保存项目失败:', error);
-      alert('复制字段失败，请检查控制台错误日志');
+      showError('复制字段失败，请检查控制台错误日志');
     }
   };
 
@@ -344,10 +350,10 @@ const TableDetails: React.FC = () => {
       // 保存到localStorage
       saveProject(updatedProject);
 
-      console.log('字段保存成功，项目已自动更新');
+      successNotification('字段保存成功，项目已自动更新');
     } catch (error) {
       console.error('保存字段到项目失败:', error);
-      alert('保存字段失败，但字段已添加到表编辑器中，请手动点击"保存表"按钮进行保存');
+      showError('保存字段失败，但字段已添加到表编辑器中，请手动点击"保存表"按钮进行保存');
     }
 
     setIsFieldModalOpen(false);
@@ -508,7 +514,7 @@ const TableDetails: React.FC = () => {
 
                 // 检查字段名是否已存在（仅限于添加新字段时）
                 if (!isEditing && tableData?.fields.some(f => f.name === fieldName)) {
-                  alert(`字段名 "${fieldName}" 已存在，请使用其他名称`);
+                  showError(`字段名 "${fieldName}" 已存在，请使用其他名称`);
                   return;
                 }
 

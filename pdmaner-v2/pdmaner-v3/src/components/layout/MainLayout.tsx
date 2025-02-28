@@ -48,6 +48,9 @@ import NewTableModal from '@components/modals/NewTableModal';
 import RenameTableModal from '@components/modals/RenameTableModal';
 import './MainLayout.css';
 
+// 导入useNotificationContext
+import { useNotificationContext } from '../../contexts/NotificationContext';
+
 // 菜单项类型定义
 interface MenuItem {
   key: string;
@@ -108,6 +111,9 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // 在组件内部添加通知上下文
+  const { success, error: showError } = useNotificationContext();
 
   // 如果没有选择项目，重定向到欢迎页面
   if (!currentProject) {
@@ -698,7 +704,7 @@ const MainLayout: React.FC = () => {
   const handleAddTableConfirm = (code: string, name: string, comment: string, tableType: string, domainId: string) => {
     if (!currentProject) {
       console.error('当前项目为空，无法添加新表');
-      alert('当前没有打开的项目，请先创建或打开一个项目');
+      showError('当前没有打开的项目，请先创建或打开一个项目');
       return;
     }
 
@@ -731,7 +737,7 @@ const MainLayout: React.FC = () => {
         parentDomainId: domainId
       };
 
-      // 更新tableItems状态
+      // 更新tableItems状态，只更新特定域下的表列表
       setTableItems(prev => {
         const newTableItems = { ...prev };
         if (!newTableItems[domainId]) {
@@ -741,16 +747,9 @@ const MainLayout: React.FC = () => {
         return newTableItems;
       });
 
-      // 确保对应的"数据表"菜单是展开的
-      toggleMenuExpand(`tables_${domainId}`);
-
       // 安全地创建项目更新数据
       const currentTablesCopy = [...(currentProject.tables || [])];
       const updatedTables = [...currentTablesCopy, newTableData];
-
-      console.log('添加新表:', newTableData);
-      console.log('当前表数量:', currentTablesCopy.length);
-      console.log('更新后表数量:', updatedTables.length);
 
       // 更新项目数据
       const updatedProject = {
@@ -765,23 +764,26 @@ const MainLayout: React.FC = () => {
       // 保存到localStorage
       saveProject(updatedProject);
       setLastSaved(new Date());
-      console.log('保存项目成功，已添加新表');
+      success('表创建成功');
 
       // 关闭新建表模态框
       setIsNewTableModalOpen(false);
 
-      // 等待状态更新后，确保菜单被正确展开
-      setTimeout(() => {
-        const domainKey = `domain_${domainId}`;
-        const tablesKey = `tables_${domainId}`;
+      // 确保对应的"数据表"菜单是展开的，但不重新加载整个菜单
+      const domainKey = `domain_${domainId}`;
+      const tablesKey = `tables_${domainId}`;
 
-        // 确保主题域和表菜单都是展开的
+      // 检查菜单项是否已展开，如果没有则展开
+      if (!isMenuItemExpanded(domainKey)) {
         toggleMenuExpand(domainKey);
+      }
+      
+      if (!isMenuItemExpanded(tablesKey)) {
         toggleMenuExpand(tablesKey);
-      }, 300);
+      }
     } catch (error) {
       console.error('保存项目失败:', error);
-      alert('创建表失败，请检查控制台错误日志');
+      showError('创建表失败，请检查控制台错误日志');
     }
   };
 
@@ -1564,6 +1566,46 @@ const MainLayout: React.FC = () => {
     navigate(tab.path);
   };
 
+  // 添加ESC键关闭弹窗功能
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        // 关闭所有打开的弹窗
+        if (isNewDomainModalOpen) setIsNewDomainModalOpen(false);
+        if (isNewTableModalOpen) setIsNewTableModalOpen(false);
+        if (isRenameTableModalOpen) setIsRenameTableModalOpen(false);
+        if (contextMenu.visible) setContextMenu(prev => ({...prev, visible: false}));
+      }
+    };
+
+    window.addEventListener('keydown', handleEscKey);
+    return () => {
+      window.removeEventListener('keydown', handleEscKey);
+    };
+  }, [isNewDomainModalOpen, isNewTableModalOpen, isRenameTableModalOpen, contextMenu.visible]);
+
+  // 添加最大化和关闭项目功能的函数
+  const handleMaximize = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(err => {
+        console.error('退出全屏模式失败:', err);
+      });
+    } else {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error('进入全屏模式失败:', err);
+      });
+    }
+  };
+
+  const handleCloseProject = () => {
+    if (window.confirm('确定要关闭当前项目吗？未保存的更改将会丢失。')) {
+      // 清除当前项目
+      dispatch(setCurrentProject(null));
+      // 返回欢迎页面
+      navigate('/');
+    }
+  };
+
   return (
     <div className={`app-layout ${darkMode ? 'dark-mode' : ''}`}>
       {/* 标题栏 */}
@@ -1576,9 +1618,8 @@ const MainLayout: React.FC = () => {
           {currentProject ? currentProject.info.name : '未打开项目'}
         </div>
         <div className="window-controls">
-          <button title="最小化">_</button>
-          <button title="最大化"><FullscreenOutlined /></button>
-          <button title="关闭">✕</button>
+          <button title="最大化" onClick={handleMaximize}><FullscreenOutlined /></button>
+          <button title="关闭项目" onClick={handleCloseProject}>✕</button>
         </div>
       </header>
 
