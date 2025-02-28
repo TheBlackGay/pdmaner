@@ -1,0 +1,57 @@
+@import "~style";
+
+.@{prefix}-import-excel {
+  padding: 10px;
+  &-upload {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    &-button {
+      cursor: pointer;
+      background: @primary-color;
+      color: @four-font-color;
+      padding: 10px 20px;
+      text-align: center;
+    }
+  }
+  &-template {
+    & > div:first-child {
+      margin: 10px 0;
+      height: 20px;
+      position: relative;
+      & > div:first-child {
+        position: absolute;
+        left: 20px;
+        top: 2px;
+        z-index: 2;
+        padding: 0 5px;
+        background: @background-color;
+        font-size: 12px;
+      }
+      & > div:last-child {
+        position: absolute;
+        left: 0;
+        top: 10px;
+        z-index: 1;
+        background: @primary-border-color;
+        width: 100%;
+        height: 1px;
+      }
+    }
+    & > div:last-child {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      i {
+        margin-right: 5px;
+      }
+    }
+    &-list {
+      & > span + span {
+        margin-left: 20px;
+      }
+    }
+  }
+}

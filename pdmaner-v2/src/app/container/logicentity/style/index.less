@@ -1,0 +1,98 @@
+@import "~style";
+
+.@{prefix}-logic-entity {
+  height: 70vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 5px;
+  &-content {
+    height: 100%;
+    .@{prefix}-check-rule-edit {
+      height: 100%;
+      margin: 0;
+      width: 100%;
+    }
+  }
+  &-tab {
+    height: 100% !important;
+    .@{prefix}-table-container {
+      border: none !important;
+    }
+  }
+  &-row {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: row;
+    & > div {
+      width: 50%;
+    }
+  }
+  &-quick {
+    flex-direction: row !important;
+    &-item {
+      padding-bottom: 10px !important;
+      border-bottom: 1px solid @primary-border-color;
+    }
+    &-parse {
+      white-space: nowrap;
+      margin-left: 10px;
+      background: @primary-color;
+      color: @background-color;
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+  &-message {
+    font-size: 12px;
+    margin-left: 10px;
+    color: @third-font-color;
+  }
+  &-fields {
+    height: 0;
+    flex-grow: 1;
+  }
+  .@{prefix}-table-container {
+    overflow: auto;
+    padding: 10px;
+    border: 1px solid @primary-border-color;
+  }
+  table {
+    width: 100%;
+    .@{prefix}-multiple-select {
+      width: 100%;
+      & > div {
+        width: 100% !important;
+      }
+    }
+    thead > tr > th:nth-child(2), th:nth-child(3) {
+      width: 300px !important;
+    }
+    th {
+      white-space: nowrap;
+    }
+  }
+  &-suggest {
+    user-select: none;
+    & > span {
+      padding: 2px 7px 2px 2px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      & > span:first-child {
+        left: 2px;
+        top: 2px;
+      }
+    }
+  }
+  & > div:last-child {
+    flex-grow: 1;
+  }
+}

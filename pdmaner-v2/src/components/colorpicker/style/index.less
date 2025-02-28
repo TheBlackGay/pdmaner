@@ -1,0 +1,54 @@
+@import "~style";
+
+.@{prefix}-color-picker {
+  width: 200px;
+  padding: 10px 10px 0px;
+  box-sizing: initial;
+  background: rgb(255, 255, 255);
+  border-radius: 4px;
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 0px 0px 1px, rgba(0, 0, 0, 0.15) 0px 8px 16px;
+  &-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    padding-bottom: 5px;
+    i {
+      cursor: pointer;
+    }
+  }
+  .sketch-picker {
+    padding: 0 !important;
+    background: none !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: none !important;
+  }
+  &-footer {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    & > div:nth-child(2) {
+      display: flex;
+      flex-direction: row;
+      padding-top: 5px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    }
+    & > div:last-child {
+      cursor: default;
+      padding-top: 5px;
+      text-align: center;
+    }
+    &-item {
+      cursor: pointer;
+      position: relative;
+      outline: none;
+      border-radius: 3px;
+      box-shadow: rgba(0, 0, 0, 0.15) 0px 0px 0px 1px inset;
+      min-width: 16px;
+      width: 16px;
+      height: 16px;
+      margin: 0px 10px 10px 0px;
+    }
+  }
+}
