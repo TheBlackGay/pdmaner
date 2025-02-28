@@ -1,0 +1,211 @@
+/* 弹窗背景 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 弹窗容器 */
+.modal-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 480px;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* 弹窗头部 */
+.modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 关闭按钮 */
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #666;
+}
+
+/* 弹窗内容 */
+.modal-body {
+  padding: 24px;
+}
+
+/* 错误消息 */
+.error-message {
+  color: #ff4d4f;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background-color: #fff1f0;
+  border: 1px solid #ffccc7;
+  border-radius: 4px;
+}
+
+/* 表单组 */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+}
+
+.required {
+  color: #ff4d4f;
+  margin-right: 4px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  outline: none;
+}
+
+/* 弹窗底部 */
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+  text-align: right;
+}
+
+.modal-footer button {
+  margin-left: 8px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cancel-btn {
+  background-color: white;
+  border: 1px solid #d9d9d9;
+  color: #666;
+}
+
+.cancel-btn:hover {
+  color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.confirm-btn {
+  background-color: #1890ff;
+  border: 1px solid #1890ff;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* 暗黑模式 */
+.dark-mode .modal-container {
+  background-color: #1f1f1f;
+  color: #f5f5f5;
+}
+
+.dark-mode .modal-header {
+  border-bottom-color: #303030;
+}
+
+.dark-mode .modal-header h2 {
+  color: #f5f5f5;
+}
+
+.dark-mode .close-btn {
+  color: #a6a6a6;
+}
+
+.dark-mode .close-btn:hover {
+  color: #f5f5f5;
+}
+
+.dark-mode .form-group label {
+  color: #d9d9d9;
+}
+
+.dark-mode .form-group input {
+  background-color: #141414;
+  border-color: #434343;
+  color: #f5f5f5;
+}
+
+.dark-mode .form-group input:focus {
+  border-color: #177ddc;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.dark-mode .modal-footer {
+  border-top-color: #303030;
+}
+
+.dark-mode .cancel-btn {
+  background-color: #141414;
+  border-color: #434343;
+  color: #d9d9d9;
+}
+
+.dark-mode .cancel-btn:hover {
+  color: #177ddc;
+  border-color: #177ddc;
+}
+
+.dark-mode .confirm-btn {
+  background-color: #177ddc;
+  border-color: #177ddc;
+}
+
+.dark-mode .confirm-btn:hover {
+  background-color: #1890ff;
+  border-color: #1890ff;
+} 
