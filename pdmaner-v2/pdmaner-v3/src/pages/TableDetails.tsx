@@ -237,6 +237,55 @@ const TableDetails: React.FC = () => {
     }
   };
   
+  // 处理字段复制
+  const handleCopyField = (field: FieldData) => {
+    if (!tableData || !currentProject) return;
+    
+    // 创建字段副本
+    const newField: FieldData = {
+      ...field,
+      id: Date.now().toString(), // 生成新的ID
+      name: `${field.name}_copy`, // 名称添加_copy后缀
+    };
+    
+    // 更新本地表数据
+    const updatedFields = [...tableData.fields, newField];
+    
+    // 更新表数据
+    const updatedTableData = {
+      ...tableData,
+      fields: updatedFields,
+      lastModified: Date.now()
+    };
+    
+    setTableData(updatedTableData);
+    
+    // 自动保存到项目信息
+    try {
+      // 更新项目中的表数据
+      const updatedTables = currentProject.tables.map(table => 
+        table.id === updatedTableData.id ? updatedTableData : table
+      );
+      
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables,
+        lastModified: Date.now()
+      };
+      
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
+      
+      // 保存到localStorage
+      saveProject(updatedProject);
+      
+      console.log('字段复制成功，项目已自动更新');
+    } catch (error) {
+      console.error('复制字段并保存项目失败:', error);
+      alert('复制字段失败，请检查控制台错误日志');
+    }
+  };
+  
   // 过滤字段
   const getFilteredFields = () => {
     if (!tableData) return [];
@@ -320,9 +369,9 @@ const TableDetails: React.FC = () => {
   
   return (
     <div className="table-details-container">
-      <div className="table-header">
+      <div className="table-details-header">
         <div className="table-title-section">
-          <h2>{tableData.name}</h2>
+          <h2 className="table-title">{tableData.name}</h2>
           <div className="table-info">
             <span className="info-item">表代码: <strong>{tableData.code}</strong></span>
             <span className="info-item">主题域: <strong>{getDomainName(tableData.domainId)}</strong></span>
@@ -331,18 +380,20 @@ const TableDetails: React.FC = () => {
           <div className="table-comment">{tableData.comment || '无表备注'}</div>
         </div>
         
-        <div className="table-actions">
-          <button className="save-button" onClick={handleSaveTable}>
+        <div className="actions-bar">
+          <button className="action-button" onClick={handleSaveTable}>
             <SaveOutlined /> 保存表
           </button>
         </div>
       </div>
       
       <div className="tabs-container">
-        <div className="tab active">字段</div>
-        <div className="tab">索引</div>
-        <div className="tab">关系</div>
-        <div className="tab">SQL预览</div>
+        <div className="tabs-header">
+          <div className="tab active">字段</div>
+          <div className="tab">索引</div>
+          <div className="tab">关系</div>
+          <div className="tab">SQL预览</div>
+        </div>
       </div>
       
       <div className="tab-content">
@@ -355,96 +406,108 @@ const TableDetails: React.FC = () => {
                 placeholder="搜索字段..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="cyber-input"
               />
             </div>
             
-            <button className="add-field-button" onClick={handleAddField}>
+            <button className="add-button" onClick={handleAddField}>
               <PlusOutlined /> 添加字段
             </button>
           </div>
           
           <div className="fields-table-wrapper">
-            <table className="fields-table">
-              <thead>
-                <tr>
-                  <th>序号</th>
-                  <th>名称</th>
-                  <th>数据类型</th>
-                  <th>长度/精度</th>
-                  <th>小数位</th>
-                  <th>主键</th>
-                  <th>不为空</th>
-                  <th>自增</th>
-                  <th>默认值</th>
-                  <th>备注</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {getFilteredFields().length === 0 ? (
+            <div className="table-container">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan={11} className="empty-message">
-                      <InfoCircleOutlined /> 暂无字段，请添加字段
-                    </td>
+                    <th>序号</th>
+                    <th>名称</th>
+                    <th>数据类型</th>
+                    <th>长度/精度</th>
+                    <th>小数位</th>
+                    <th>主键</th>
+                    <th>不为空</th>
+                    <th>自增</th>
+                    <th>默认值</th>
+                    <th>备注</th>
+                    <th>操作</th>
                   </tr>
-                ) : (
-                  getFilteredFields().map((field, index) => (
-                    <tr key={field.id} className={field.primaryKey ? 'primary-key-row' : ''}>
-                      <td>{index + 1}</td>
-                      <td>{field.name}</td>
-                      <td>{field.type}</td>
-                      <td>{field.length || '-'}</td>
-                      <td>{field.scale || '-'}</td>
-                      <td>{field.primaryKey ? <KeyOutlined className="primary-key-icon" /> : '-'}</td>
-                      <td>{field.notNull ? '√' : '-'}</td>
-                      <td>{field.autoIncrement ? '√' : '-'}</td>
-                      <td className="default-value-cell">{field.defaultValue || '-'}</td>
-                      <td className="comment-cell">{field.comment || '-'}</td>
-                      <td className="actions-cell">
-                        <button title="向上移动" onClick={() => handleMoveField(field.id, 'up')}>
-                          <UpOutlined />
-                        </button>
-                        <button title="向下移动" onClick={() => handleMoveField(field.id, 'down')}>
-                          <DownOutlined />
-                        </button>
-                        <button title="编辑" onClick={() => handleEditField(field)}>
-                          <EditOutlined />
-                        </button>
-                        <button title="复制">
-                          <CopyOutlined />
-                        </button>
-                        <button 
-                          title="删除" 
-                          className="delete-button"
-                          onClick={() => handleDeleteField(field.id)}
-                        >
-                          <DeleteOutlined />
-                        </button>
+                </thead>
+                <tbody>
+                  {getFilteredFields().length === 0 ? (
+                    <tr>
+                      <td colSpan={11} className="empty-state">
+                        <h3><InfoCircleOutlined /> 暂无字段</h3>
+                        <p>请点击"添加字段"按钮来添加新字段</p>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    getFilteredFields().map((field, index) => (
+                      <tr key={field.id} className={field.primaryKey ? 'primary-key-row' : ''}>
+                        <td>{index + 1}</td>
+                        <td>{field.name}</td>
+                        <td><span className="type-badge">{field.type}</span></td>
+                        <td>{field.length || '-'}</td>
+                        <td>{field.scale || '-'}</td>
+                        <td>{field.primaryKey ? <span className="pk-badge"><KeyOutlined /></span> : '-'}</td>
+                        <td>{field.notNull ? '√' : '-'}</td>
+                        <td>{field.autoIncrement ? '√' : '-'}</td>
+                        <td className="default-value-cell">{field.defaultValue || '-'}</td>
+                        <td className="comment-cell">{field.comment || '-'}</td>
+                        <td className="actions-cell">
+                          <button title="向上移动" className="table-action-btn" onClick={() => handleMoveField(field.id, 'up')}>
+                            <UpOutlined />
+                          </button>
+                          <button title="向下移动" className="table-action-btn" onClick={() => handleMoveField(field.id, 'down')}>
+                            <DownOutlined />
+                          </button>
+                          <button title="编辑" className="table-action-btn" onClick={() => handleEditField(field)}>
+                            <EditOutlined />
+                          </button>
+                          <button title="复制" className="table-action-btn" onClick={() => handleCopyField(field)}>
+                            <CopyOutlined />
+                          </button>
+                          <button 
+                            title="删除" 
+                            className="table-action-btn delete-btn"
+                            onClick={() => handleDeleteField(field.id)}
+                          >
+                            <DeleteOutlined />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
       
       {isFieldModalOpen && (
-        <div className="field-modal-backdrop">
-          <div className="field-modal">
-            <div className="field-modal-header">
-              <h3>{isEditing ? '编辑字段' : '新建字段'}</h3>
-              <button className="close-button" onClick={() => setIsFieldModalOpen(false)}>×</button>
+        <div className="modal-backdrop">
+          <div className="modal-container cyber-card">
+            <div className="modal-header">
+              <h2 className="cyber-title">{isEditing ? '编辑字段' : '新建字段'}</h2>
+              <button className="close-btn" onClick={() => setIsFieldModalOpen(false)}>×</button>
             </div>
-            <div className="field-modal-content">
+            <div className="modal-body">
               <form onSubmit={(e) => {
                 e.preventDefault();
-                // 模拟提交
+                // 获取表单数据
                 const formData = new FormData(e.currentTarget);
+                const fieldName = formData.get('name') as string;
+                
+                // 检查字段名是否已存在（仅限于添加新字段时）
+                if (!isEditing && tableData?.fields.some(f => f.name === fieldName)) {
+                  alert(`字段名 "${fieldName}" 已存在，请使用其他名称`);
+                  return;
+                }
+                
                 const field: FieldData = {
                   id: selectedField?.id || '',
-                  name: formData.get('name') as string,
+                  name: fieldName,
                   type: formData.get('type') as string,
                   length: parseInt(formData.get('length') as string) || undefined,
                   scale: parseInt(formData.get('scale') as string) || undefined,
@@ -456,100 +519,130 @@ const TableDetails: React.FC = () => {
                 };
                 handleSaveField(field);
               }}>
-                <div className="form-row">
+                <div className="form-section">
+                  <h3 className="section-title">基本信息</h3>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>字段名 <span className="required">*</span></label>
+                      <input 
+                        type="text" 
+                        name="name" 
+                        required 
+                        className="cyber-input"
+                        defaultValue={selectedField?.name || ''}
+                        placeholder="输入字段名称"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>数据类型 <span className="required">*</span></label>
+                      <select 
+                        name="type" 
+                        required 
+                        className="cyber-select"
+                        defaultValue={selectedField?.type || 'VARCHAR'}
+                      >
+                        {dataTypeOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>长度/精度</label>
+                      <input 
+                        type="number" 
+                        name="length" 
+                        min="0"
+                        className="cyber-input"
+                        defaultValue={selectedField?.length || ''}
+                        placeholder="字段长度"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>小数位数</label>
+                      <input 
+                        type="number" 
+                        name="scale" 
+                        min="0"
+                        className="cyber-input"
+                        defaultValue={selectedField?.scale || ''}
+                        placeholder="小数位数"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <h3 className="section-title">属性设置</h3>
+                  <div className="cyber-checkbox-group">
+                    <div className="cyber-checkbox">
+                      <input 
+                        type="checkbox" 
+                        id="primaryKey" 
+                        name="primaryKey"
+                        defaultChecked={selectedField?.primaryKey || false}
+                      />
+                      <label htmlFor="primaryKey">
+                        <span className="checkbox-icon"></span>
+                        <span className="checkbox-text">主键</span>
+                      </label>
+                    </div>
+                    <div className="cyber-checkbox">
+                      <input 
+                        type="checkbox" 
+                        id="notNull" 
+                        name="notNull"
+                        defaultChecked={selectedField?.notNull || false}
+                      />
+                      <label htmlFor="notNull">
+                        <span className="checkbox-icon"></span>
+                        <span className="checkbox-text">不为空</span>
+                      </label>
+                    </div>
+                    <div className="cyber-checkbox">
+                      <input 
+                        type="checkbox" 
+                        id="autoIncrement" 
+                        name="autoIncrement"
+                        defaultChecked={selectedField?.autoIncrement || false}
+                      />
+                      <label htmlFor="autoIncrement">
+                        <span className="checkbox-icon"></span>
+                        <span className="checkbox-text">自增</span>
+                      </label>
+                    </div>
+                  </div>
+                  
                   <div className="form-group">
-                    <label>字段名 <span className="required">*</span></label>
+                    <label>默认值</label>
                     <input 
                       type="text" 
-                      name="name" 
-                      required 
-                      defaultValue={selectedField?.name || ''}
+                      name="defaultValue"
+                      className="cyber-input"
+                      defaultValue={selectedField?.defaultValue || ''}
+                      placeholder="字段默认值（可选）"
                     />
                   </div>
+                  
                   <div className="form-group">
-                    <label>数据类型 <span className="required">*</span></label>
-                    <select name="type" required defaultValue={selectedField?.type || 'VARCHAR'}>
-                      {dataTypeOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
+                    <label>备注</label>
+                    <textarea 
+                      name="comment"
+                      rows={3}
+                      className="cyber-textarea"
+                      defaultValue={selectedField?.comment || ''}
+                      placeholder="字段说明（可选）"
+                    ></textarea>
                   </div>
                 </div>
                 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>长度/精度</label>
-                    <input 
-                      type="number" 
-                      name="length" 
-                      min="0"
-                      defaultValue={selectedField?.length || ''}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>小数位数</label>
-                    <input 
-                      type="number" 
-                      name="scale" 
-                      min="0"
-                      defaultValue={selectedField?.scale || ''}
-                    />
-                  </div>
-                </div>
-                
-                <div className="form-row checkbox-group">
-                  <div className="form-check">
-                    <input 
-                      type="checkbox" 
-                      id="primaryKey" 
-                      name="primaryKey"
-                      defaultChecked={selectedField?.primaryKey || false}
-                    />
-                    <label htmlFor="primaryKey">主键</label>
-                  </div>
-                  <div className="form-check">
-                    <input 
-                      type="checkbox" 
-                      id="notNull" 
-                      name="notNull"
-                      defaultChecked={selectedField?.notNull || false}
-                    />
-                    <label htmlFor="notNull">不为空</label>
-                  </div>
-                  <div className="form-check">
-                    <input 
-                      type="checkbox" 
-                      id="autoIncrement" 
-                      name="autoIncrement"
-                      defaultChecked={selectedField?.autoIncrement || false}
-                    />
-                    <label htmlFor="autoIncrement">自增</label>
-                  </div>
-                </div>
-                
-                <div className="form-group">
-                  <label>默认值</label>
-                  <input 
-                    type="text" 
-                    name="defaultValue"
-                    defaultValue={selectedField?.defaultValue || ''}
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>备注</label>
-                  <textarea 
-                    name="comment"
-                    rows={3}
-                    defaultValue={selectedField?.comment || ''}
-                  ></textarea>
-                </div>
-                
-                <div className="modal-buttons">
-                  <button type="button" className="cancel-button" onClick={() => setIsFieldModalOpen(false)}>
+                <div className="modal-footer">
+                  <button type="button" className="cancel-btn" onClick={() => setIsFieldModalOpen(false)}>
                     取消
                   </button>
-                  <button type="submit" className="submit-button">
+                  <button type="submit" className="confirm-btn">
                     {isEditing ? '保存修改' : '添加字段'}
                   </button>
                 </div>
