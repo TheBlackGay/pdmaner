@@ -64,6 +64,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
               onClick={(e) => {
                 e.stopPropagation();
                 // 如果有子项，则切换展开/折叠状态
+                // 只切换当前域的展开状态，不影响其他域或子菜单
                 onToggleMenuExpand(item.key);
               }}
               onContextMenu={(e) => {
@@ -99,15 +100,37 @@ const SideMenu: React.FC<SideMenuProps> = ({
                         e.nativeEvent.stopImmediatePropagation();
                         e.preventDefault();
                         
-                        // 如果有子项，则切换展开/折叠状态
-                        if (subItem.children && subItem.children.length > 0) {
+                        // 处理"数据表"、"逻辑实体"、"多表透视"等菜单项的点击
+                        // 这些项目应该被展开/折叠，而不是导航到页面
+                        if (subItem.key.startsWith('tables_') || 
+                            subItem.key.startsWith('entities_') || 
+                            subItem.key.startsWith('views_') || 
+                            subItem.key.startsWith('diagrams_') || 
+                            subItem.key.startsWith('dictionaries_')) {
+                          // 只切换展开/折叠状态
                           onToggleMenuExpand(subItem.key);
-                        } else {
+                        } 
+                        // 其他没有子菜单的项目才进行导航
+                        else if (!subItem.children || subItem.children.length === 0) {
+                          // 处理点击没有子项的菜单
                           // 确保使用正确的path
                           if (subItem.parentDomainId && subItem.path) {
-                            // 确保path中包含正确的domainId
+                            // 解析并修复路径
+                            let correctPath;
+                            
                             const pathParts = subItem.path.split('/');
-                            const correctPath = `/app/${pathParts[2]}/${subItem.parentDomainId}/${pathParts[4] || ''}`;
+                            // 确保正确使用当前主题域ID，不管原始路径中是否已经有domainId
+                            if (pathParts.length >= 4) {
+                              // 替换路径中的domainId部分
+                              pathParts[3] = subItem.parentDomainId;
+                              correctPath = pathParts.join('/');
+                            } else {
+                              // 如果路径格式不符合预期，构建新路径
+                              // 从key中提取类型，例如tables_123 => tables
+                              const typeMatch = subItem.key.match(/^(\w+)_/);
+                              const type = typeMatch ? typeMatch[1] : '';
+                              correctPath = `/app/entity/${subItem.parentDomainId}/${type}`;
+                            }
                             
                             // 创建修正后的菜单项
                             const fixedItem = {
@@ -115,10 +138,14 @@ const SideMenu: React.FC<SideMenuProps> = ({
                               path: correctPath
                             };
                             
+                            // 点击菜单项，但不影响其他项的展开状态
                             onMenuItemClick(fixedItem);
                           } else {
                             onMenuItemClick(subItem);
                           }
+                        } else {
+                          // 有子菜单的项目，切换展开/折叠状态
+                          onToggleMenuExpand(subItem.key);
                         }
                       }}
                       onContextMenu={(e) => {
@@ -215,6 +242,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
               className="menu-group-header"
               onClick={(e) => {
                 e.stopPropagation();
+                // 只切换当前菜单组的展开状态，不影响其子菜单项
                 onToggleMenuExpand(menuGroup.key);
               }}
               onContextMenu={menuGroup.key === 'model' ? (e) => {
