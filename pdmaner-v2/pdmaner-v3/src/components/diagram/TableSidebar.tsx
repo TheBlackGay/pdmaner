@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@store/index';
 import { Entity } from '../../models/entity';
-import { Input, Tooltip, Empty, Spin, Select } from 'antd';
-import { SearchOutlined, TableOutlined, PlusOutlined, DatabaseOutlined, ApartmentOutlined } from '@ant-design/icons';
+import { Input, Tooltip, Empty, Spin } from 'antd';
+import { SearchOutlined, TableOutlined, PlusOutlined } from '@ant-design/icons';
 import './TableSidebar.css';
 
 interface TableSidebarProps {
@@ -15,14 +15,13 @@ const TableSidebar: React.FC<TableSidebarProps> = ({ onAddTable, diagramId }) =>
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredEntities, setFilteredEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDomain, setSelectedDomain] = useState<string>('all');
   
   // 从Redux获取当前项目和实体列表
   const currentProject = useSelector((state: RootState) => state.app.currentProject);
   
   // 当项目数据变化或搜索词变化时，更新过滤后的实体列表
   useEffect(() => {
-    if (!currentProject || !currentProject.entities) {
+    if (!currentProject) {
       setFilteredEntities([]);
       setLoading(false);
       return;
@@ -30,28 +29,54 @@ const TableSidebar: React.FC<TableSidebarProps> = ({ onAddTable, diagramId }) =>
     
     setLoading(true);
     
-    // 获取当前图表中已经使用的实体ID列表
-    const currentDiagram = currentProject.diagrams?.find(d => d.id === diagramId);
-    const usedEntityIds = currentDiagram?.entityIds || [];
-    
-    // 过滤实体：基于搜索词、主题域和尚未添加到图表中的实体
-    const filtered = currentProject.entities.filter(entity => {
-      const matchesSearch = 
-        !searchTerm || 
-        entity.defName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        entity.defKey.toLowerCase().includes(searchTerm.toLowerCase());
+    try {
+      // 查找当前图表
+      const currentDiagram = currentProject.diagrams?.find(d => d.id === diagramId);
+      if (!currentDiagram) {
+        setFilteredEntities([]);
+        setLoading(false);
+        return;
+      }
       
-      // 根据主题域筛选
-      const matchesDomain = 
-        selectedDomain === 'all' || 
-        entity.domainId === selectedDomain;
+      // 获取当前图表中已经使用的实体ID列表
+      const usedEntityIds = currentDiagram.entityIds || [];
       
-      return matchesSearch && matchesDomain;
-    });
-    
-    setFilteredEntities(filtered);
-    setLoading(false);
-  }, [currentProject, searchTerm, diagramId, selectedDomain]);
+      // 使用当前图表所属域过滤数据表
+      const domainId = currentDiagram.domainId;
+      
+      // 获取当前域下的所有表
+      const domainTables = currentProject.tables.filter(table => table.domainId === domainId);
+      
+      // 将表转换为实体格式并过滤搜索条件
+      const entities = domainTables.map(table => ({
+        id: table.id,
+        defKey: table.code,
+        defName: table.name,
+        comment: table.comment,
+        domainId: table.domainId,
+        fields: table.fields || [],
+        indexes: table.indexes || [],
+        type: table.type
+      }));
+      
+      // 基于搜索词过滤
+      const filtered = entities.filter(entity => {
+        const matchesSearch = 
+          !searchTerm || 
+          entity.defName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          entity.defKey.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        return matchesSearch;
+      });
+      
+      setFilteredEntities(filtered);
+    } catch (err) {
+      console.error('过滤实体列表出错:', err);
+      setFilteredEntities([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentProject, searchTerm, diagramId]);
   
   // 处理搜索输入变化
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,24 +102,21 @@ const TableSidebar: React.FC<TableSidebarProps> = ({ onAddTable, diagramId }) =>
     return currentDiagram?.entityIds?.includes(entityId) || false;
   };
   
-  // 生成主题域选项
-  const getDomainOptions = () => {
-    const domains = currentProject?.domains || [];
+  // 获取当前域名称
+  const getCurrentDomainName = (): string => {
+    if (!currentProject || !diagramId) return '';
     
-    // 创建"全部"选项和所有域选项
-    return [
-      { label: '全部主题域', value: 'all' },
-      ...(domains.map(domain => ({
-        label: domain.defName || domain.defKey,
-        value: domain.id
-      })))
-    ];
+    const diagram = currentProject.diagrams?.find(d => d.id === diagramId);
+    if (!diagram) return '';
+    
+    const domain = currentProject.domains.find(d => d.id === diagram.domainId);
+    return domain?.name || '';
   };
   
   return (
     <div className="table-sidebar">
       <div className="sidebar-header">
-        <h3><DatabaseOutlined /> 可用表</h3>
+        <h3 className="domain-title">{getCurrentDomainName()} - 可用表</h3>
         <div className="search-container">
           <Input
             placeholder="搜索表..."
@@ -102,16 +124,6 @@ const TableSidebar: React.FC<TableSidebarProps> = ({ onAddTable, diagramId }) =>
             value={searchTerm}
             onChange={handleSearchChange}
             allowClear
-          />
-        </div>
-        <div className="domain-filter">
-          <ApartmentOutlined />
-          <Select
-            placeholder="选择主题域"
-            value={selectedDomain}
-            onChange={setSelectedDomain}
-            options={getDomainOptions()}
-            style={{ width: '100%', marginTop: '8px' }}
           />
         </div>
       </div>
