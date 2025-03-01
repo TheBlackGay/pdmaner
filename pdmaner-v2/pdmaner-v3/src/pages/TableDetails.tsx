@@ -19,7 +19,9 @@ import {
   FileTextOutlined,
   VerticalAlignTopOutlined,
   VerticalAlignBottomOutlined,
-  DatabaseOutlined
+  DatabaseOutlined,
+  ImportOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
@@ -777,7 +779,30 @@ const TableDetails: React.FC = () => {
 
   // 处理行点击，选择字段
   const handleRowClick = (field: FieldData) => {
-    setSelectedField(field);
+    setSelectedField({...field}); // 添加一个深拷贝来避免直接修改原始数据
+  };
+
+  // 处理表单编辑时确保ID始终有值的辅助函数
+  const updateSelectedField = (updatedValues: Partial<FieldData>) => {
+    if (selectedField) {
+      // 如果已有选定的字段，则合并更新
+      setSelectedField({
+        ...selectedField,
+        ...updatedValues
+      });
+    } else {
+      // 如果是新建字段，创建带有默认值和必要属性的新对象
+      setSelectedField({
+        id: Date.now().toString(), // 临时ID
+        name: '',
+        code: '',
+        type: 'VARCHAR',
+        primaryKey: false,
+        notNull: false,
+        autoIncrement: false,
+        ...updatedValues
+      });
+    }
   };
 
   // 渲染表详情标签内容
@@ -816,171 +841,140 @@ const TableDetails: React.FC = () => {
   // 渲染字段管理标签页内容
   const renderFieldsTab = () => {
     return (
-      <div
-        className="fields-panel"
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+      <div className="fields-panel" 
+           onDrop={handleDrop} 
+           onDragOver={handleDragOver}
+           onDragLeave={handleDragLeave}
       >
         <div className="fields-toolbar">
           <div className="toolbar-left">
-            <button
-              className="add-button"
-              onClick={handleAddField}
-            >
+            <button className="add-button" onClick={handleAddField}>
               <PlusOutlined /> 添加字段
             </button>
-            
             <div className="button-group">
-              <button 
-                className="edit-button" 
-                disabled={!selectedField}
-                onClick={() => {
-                  if (selectedField) {
-                    handleEditField(selectedField);
-                  }
-                }}
+              <button
+                title="排序: 按代码"
+                onClick={() => handleSortFields('code')}
               >
-                <EditOutlined /> 编辑
-              </button>
-              <button 
-                className="copy-button" 
-                disabled={!selectedField}
-                onClick={() => {
-                  if (selectedField) {
-                    handleCopyField(selectedField);
-                  }
-                }}
-              >
-                <CopyOutlined /> 复制
+                代码 <DownOutlined />
               </button>
               <button
-                className="delete-button"
-                disabled={!selectedField}
-                onClick={() => {
-                  if (selectedField) {
-                    handleDeleteField(selectedField.id);
-                  }
-                }}
+                title="排序: 按名称"
+                onClick={() => handleSortFields('name')}
               >
-                <DeleteOutlined /> 删除
+                名称 <DownOutlined />
               </button>
-            </div>
-            
-            <div className="button-group">
-              <button 
-                className="add-to-library-button" 
-                onClick={handleAddToLibrary} 
-                title="将选中的字段添加到标准字段库"
-                disabled={!selectedField}
+              <button
+                title="排序: 主键优先"
+                onClick={() => handleSortFields('primaryKey')}
               >
-                <SaveOutlined /> 字段入库
-              </button>
-            </div>
-            
-            <div className="button-group">
-              <button 
-                className="move-button icon-only"
-                title="置顶"
-                disabled={!selectedField}
-                onClick={() => {
-                  if (selectedField) {
-                    handleMoveField(selectedField.id, 'top');
-                  }
-                }}
-              >
-                <VerticalAlignTopOutlined />
-              </button>
-              <button 
-                className="move-button icon-only"
-                title="上移一位"
-                disabled={!selectedField}
-                onClick={() => {
-                  if (selectedField) {
-                    handleMoveField(selectedField.id, 'up');
-                  }
-                }}
-              >
-                <UpOutlined />
-              </button>
-              <button 
-                className="move-button icon-only"
-                title="下移一位"
-                disabled={!selectedField}
-                onClick={() => {
-                  if (selectedField) {
-                    handleMoveField(selectedField.id, 'down');
-                  }
-                }}
-              >
-                <DownOutlined />
-              </button>
-              <button 
-                className="move-button icon-only"
-                title="置底"
-                disabled={!selectedField}
-                onClick={() => {
-                  if (selectedField) {
-                    handleMoveField(selectedField.id, 'bottom');
-                  }
-                }}
-              >
-                <VerticalAlignBottomOutlined />
+                主键 <DownOutlined />
               </button>
             </div>
           </div>
+          
           <div className="toolbar-right">
-            {/* 字段入库按钮已移至左侧 */}
+            <div className="search-box">
+              <SearchOutlined />
+              <input
+                type="text"
+                placeholder="搜索字段..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  className="clear-search"
+                  onClick={() => setSearchTerm('')}
+                >
+                  <CloseOutlined />
+                </button>
+              )}
+            </div>
+            <button 
+              className="add-to-library-button"
+              onClick={handleAddToLibrary}
+              disabled={!selectedField}
+              title="添加选中字段到标准字段库"
+            >
+              <DatabaseOutlined /> 添加到字段库
+            </button>
           </div>
         </div>
-
         <div className="fields-table-wrapper">
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width: '30px' }}></th>
+                <th style={{ width: '150px' }}>字段名称</th>
+                <th style={{ width: '150px' }}>字段代码</th>
+                <th style={{ width: '100px' }}>类型</th>
+                <th style={{ width: '80px' }}>长度</th>
+                <th style={{ width: '50px' }}>主键</th>
+                <th style={{ width: '50px' }}>非空</th>
+                <th style={{ width: '50px' }}>自增</th>
+                <th style={{ width: '150px' }}>默认值</th>
+                <th>备注</th>
+                <th style={{ width: '120px' }}>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {getFilteredFields().length === 0 ? (
                 <tr>
-                  <th>序号</th>
-                  <th>名称</th>
-                  <th>数据类型</th>
-                  <th>长度/精度</th>
-                  <th>小数位</th>
-                  <th>主键</th>
-                  <th>不为空</th>
-                  <th>自增</th>
-                  <th>默认值</th>
-                  <th>备注</th>
+                  <td colSpan={11} className="empty-state">
+                    {searchTerm ? (
+                      <>
+                        <h3>未找到匹配的字段</h3>
+                        <p>尝试使用其他搜索词，或清除搜索</p>
+                      </>
+                    ) : (
+                      <>
+                        <h3>暂无字段</h3>
+                        <p>点击"添加字段"按钮或从标准字段库拖拽字段到此处</p>
+                      </>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {getFilteredFields().length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="empty-message">
-                      <InfoCircleOutlined /> 暂无字段，请添加或从标准字段库拖拽字段
+              ) : (
+                getFilteredFields().map((field, index) => (
+                  <tr
+                    key={field.id}
+                    className={`${field.primaryKey ? 'primary-key-row' : ''} ${selectedField?.id === field.id ? 'selected-row' : ''}`}
+                    onClick={() => handleRowClick(field)}
+                  >
+                    <td>{index + 1}</td>
+                    <td>{field.name}</td>
+                    <td>{field.code}</td>
+                    <td><span className="type-badge">{field.type}</span></td>
+                    <td>{field.length || '-'}</td>
+                    <td>{field.primaryKey ? <span className="pk-badge"><KeyOutlined /></span> : '-'}</td>
+                    <td>{field.notNull ? '√' : '-'}</td>
+                    <td>{field.autoIncrement ? '√' : '-'}</td>
+                    <td className="default-value-cell">{field.defaultValue || '-'}</td>
+                    <td className="comment-cell">{field.comment || '-'}</td>
+                    <td className="actions-cell">
+                      <button title="编辑" className="table-action-btn" onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditField(field);
+                      }}>
+                        <EditOutlined />
+                      </button>
+                      <button
+                        title="删除"
+                        className="table-action-btn delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteField(field.id);
+                        }}
+                      >
+                        <DeleteOutlined />
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  getFilteredFields().map((field, index) => (
-                    <tr
-                      key={field.id}
-                      className={`${field.primaryKey ? 'primary-key-row' : ''} ${selectedField?.id === field.id ? 'selected-row' : ''}`}
-                      onClick={() => handleRowClick(field)}
-                    >
-                      <td>{index + 1}</td>
-                      <td>{field.name}</td>
-                      <td><span className="type-badge">{field.type}</span></td>
-                      <td>{field.length || '-'}</td>
-                      <td>{field.scale || '-'}</td>
-                      <td>{field.primaryKey ? <span className="pk-badge"><KeyOutlined /></span> : '-'}</td>
-                      <td>{field.notNull ? '√' : '-'}</td>
-                      <td>{field.autoIncrement ? '√' : '-'}</td>
-                      <td className="default-value-cell">{field.defaultValue || '-'}</td>
-                      <td className="comment-cell">{field.comment || '-'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     );
@@ -1030,18 +1024,6 @@ const TableDetails: React.FC = () => {
                       </td>
                       <td className="comment-cell">{index.comment || '-'}</td>
                       <td className="actions-cell">
-                        <button title="向上移动" className="table-action-btn" onClick={(e) => {
-                          e.stopPropagation();
-                          handleMoveIndex(index.id, 'up');
-                        }}>
-                          <UpOutlined />
-                        </button>
-                        <button title="向下移动" className="table-action-btn" onClick={(e) => {
-                          e.stopPropagation();
-                          handleMoveIndex(index.id, 'down');
-                        }}>
-                          <DownOutlined />
-                        </button>
                         <button title="编辑" className="table-action-btn" onClick={(e) => {
                           e.stopPropagation();
                           handleEditIndex(index);
@@ -1300,6 +1282,394 @@ const TableDetails: React.FC = () => {
     }
   };
 
+  // 解析SQL DDL语句生成表结构
+  const parseSqlToTable = (sqlText: string) => {
+    try {
+      const trimmedSql = sqlText.trim();
+      
+      // 简单验证是否是CREATE TABLE语句
+      if (!trimmedSql.toUpperCase().includes('CREATE TABLE')) {
+        showError('无效的SQL语句，请使用CREATE TABLE语句');
+        return;
+      }
+
+      // 从SQL中提取表名
+      const tableNameMatch = trimmedSql.match(/CREATE\s+TABLE\s+(?:\w+\.)?([`"']?)(\w+)\1/i);
+      const tableName = tableNameMatch ? tableNameMatch[2] : '新建表';
+      
+      // 提取字段定义
+      const fieldsSection = trimmedSql.substring(
+        trimmedSql.indexOf('(') + 1, 
+        trimmedSql.lastIndexOf(')')
+      );
+      
+      // 按逗号分隔各个字段定义，但忽略括号内的逗号
+      const fieldDefinitions: string[] = [];
+      let currentField = '';
+      let parenthesesCount = 0;
+      
+      for (let i = 0; i < fieldsSection.length; i++) {
+        const char = fieldsSection[i];
+        
+        if (char === '(') parenthesesCount++;
+        else if (char === ')') parenthesesCount--;
+        
+        if (char === ',' && parenthesesCount === 0) {
+          fieldDefinitions.push(currentField.trim());
+          currentField = '';
+        } else {
+          currentField += char;
+        }
+      }
+      
+      if (currentField.trim()) {
+        fieldDefinitions.push(currentField.trim());
+      }
+      
+      // 过滤掉非字段定义（如约束、索引等）
+      const realFieldDefinitions = fieldDefinitions.filter(def => {
+        const upperDef = def.toUpperCase();
+        return !upperDef.startsWith('PRIMARY KEY') &&
+               !upperDef.startsWith('UNIQUE') &&
+               !upperDef.startsWith('CONSTRAINT') &&
+               !upperDef.startsWith('FOREIGN KEY') &&
+               !upperDef.startsWith('CHECK') &&
+               !upperDef.startsWith('INDEX');
+      });
+      
+      // 解析字段定义为字段对象
+      const fields: FieldData[] = realFieldDefinitions.map(fieldDef => {
+        const parts = fieldDef.trim().split(/\s+/);
+        const fieldName = parts[0].replace(/[`'"]/g, '');
+        
+        // 提取类型信息
+        const typeMatch = fieldDef.match(/\s+([A-Za-z]+)(?:\(([^)]+)\))?/);
+        const fieldType = typeMatch ? typeMatch[1].toUpperCase() : 'VARCHAR';
+        
+        // 提取长度和小数位
+        let fieldLength: number | undefined;
+        let fieldScale: number | undefined;
+        
+        if (typeMatch && typeMatch[2]) {
+          const sizeParts = typeMatch[2].split(',');
+          fieldLength = parseInt(sizeParts[0]);
+          if (sizeParts.length > 1) {
+            fieldScale = parseInt(sizeParts[1]);
+          }
+        }
+        
+        // 检查是否主键
+        const isPrimaryKey = fieldDef.toUpperCase().includes('PRIMARY KEY');
+        
+        // 检查是否非空
+        const isNotNull = fieldDef.toUpperCase().includes('NOT NULL');
+        
+        // 检查是否自增
+        const isAutoIncrement = (
+          fieldDef.toUpperCase().includes('AUTO_INCREMENT') ||
+          fieldDef.toUpperCase().includes('IDENTITY') ||
+          fieldDef.toUpperCase().includes('SERIAL')
+        );
+        
+        // 提取默认值
+        const defaultMatch = fieldDef.match(/DEFAULT\s+([^,\s]+)/i);
+        const defaultValue = defaultMatch ? defaultMatch[1] : undefined;
+        
+        // 提取注释
+        const commentMatch = fieldDef.match(/COMMENT\s+['"]([^'"]+)['"]/i);
+        const comment = commentMatch ? commentMatch[1] : '';
+        
+        // 生成字段ID
+        const fieldId = generateUUID();
+        
+        return {
+          id: fieldId,
+          name: fieldName,
+          code: fieldName.toLowerCase(),
+          type: fieldType,
+          length: fieldLength,
+          scale: fieldScale,
+          primaryKey: isPrimaryKey,
+          notNull: isNotNull,
+          autoIncrement: isAutoIncrement,
+          defaultValue: defaultValue,
+          comment: comment
+        };
+      });
+      
+      // 创建新表
+      createTableFromParsedStructure(tableName, fields);
+      
+    } catch (err) {
+      console.error('解析SQL失败:', err);
+      showError('解析SQL失败，请检查SQL语法');
+    }
+  };
+
+  // 创建表并添加到默认主题域
+  const createTableFromParsedStructure = (tableName: string, fields: FieldData[]) => {
+    if (!currentProject) {
+      showError('项目未打开，无法创建表');
+      return;
+    }
+    
+    try {
+      // 获取默认主题域
+      const defaultDomain = currentProject.domains.find(d => d.code === 'default') || currentProject.domains[0];
+      
+      if (!defaultDomain) {
+        showError('未找到默认主题域');
+        return;
+      }
+      
+      // 生成表ID和表代码
+      const tableId = generateUUID();
+      const tableCode = tableName.toLowerCase().replace(/\s+/g, '_');
+      const now = Date.now();
+      
+      // 创建新表对象
+      const newTable: TableData = {
+        id: tableId,
+        name: tableName,
+        code: tableCode,
+        comment: `解析自SQL - ${new Date().toLocaleString()}`,
+        domainId: defaultDomain.id,
+        type: '业务表',
+        fields: fields,
+        indexes: [],
+        createTime: now,
+        lastModified: now
+      };
+      
+      // 更新项目数据
+      const updatedTables = [...currentProject.tables, newTable];
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables,
+        lastModified: now
+      };
+      
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
+      
+      // 保存到localStorage
+      saveProject(updatedProject);
+      
+      // 提示成功并跳转到新表
+      success(`表 "${tableName}" 成功导入，已添加到 "${defaultDomain.name}" 主题域`);
+      navigate(`/app/table/${tableId}`);
+      
+    } catch (err) {
+      console.error('创建表失败:', err);
+      showError('创建表失败，请检查控制台错误日志');
+    }
+  };
+
+  // 打开解析SQL的模态框
+  const openSqlParsingModal = () => {
+    // 创建模态框DOM
+    const modalContainer = document.createElement('div');
+    modalContainer.className = 'modal-backdrop visible';
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-container';
+    modalContent.style.width = '800px';
+    modalContent.style.maxWidth = '90vw';
+    modalContainer.appendChild(modalContent);
+    
+    // 添加模态框头部
+    const modalHeader = document.createElement('div');
+    modalHeader.className = 'modal-header';
+    modalHeader.innerHTML = '<h3>解析SQL为数据表</h3>';
+    modalContent.appendChild(modalHeader);
+    
+    // 添加关闭按钮
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-btn';
+    closeButton.innerHTML = '×';
+    closeButton.onclick = () => document.body.removeChild(modalContainer);
+    modalHeader.appendChild(closeButton);
+    
+    // 添加模态框内容
+    const modalBody = document.createElement('div');
+    modalBody.className = 'modal-body';
+    modalContent.appendChild(modalBody);
+    
+    // 添加表单
+    const form = document.createElement('form');
+    modalBody.appendChild(form);
+    
+    // 添加SQL输入区
+    const formSection = document.createElement('div');
+    formSection.className = 'form-section';
+    form.appendChild(formSection);
+    
+    const textareaLabel = document.createElement('label');
+    textareaLabel.innerHTML = 'SQL CREATE TABLE语句:';
+    textareaLabel.style.display = 'block';
+    textareaLabel.style.marginBottom = '8px';
+    formSection.appendChild(textareaLabel);
+    
+    const textareaWrapper = document.createElement('div');
+    textareaWrapper.style.position = 'relative';
+    formSection.appendChild(textareaWrapper);
+    
+    const textarea = document.createElement('textarea');
+    textarea.style.width = '100%';
+    textarea.style.height = '300px';
+    textarea.style.padding = '12px';
+    textarea.style.fontSize = '14px';
+    textarea.style.fontFamily = 'monospace';
+    textarea.style.border = '1px solid var(--cyber-neon-blue, #05d9e8)';
+    textarea.style.borderRadius = '4px';
+    textarea.style.backgroundColor = 'rgba(10, 12, 26, 0.7)';
+    textarea.style.color = '#e0e0ff';
+    textarea.placeholder = `请输入CREATE TABLE语句，例如：
+CREATE TABLE user (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL,
+  email VARCHAR(100) UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`;
+    textareaWrapper.appendChild(textarea);
+    
+    // 添加SQL示例按钮
+    const exampleWrapper = document.createElement('div');
+    exampleWrapper.style.marginTop = '8px';
+    exampleWrapper.style.textAlign = 'right';
+    formSection.appendChild(exampleWrapper);
+    
+    const exampleButton = document.createElement('button');
+    exampleButton.type = 'button';
+    exampleButton.className = 'cyber-btn-link';
+    exampleButton.innerHTML = '插入示例SQL';
+    exampleButton.onclick = () => {
+      textarea.value = `CREATE TABLE users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  first_name VARCHAR(50),
+  last_name VARCHAR(50),
+  date_of_birth DATE,
+  gender CHAR(1),
+  phone_number VARCHAR(20),
+  address TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_login DATETIME,
+  role ENUM('admin', 'user', 'guest') DEFAULT 'user',
+  CONSTRAINT chk_gender CHECK (gender IN ('M', 'F', 'O'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户信息表';`;
+    };
+    exampleWrapper.appendChild(exampleButton);
+    
+    // 添加说明
+    const helpText = document.createElement('div');
+    helpText.style.marginTop = '16px';
+    helpText.style.padding = '12px';
+    helpText.style.backgroundColor = 'rgba(5, 217, 232, 0.05)';
+    helpText.style.border = '1px solid rgba(5, 217, 232, 0.2)';
+    helpText.style.borderRadius = '4px';
+    helpText.style.fontSize = '14px';
+    helpText.style.lineHeight = '1.5';
+    helpText.innerHTML = `
+      <p><strong>支持的SQL格式:</strong></p>
+      <ul style="padding-left: 20px; margin-top: 8px;">
+        <li>标准CREATE TABLE语法</li>
+        <li>字段定义 (名称、类型、长度、约束等)</li>
+        <li>支持提取PRIMARY KEY、NOT NULL、AUTO_INCREMENT等约束</li>
+        <li>支持COMMENT提取为字段注释</li>
+      </ul>
+      <p style="margin-top: 8px;"><strong>注意:</strong> 解析生成的表将添加到默认主题域</p>
+    `;
+    formSection.appendChild(helpText);
+    
+    // 添加模态框底部
+    const modalFooter = document.createElement('div');
+    modalFooter.className = 'modal-footer';
+    modalContent.appendChild(modalFooter);
+    
+    // 添加取消按钮
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'cancel-btn';
+    cancelButton.innerHTML = '取消';
+    cancelButton.onclick = () => document.body.removeChild(modalContainer);
+    modalFooter.appendChild(cancelButton);
+    
+    // 添加解析按钮
+    const parseButton = document.createElement('button');
+    parseButton.type = 'button';
+    parseButton.className = 'confirm-btn';
+    parseButton.innerHTML = '解析并创建表';
+    parseButton.onclick = () => {
+      if (!textarea.value.trim()) {
+        showError('请输入SQL语句');
+        return;
+      }
+      
+      parseSqlToTable(textarea.value);
+      document.body.removeChild(modalContainer);
+    };
+    modalFooter.appendChild(parseButton);
+    
+    // 添加模态框到body
+    document.body.appendChild(modalContainer);
+  };
+
+  // 根据指定属性对字段进行排序
+  const handleSortFields = (sortKey: 'name' | 'code' | 'primaryKey') => {
+    if (!tableData) return;
+    
+    const sortedFields = [...tableData.fields].sort((a, b) => {
+      if (sortKey === 'primaryKey') {
+        // 对于主键排序，主键字段优先
+        if (a.primaryKey && !b.primaryKey) return -1;
+        if (!a.primaryKey && b.primaryKey) return 1;
+        return a.name.localeCompare(b.name); // 相同时按名称排序
+      }
+      
+      // 对于name和code排序
+      if (sortKey === 'name' || sortKey === 'code') {
+        return a[sortKey].localeCompare(b[sortKey]);
+      }
+      
+      return 0;
+    });
+    
+    // 更新表数据
+    const updatedTable = {
+      ...tableData,
+      fields: sortedFields
+    };
+    
+    // 更新项目数据
+    if (currentProject) {
+      const updatedTables = currentProject.tables.map(t => 
+        t.id === tableData.id ? updatedTable : t
+      );
+      
+      // 更新Redux状态
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables
+      };
+      
+      dispatch(setCurrentProject(updatedProject));
+      
+      // 更新本地状态
+      setTableData(updatedTable);
+      
+      // 显示成功通知
+      success(`字段已按${
+        sortKey === 'name' ? '名称' : 
+        sortKey === 'code' ? '代码' : 
+        '主键优先'
+      }排序`);
+    }
+  };
+
   if (!tableData) {
     return <div className="loading-container">加载表信息中...</div>;
   }
@@ -1504,7 +1874,7 @@ const TableDetails: React.FC = () => {
                       <input
                         type="text"
                         value={selectedField?.name || ''}
-                        onChange={(e) => setSelectedField({...selectedField, name: e.target.value})}
+                        onChange={(e) => updateSelectedField({ name: e.target.value })}
                         placeholder="请输入字段名称"
                         autoFocus
                       />
@@ -1516,7 +1886,7 @@ const TableDetails: React.FC = () => {
                       <input
                         type="text"
                         value={selectedField?.code || ''}
-                        onChange={(e) => setSelectedField({...selectedField, code: e.target.value})}
+                        onChange={(e) => updateSelectedField({ code: e.target.value })}
                         placeholder="请输入字段代码"
                       />
                     </div>
@@ -1533,7 +1903,7 @@ const TableDetails: React.FC = () => {
                       <label>数据类型:</label>
                       <select
                         value={selectedField?.type || 'VARCHAR'}
-                        onChange={(e) => setSelectedField({...selectedField, type: e.target.value})}
+                        onChange={(e) => updateSelectedField({ type: e.target.value })}
                       >
                         {dataTypeOptions.map(option => (
                           <option key={option.value} value={option.value}>
@@ -1547,7 +1917,7 @@ const TableDetails: React.FC = () => {
                       <input
                         type="number"
                         value={selectedField?.length || ''}
-                        onChange={(e) => setSelectedField({...selectedField, length: Number(e.target.value) || undefined})}
+                        onChange={(e) => updateSelectedField({ length: Number(e.target.value) || undefined })}
                         placeholder="字段长度"
                       />
                     </div>
@@ -1558,7 +1928,7 @@ const TableDetails: React.FC = () => {
                       <input
                         type="number"
                         value={selectedField?.scale || ''}
-                        onChange={(e) => setSelectedField({...selectedField, scale: Number(e.target.value) || undefined})}
+                        onChange={(e) => updateSelectedField({ scale: Number(e.target.value) || undefined })}
                         placeholder="小数位数"
                       />
                     </div>
@@ -1567,7 +1937,7 @@ const TableDetails: React.FC = () => {
                       <input
                         type="text"
                         value={selectedField?.defaultValue || ''}
-                        onChange={(e) => setSelectedField({...selectedField, defaultValue: e.target.value})}
+                        onChange={(e) => updateSelectedField({ defaultValue: e.target.value })}
                         placeholder="默认值"
                       />
                     </div>
@@ -1584,7 +1954,7 @@ const TableDetails: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={selectedField?.primaryKey || false}
-                        onChange={(e) => setSelectedField({...selectedField, primaryKey: e.target.checked})}
+                        onChange={(e) => updateSelectedField({ primaryKey: e.target.checked })}
                       />
                       <div className="checkbox-display"></div>
                       <span className="checkbox-label">主键</span>
@@ -1594,7 +1964,7 @@ const TableDetails: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={selectedField?.notNull || false}
-                        onChange={(e) => setSelectedField({...selectedField, notNull: e.target.checked})}
+                        onChange={(e) => updateSelectedField({ notNull: e.target.checked })}
                       />
                       <div className="checkbox-display"></div>
                       <span className="checkbox-label">不为空</span>
@@ -1604,7 +1974,7 @@ const TableDetails: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={selectedField?.autoIncrement || false}
-                        onChange={(e) => setSelectedField({...selectedField, autoIncrement: e.target.checked})}
+                        onChange={(e) => updateSelectedField({ autoIncrement: e.target.checked })}
                       />
                       <div className="checkbox-display"></div>
                       <span className="checkbox-label">自增</span>
@@ -1622,7 +1992,7 @@ const TableDetails: React.FC = () => {
                       <label>备注:</label>
                       <textarea
                         value={selectedField?.comment || ''}
-                        onChange={(e) => setSelectedField({...selectedField, comment: e.target.value})}
+                        onChange={(e) => updateSelectedField({ comment: e.target.value })}
                         placeholder="输入字段备注说明"
                       />
                     </div>

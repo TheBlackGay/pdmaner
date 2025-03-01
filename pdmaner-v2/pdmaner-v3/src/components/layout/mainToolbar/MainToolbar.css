@@ -55,3 +55,34 @@
   color: #05d9e8;
   box-shadow: 0 0 8px rgba(5, 217, 232, 0.5);
 }
+
+.toolbar-group button.action-highlight {
+  background-color: rgba(5, 217, 232, 0.2);
+  border: 1px solid rgba(5, 217, 232, 0.4);
+  color: #05d9e8;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
+}
+
+.toolbar-group button.action-highlight:hover {
+  background-color: rgba(5, 217, 232, 0.3);
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(5, 217, 232, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(5, 217, 232, 0.4);
+}
+
+.toolbar-group button.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sql-import-icon {
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 12px;
+  background: linear-gradient(135deg, #05d9e8, #a239ca);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding: 0 2px;
+}

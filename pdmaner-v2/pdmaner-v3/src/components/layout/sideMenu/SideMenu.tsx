@@ -99,10 +99,17 @@ const SideMenu: React.FC<SideMenuProps> = ({
                         e.nativeEvent.stopImmediatePropagation();
                         e.preventDefault();
                         
-                        // 如果有子项，则切换展开/折叠状态
-                        if (subItem.children && subItem.children.length > 0) {
+                        // 判断是否是需要展开/折叠的菜单类型（表、实体、视图、图表、字典）
+                        const categoryMenuTypes = ['tables_', 'entities_', 'views_', 'diagrams_', 'dictionaries_'];
+                        const isCategoryMenu = categoryMenuTypes.some(prefix => subItem.key.startsWith(prefix));
+                        
+                        // 如果是分类菜单或者有子项，则切换展开/折叠状态
+                        if (isCategoryMenu || (subItem.children && subItem.children.length > 0)) {
+                          console.log('展开/折叠菜单:', subItem.key);
                           onToggleMenuExpand(subItem.key);
                         } else {
+                          // 只有不是分类菜单且没有子项的菜单才导航
+                          console.log('导航到:', subItem.path);
                           // 确保使用正确的path
                           if (subItem.parentDomainId && subItem.path) {
                             // 确保path中包含正确的domainId
@@ -142,7 +149,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
                       )}
                     </div>
 
-                    {/* 子菜单项的子项 */}
+                    {/* 子菜单项的子项 - 只有当父菜单展开时才显示 */}
                     {subItem.expanded && subItem.children && subItem.children.length > 0 && (
                       <div className="table-items">
                         {subItem.children.map(tableItem => (

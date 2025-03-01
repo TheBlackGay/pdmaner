@@ -10,7 +10,13 @@ import {
   BookOutlined,
   CodeOutlined,
   FolderOpenOutlined,
-  PlusOutlined
+  PlusOutlined,
+  SettingOutlined,
+  FileTextOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  KeyOutlined,
+  BulbOutlined
 } from '@ant-design/icons';
 import { toggleDarkMode, setLoading, setCurrentProject, updateCurrentProject } from '@store/slices/appSlice';
 import { RootState } from '@store/index';
@@ -270,6 +276,8 @@ const MainLayout: React.FC = () => {
 
   // 获取基础菜单项
   const getFixedMenuItems = (): MenuItem[] => {
+    console.log('获取菜单项，当前展开状态:', expandedGroups);
+    
     return [
       {
         key: 'home',
@@ -380,42 +388,58 @@ const MainLayout: React.FC = () => {
     return findMenuItem(getMenuItems());
   };
 
-  // 切换菜单项的展开/折叠状态
+  // 切换菜单展开状态
   const toggleMenuExpand = (menuKey: string) => {
-    // 更新expandedGroups状态
-    setExpandedGroups(prev => {
-      if (prev.includes(menuKey)) {
-        // 如果已经展开，则折叠
-        return prev.filter(key => key !== menuKey);
+    console.log('toggleMenuExpand 被调用:', menuKey);
+    
+    setExpandedGroups(prevExpandedGroups => {
+      // 检查当前菜单是否已经展开
+      const isExpanded = prevExpandedGroups.includes(menuKey);
+      let newExpandedGroups: string[];
+
+      if (isExpanded) {
+        // 如果已展开，则折叠
+        console.log('折叠菜单:', menuKey);
+        newExpandedGroups = prevExpandedGroups.filter(key => key !== menuKey);
       } else {
-        // 如果是展开操作，需要处理一些特殊情况
-        let newExpandedGroups = [...prev, menuKey];
+        // 如果未展开，则展开
+        console.log('展开菜单:', menuKey);
+
+        // 首先，将当前菜单项添加到展开列表
+        newExpandedGroups = [...prevExpandedGroups, menuKey];
         
-        // 若是数据表、逻辑实体、多表透视等类型，需要关闭同级其他菜单
-        if (menuKey.startsWith('tables_') || 
-            menuKey.startsWith('entities_') || 
-            menuKey.startsWith('views_') || 
-            menuKey.startsWith('diagrams_') || 
-            menuKey.startsWith('dictionaries_')) {
-          // 提取domainId
-          const parts = menuKey.split('_');
-          const type = parts[0];
-          const domainId = parts.slice(1).join('_');
-          
-          // 关闭同一个主题域下的其他同级菜单
-          const siblingKeys = ['tables_', 'entities_', 'views_', 'diagrams_', 'dictionaries_'];
-          
-          siblingKeys.forEach(siblingType => {
-            if (siblingType !== type + '_') {
-              const siblingKey = siblingType + domainId;
-              // 从展开列表中移除兄弟菜单
-              newExpandedGroups = newExpandedGroups.filter(key => key !== siblingKey);
-            }
-          });
+        // 如果是domain_前缀的菜单项，同时展开其下的tables项
+        if (menuKey.startsWith('domain_')) {
+          const domainId = menuKey.split('_')[1];
+          const tablesKey = `tables_${domainId}`;
+          if (!newExpandedGroups.includes(tablesKey)) {
+            console.log('自动展开数据表菜单:', tablesKey);
+            newExpandedGroups.push(tablesKey);
+          }
         }
         
-        return newExpandedGroups;
+        // 特殊处理主题域下的各类菜单项
+        const categoryMenuPrefixes = ['tables_', 'entities_', 'views_', 'diagrams_', 'dictionaries_'];
+        const clickedPrefix = categoryMenuPrefixes.find(prefix => menuKey.startsWith(prefix));
+        
+        if (clickedPrefix) {
+          // 提取domainId
+          const domainId = menuKey.substring(clickedPrefix.length);
+          
+          // 保持domain菜单的展开状态
+          const domainKey = `domain_${domainId}`;
+          if (!newExpandedGroups.includes(domainKey)) {
+            console.log('确保主题域保持展开:', domainKey);
+            newExpandedGroups.push(domainKey);
+          }
+          
+          // 不再关闭同一主题域下的其他菜单项
+          // 用户希望能够同时展开多个菜单项
+        }
       }
+      
+      console.log('新的展开状态:', newExpandedGroups);
+      return newExpandedGroups;
     });
   };
 
@@ -551,6 +575,8 @@ const MainLayout: React.FC = () => {
 
   // 菜单项点击导航
   const navigateToMenuItem = (item: MenuItem) => {
+    console.log('导航到菜单项:', item.key, '路径:', item.path);
+    
     // 如果是首页，直接导航到/app
     if (item.key === 'home') {
       navigate('/app');
@@ -562,6 +588,10 @@ const MainLayout: React.FC = () => {
     
     // 如果有path属性，导航到指定路径
     if (item.path) {
+      // 记录导航前的展开状态
+      const currentExpandedGroups = [...expandedGroups];
+      console.log('导航前的展开状态:', currentExpandedGroups);
+      
       navigate(item.path);
       setActiveTab(item.key);
       setShowProjectOverview(false); // 隐藏项目概览
@@ -579,6 +609,13 @@ const MainLayout: React.FC = () => {
             icon: item.icon
           }
         ]);
+      }
+      
+      // 确保导航后保持相同的展开状态
+      if (!expandedGroups.includes(item.key) && item.key.startsWith('domain_')) {
+        // 如果导航到主题域相关页面，确保该主题域保持展开
+        console.log('确保主题域保持展开:', item.key);
+        setExpandedGroups(currentExpandedGroups);
       }
     }
   };
@@ -713,6 +750,10 @@ const MainLayout: React.FC = () => {
 
   // 处理表项点击
   const handleTableItemClick = (tableKey: string) => {
+    // 记录点击前的展开状态
+    const currentExpandedGroups = [...expandedGroups];
+    console.log('表项点击前的展开状态:', currentExpandedGroups);
+    
     // 防止重复点击同一个表，避免不必要的状态更新和路由切换
     if (selectedTableKey === tableKey) {
       console.log('当前表已选中:', tableKey);
@@ -724,10 +765,14 @@ const MainLayout: React.FC = () => {
     
     // 查找表数据
     const table = currentProject?.tables?.find(t => t.id === tableKey);
+    if (!table) {
+      console.error('未找到表数据:', tableKey);
+      return;
+    }
     
     // 检查标签页是否已存在
     const existingTab = tabs.find(tab => tab.type === tableKey);
-    if (!existingTab && table) {
+    if (!existingTab) {
       // 添加新标签页
       setTabs(prev => [
         ...prev,
@@ -745,6 +790,24 @@ const MainLayout: React.FC = () => {
     
     // 导航到表详情页
     navigate(`/app/table/${tableKey}`);
+    
+    // 确保表所属主题域保持展开
+    const domainKey = `domain_${table.domainId}`;
+    const tablesKey = `tables_${table.domainId}`;
+    
+    // 组合新的展开状态，确保包含必要的项并保留其他已展开的项
+    let newExpandedGroups = [...currentExpandedGroups];
+    
+    // 确保必要的项被展开
+    if (!newExpandedGroups.includes(domainKey)) {
+      newExpandedGroups.push(domainKey);
+    }
+    if (!newExpandedGroups.includes(tablesKey)) {
+      newExpandedGroups.push(tablesKey);
+    }
+    
+    console.log('表项点击后的展开状态:', newExpandedGroups);
+    setExpandedGroups(newExpandedGroups);
   };
 
   // 项目统计信息
@@ -835,6 +898,347 @@ const MainLayout: React.FC = () => {
     setShowStandardFields(isDataModelPage());
   }, [location.pathname]);
 
+  // 导入SQL模态框处理
+  const handleOpenSqlImport = () => {
+    // 定义SQL导入模态框
+    const modalContainer = document.createElement('div');
+    modalContainer.className = 'modal-backdrop visible';
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-container';
+    modalContent.style.width = '800px';
+    modalContent.style.maxWidth = '90vw';
+    modalContainer.appendChild(modalContent);
+    
+    // 添加模态框头部
+    const modalHeader = document.createElement('div');
+    modalHeader.className = 'modal-header';
+    modalHeader.innerHTML = '<h3>解析SQL为数据表</h3>';
+    modalContent.appendChild(modalHeader);
+    
+    // 添加关闭按钮
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-btn';
+    closeButton.innerHTML = '×';
+    closeButton.onclick = () => document.body.removeChild(modalContainer);
+    modalHeader.appendChild(closeButton);
+    
+    // 添加模态框内容
+    const modalBody = document.createElement('div');
+    modalBody.className = 'modal-body';
+    modalContent.appendChild(modalBody);
+    
+    // 添加表单
+    const form = document.createElement('form');
+    modalBody.appendChild(form);
+    
+    // 添加SQL输入区
+    const formSection = document.createElement('div');
+    formSection.className = 'form-section';
+    form.appendChild(formSection);
+    
+    const textareaLabel = document.createElement('label');
+    textareaLabel.innerHTML = 'SQL CREATE TABLE语句:';
+    textareaLabel.style.display = 'block';
+    textareaLabel.style.marginBottom = '8px';
+    formSection.appendChild(textareaLabel);
+    
+    const textareaWrapper = document.createElement('div');
+    textareaWrapper.style.position = 'relative';
+    formSection.appendChild(textareaWrapper);
+    
+    const textarea = document.createElement('textarea');
+    textarea.style.width = '100%';
+    textarea.style.height = '300px';
+    textarea.style.padding = '12px';
+    textarea.style.fontSize = '14px';
+    textarea.style.fontFamily = 'monospace';
+    textarea.style.border = '1px solid var(--cyber-neon-blue, #05d9e8)';
+    textarea.style.borderRadius = '4px';
+    textarea.style.backgroundColor = 'rgba(10, 12, 26, 0.7)';
+    textarea.style.color = '#e0e0ff';
+    textarea.placeholder = `请输入CREATE TABLE语句，例如：
+CREATE TABLE user (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL,
+  email VARCHAR(100) UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`;
+    textareaWrapper.appendChild(textarea);
+    
+    // 添加SQL示例按钮
+    const exampleWrapper = document.createElement('div');
+    exampleWrapper.style.marginTop = '8px';
+    exampleWrapper.style.textAlign = 'right';
+    formSection.appendChild(exampleWrapper);
+    
+    const exampleButton = document.createElement('button');
+    exampleButton.type = 'button';
+    exampleButton.className = 'cyber-btn-link';
+    exampleButton.innerHTML = '插入示例SQL';
+    exampleButton.onclick = () => {
+      textarea.value = `CREATE TABLE users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  first_name VARCHAR(50),
+  last_name VARCHAR(50),
+  date_of_birth DATE,
+  gender CHAR(1),
+  phone_number VARCHAR(20),
+  address TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_login DATETIME,
+  role ENUM('admin', 'user', 'guest') DEFAULT 'user',
+  CONSTRAINT chk_gender CHECK (gender IN ('M', 'F', 'O'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户信息表';`;
+    };
+    exampleWrapper.appendChild(exampleButton);
+    
+    // 添加说明
+    const helpText = document.createElement('div');
+    helpText.style.marginTop = '16px';
+    helpText.style.padding = '12px';
+    helpText.style.backgroundColor = 'rgba(5, 217, 232, 0.05)';
+    helpText.style.border = '1px solid rgba(5, 217, 232, 0.2)';
+    helpText.style.borderRadius = '4px';
+    helpText.style.fontSize = '14px';
+    helpText.style.lineHeight = '1.5';
+    helpText.innerHTML = `
+      <p><strong>支持的SQL格式:</strong></p>
+      <ul style="padding-left: 20px; margin-top: 8px;">
+        <li>标准CREATE TABLE语法</li>
+        <li>字段定义 (名称、类型、长度、约束等)</li>
+        <li>支持提取PRIMARY KEY、NOT NULL、AUTO_INCREMENT等约束</li>
+        <li>支持COMMENT提取为字段注释</li>
+      </ul>
+      <p style="margin-top: 8px;"><strong>注意:</strong> 解析生成的表将添加到默认主题域</p>
+    `;
+    formSection.appendChild(helpText);
+    
+    // 添加模态框底部
+    const modalFooter = document.createElement('div');
+    modalFooter.className = 'modal-footer';
+    modalContent.appendChild(modalFooter);
+    
+    // 添加取消按钮
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'cancel-btn';
+    cancelButton.innerHTML = '取消';
+    cancelButton.onclick = () => document.body.removeChild(modalContainer);
+    modalFooter.appendChild(cancelButton);
+    
+    // 添加解析按钮
+    const parseButton = document.createElement('button');
+    parseButton.type = 'button';
+    parseButton.className = 'confirm-btn';
+    parseButton.innerHTML = '解析并创建表';
+    parseButton.onclick = () => {
+      if (!textarea.value.trim()) {
+        error('请输入SQL语句');
+        return;
+      }
+      
+      parseSqlToTable(textarea.value);
+      document.body.removeChild(modalContainer);
+    };
+    modalFooter.appendChild(parseButton);
+    
+    // 添加模态框到body
+    document.body.appendChild(modalContainer);
+  };
+  
+  // 解析SQL DDL语句生成表结构
+  const parseSqlToTable = (sqlText: string) => {
+    try {
+      if (!currentProject) {
+        error('项目未打开，无法创建表');
+        return;
+      }
+      
+      const trimmedSql = sqlText.trim();
+      
+      // 简单验证是否是CREATE TABLE语句
+      if (!trimmedSql.toUpperCase().includes('CREATE TABLE')) {
+        error('无效的SQL语句，请使用CREATE TABLE语句');
+        return;
+      }
+
+      // 从SQL中提取表名
+      const tableNameMatch = trimmedSql.match(/CREATE\s+TABLE\s+(?:\w+\.)?([`"']?)(\w+)\1/i);
+      const tableName = tableNameMatch ? tableNameMatch[2] : '新建表';
+      
+      // 提取字段定义
+      const fieldsSection = trimmedSql.substring(
+        trimmedSql.indexOf('(') + 1, 
+        trimmedSql.lastIndexOf(')')
+      );
+      
+      // 按逗号分隔各个字段定义，但忽略括号内的逗号
+      const fieldDefinitions: string[] = [];
+      let currentField = '';
+      let parenthesesCount = 0;
+      
+      for (let i = 0; i < fieldsSection.length; i++) {
+        const char = fieldsSection[i];
+        
+        if (char === '(') parenthesesCount++;
+        else if (char === ')') parenthesesCount--;
+        
+        if (char === ',' && parenthesesCount === 0) {
+          fieldDefinitions.push(currentField.trim());
+          currentField = '';
+        } else {
+          currentField += char;
+        }
+      }
+      
+      if (currentField.trim()) {
+        fieldDefinitions.push(currentField.trim());
+      }
+      
+      // 过滤掉非字段定义（如约束、索引等）
+      const realFieldDefinitions = fieldDefinitions.filter(def => {
+        const upperDef = def.toUpperCase();
+        return !upperDef.startsWith('PRIMARY KEY') &&
+               !upperDef.startsWith('UNIQUE') &&
+               !upperDef.startsWith('CONSTRAINT') &&
+               !upperDef.startsWith('FOREIGN KEY') &&
+               !upperDef.startsWith('CHECK') &&
+               !upperDef.startsWith('INDEX');
+      });
+      
+      // 解析字段定义为字段对象
+      const fields: any[] = realFieldDefinitions.map(fieldDef => {
+        const parts = fieldDef.trim().split(/\s+/);
+        const fieldName = parts[0].replace(/[`'"]/g, '');
+        
+        // 提取类型信息
+        const typeMatch = fieldDef.match(/\s+([A-Za-z]+)(?:\(([^)]+)\))?/);
+        const fieldType = typeMatch ? typeMatch[1].toUpperCase() : 'VARCHAR';
+        
+        // 提取长度和小数位
+        let fieldLength: number | undefined;
+        let fieldScale: number | undefined;
+        
+        if (typeMatch && typeMatch[2]) {
+          const sizeParts = typeMatch[2].split(',');
+          fieldLength = parseInt(sizeParts[0]);
+          if (sizeParts.length > 1) {
+            fieldScale = parseInt(sizeParts[1]);
+          }
+        }
+        
+        // 检查是否主键
+        const isPrimaryKey = fieldDef.toUpperCase().includes('PRIMARY KEY');
+        
+        // 检查是否非空
+        const isNotNull = fieldDef.toUpperCase().includes('NOT NULL');
+        
+        // 检查是否自增
+        const isAutoIncrement = (
+          fieldDef.toUpperCase().includes('AUTO_INCREMENT') ||
+          fieldDef.toUpperCase().includes('IDENTITY') ||
+          fieldDef.toUpperCase().includes('SERIAL')
+        );
+        
+        // 提取默认值
+        const defaultMatch = fieldDef.match(/DEFAULT\s+([^,\s]+)/i);
+        const defaultValue = defaultMatch ? defaultMatch[1] : undefined;
+        
+        // 提取注释
+        const commentMatch = fieldDef.match(/COMMENT\s+['"]([^'"]+)['"]/i);
+        const comment = commentMatch ? commentMatch[1] : '';
+        
+        // 生成字段ID
+        const fieldId = generateUUID();
+        
+        return {
+          id: fieldId,
+          name: fieldName,
+          code: fieldName.toLowerCase(),
+          type: fieldType,
+          length: fieldLength,
+          scale: fieldScale,
+          primaryKey: isPrimaryKey,
+          notNull: isNotNull,
+          autoIncrement: isAutoIncrement,
+          defaultValue: defaultValue,
+          comment: comment
+        };
+      });
+      
+      // 创建表并添加到项目
+      createTableFromParsedStructure(tableName, fields);
+      
+    } catch (err) {
+      console.error('解析SQL失败:', err);
+      error('解析SQL失败，请检查SQL语法');
+    }
+  };
+
+  // 创建表并添加到默认主题域
+  const createTableFromParsedStructure = (tableName: string, fields: any[]) => {
+    if (!currentProject) {
+      error('项目未打开，无法创建表');
+      return;
+    }
+    
+    try {
+      // 获取默认主题域
+      const defaultDomain = currentProject.domains.find(d => d.code === 'default') || currentProject.domains[0];
+      
+      if (!defaultDomain) {
+        error('未找到默认主题域');
+        return;
+      }
+      
+      // 生成表ID和表代码
+      const tableId = generateUUID();
+      const tableCode = tableName.toLowerCase().replace(/\s+/g, '_');
+      const now = Date.now();
+      
+      // 创建新表对象
+      const newTable = {
+        id: tableId,
+        name: tableName,
+        code: tableCode,
+        comment: `解析自SQL - ${new Date().toLocaleString()}`,
+        domainId: defaultDomain.id,
+        type: '业务表',
+        fields: fields,
+        indexes: [],
+        createTime: now,
+        lastModified: now
+      };
+      
+      // 更新项目数据
+      const updatedTables = [...currentProject.tables, newTable];
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables,
+        lastModified: now
+      };
+      
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
+      
+      // 保存到localStorage
+      saveProject(updatedProject);
+      
+      // 提示成功并跳转到新表
+      success(`表 "${tableName}" 成功导入，已添加到 "${defaultDomain.name}" 主题域`);
+      navigate(`/app/table/${tableId}`);
+      
+    } catch (err) {
+      console.error('创建表失败:', err);
+      error('创建表失败，请检查控制台错误日志');
+    }
+  };
+
   return (
     <div className={`app-layout ${darkMode ? 'dark-mode' : ''}`}>
       {/* 头部组件 */}
@@ -852,6 +1256,7 @@ const MainLayout: React.FC = () => {
         onToggleDarkMode={handleToggleDarkMode}
         autoSaveEnabled={autoSaveEnabled}
         darkMode={darkMode}
+        onOpenSqlImport={handleOpenSqlImport}
       />
 
       <div className="main-container">
@@ -952,6 +1357,10 @@ const MainLayout: React.FC = () => {
           if (!currentProject) return;
           
           try {
+            // 记录操作前的展开状态
+            const currentExpandedGroups = [...expandedGroups];
+            console.log('添加表前的展开状态:', currentExpandedGroups);
+            
             // 生成表ID
             const tableId = generateUUID();
             const now = Date.now();
@@ -1003,25 +1412,49 @@ const MainLayout: React.FC = () => {
             
             setTableItems(updatedTableItems);
             
-            // 确保展开相应的菜单项
-            if (!expandedGroups.includes(`domain_${domainId}`)) {
-              setExpandedGroups(prev => [...prev, `domain_${domainId}`]);
+            // 组合新的展开状态，确保包含必要的项
+            let newExpandedGroups = [...currentExpandedGroups];
+            const domainKey = `domain_${domainId}`;
+            const tablesKey = `tables_${domainId}`;
+            
+            // 确保必要的项被展开
+            if (!newExpandedGroups.includes(domainKey)) {
+              newExpandedGroups.push(domainKey);
             }
-            if (!expandedGroups.includes(`tables_${domainId}`)) {
-              setExpandedGroups(prev => [...prev, `tables_${domainId}`]);
+            if (!newExpandedGroups.includes(tablesKey)) {
+              newExpandedGroups.push(tablesKey);
             }
+            
+            console.log('添加表后的展开状态:', newExpandedGroups);
+            setExpandedGroups(newExpandedGroups);
+            
+            // 关闭模态框
+            setIsNewTableModalOpen(false);
             
             // 添加成功后导航到新建的表页面
             navigate(`/app/table/${tableId}`);
+            
+            // 设置当前激活的标签页
+            setActiveTab(tableId);
+            
+            // 添加新标签页
+            setTabs(prev => [
+              ...prev,
+              {
+                id: tableId,
+                title: name,
+                type: tableId,
+                icon: <TableOutlined />
+              }
+            ]);
             
             success('表创建成功');
           } catch (err) {
             console.error('创建表失败', err);
             error('创建表失败，请检查控制台错误日志');
+            // 关闭模态框
+            setIsNewTableModalOpen(false);
           }
-          
-          // 关闭模态框
-          setIsNewTableModalOpen(false);
         }}
         domainId={currentDomainId}
         domainName={currentDomainName}

@@ -19,6 +19,7 @@ interface MainToolbarProps {
   onToggleDarkMode: () => void;
   autoSaveEnabled: boolean;
   darkMode: boolean;
+  onOpenSqlImport?: () => void;
 }
 
 const MainToolbar: React.FC<MainToolbarProps> = ({
@@ -26,7 +27,8 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   onToggleAutoSave,
   onToggleDarkMode,
   autoSaveEnabled,
-  darkMode
+  darkMode,
+  onOpenSqlImport
 }) => {
   return (
     <div className="main-toolbar">
@@ -34,6 +36,13 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         <button title="保存项目" onClick={onSaveProject}><SaveOutlined /></button>
         <button title="导入"><ImportOutlined /></button>
         <button title="导出"><ExportOutlined /></button>
+        <button 
+          title="导入SQL为表" 
+          onClick={onOpenSqlImport}
+          className={onOpenSqlImport ? "action-highlight" : "disabled"}
+        >
+          <span className="sql-import-icon">SQL</span>
+        </button>
       </div>
       <div className="toolbar-group">
         <button title="撤销"><span>↩</span></button>
