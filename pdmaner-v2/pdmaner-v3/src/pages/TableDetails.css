@@ -507,32 +507,31 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  background: rgba(15, 20, 40, 0.4);
-  border: 1px solid rgba(5, 217, 232, 0.2);
-  border-radius: 4px;
-  color: #e0e0ff;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(162, 57, 202, 0.2));
+  border: 1px solid rgba(5, 217, 232, 0.4);
+  border-radius: 6px;
+  color: #05d9e8;
+  font-weight: 500;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
 }
 
 .add-to-library-button:hover {
-  background-color: rgba(5, 217, 232, 0.15);
-  border-color: rgba(5, 217, 232, 0.4);
-  color: #05d9e8;
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.3), rgba(162, 57, 202, 0.3));
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.4);
 }
 
 .add-to-library-button:disabled {
-  opacity: 0.3;
+  opacity: 0.5;
   cursor: not-allowed;
-  pointer-events: none;
+  box-shadow: none;
 }
 
-/* 与其他按钮保持一致的hover效果 */
 .add-to-library-button::before {
   content: '';
   position: absolute;
@@ -540,11 +539,136 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(5, 217, 232, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   transition: all 0.6s;
 }
 
 .add-to-library-button:hover::before {
+  left: 100%;
+}
+
+/* 按钮组样式 */
+.button-group {
+  display: flex;
+  margin-left: 10px;
+  gap: 8px;
+}
+
+/* 编辑按钮样式 */
+.edit-button, .copy-button, .delete-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(162, 57, 202, 0.2));
+  border: 1px solid rgba(5, 217, 232, 0.4);
+  border-radius: 6px;
+  color: #05d9e8;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
+  min-width: 100px;
+}
+
+.edit-button:hover, .copy-button:hover {
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.3), rgba(162, 57, 202, 0.3));
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.4);
+}
+
+.delete-button:hover {
+  background: linear-gradient(135deg, rgba(255, 42, 109, 0.3), rgba(162, 57, 202, 0.3));
+  box-shadow: 0 0 15px rgba(255, 42, 109, 0.4);
+  color: #ff2a6d;
+  text-shadow: 0 0 8px rgba(255, 42, 109, 0.4);
+}
+
+.edit-button::before, .copy-button::before, .delete-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: all 0.6s;
+}
+
+.edit-button:hover::before, .copy-button:hover::before, .delete-button:hover::before {
+  left: 100%;
+}
+
+.edit-button:disabled, .copy-button:disabled, .delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 工具栏左侧按钮组 */
+.toolbar-left {
+  display: flex;
+  align-items: center;
+}
+
+/* 右侧按钮组 */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 移动按钮样式 */
+.move-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.15), rgba(162, 57, 202, 0.15));
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 6px;
+  color: #05d9e8;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
+}
+
+.move-button:hover {
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.25), rgba(162, 57, 202, 0.25));
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.3);
+}
+
+.move-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.move-button.icon-only {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 16px;
+}
+
+.move-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: all 0.6s;
+}
+
+.move-button:hover::before {
   left: 100%;
 }
 
@@ -680,10 +804,10 @@
   width: 100%;
   height: 1px;
   background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(5, 217, 232, 0.3) 20%, 
-    rgba(5, 217, 232, 0.3) 80%, 
-    transparent 100%);
+    transparent, 
+    rgba(5, 217, 232, 0.3),
+    rgba(5, 217, 232, 0.3), 
+    transparent);
 }
 
 .search-box {
@@ -934,17 +1058,16 @@
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 16px;
+  position: relative;
 }
 
 .form-group label {
-  font-size: 13px;
+  font-size: 14px;
   color: #a8a8ff;
+  transition: all 0.2s;
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
 }
 
 .form-group label .required {
@@ -1026,64 +1149,700 @@
 
 .custom-checkbox {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
   cursor: pointer;
+  user-select: none;
 }
 
 .custom-checkbox input[type="checkbox"] {
   position: absolute;
   opacity: 0;
-  height: 0;
-  width: 0;
+  cursor: pointer;
 }
 
 .checkbox-display {
-  width: 20px;
-  height: 20px;
-  background: rgba(15, 20, 40, 0.4);
-  border: 1px solid rgba(5, 217, 232, 0.2);
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
   position: relative;
+  height: 20px;
+  width: 20px;
+  background-color: rgba(10, 12, 26, 0.7);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 4px;
+  margin-right: 8px;
+  margin-top: 2px;
 }
 
 .custom-checkbox:hover .checkbox-display {
-  border-color: rgba(5, 217, 232, 0.4);
-  background: rgba(15, 20, 40, 0.6);
-}
-
-.custom-checkbox input[type="checkbox"]:checked + .checkbox-display {
-  background: rgba(5, 217, 232, 0.2);
   border-color: rgba(5, 217, 232, 0.6);
 }
 
-.custom-checkbox input[type="checkbox"]:checked + .checkbox-display::after {
+.custom-checkbox input:checked ~ .checkbox-display {
+  background-color: rgba(5, 217, 232, 0.1);
+  border-color: rgba(5, 217, 232, 0.6);
+}
+
+.custom-checkbox input:checked ~ .checkbox-display:after {
   content: '';
   position: absolute;
+  left: 6px;
+  top: 2px;
   width: 6px;
-  height: 10px;
-  border: solid #05d9e8;
+  height: 12px;
+  border: solid rgba(5, 217, 232, 1);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
 .checkbox-label {
+  flex: 1;
+}
+
+.required {
+  color: #ff4d4f;
+  margin-right: 4px;
+}
+
+/* 索引模态框样式 - 增强部分 */
+
+/* 改进字段选择列表 */
+.field-select-list {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid rgba(0, 255, 238, 0.2);
+  border-radius: 4px;
+  padding: 10px;
+  background-color: rgba(0, 25, 50, 0.3);
+  transition: border-color 0.3s;
+}
+
+.field-select-list:hover {
+  border-color: rgba(0, 255, 238, 0.4);
+}
+
+.field-select-item {
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  border-left: 2px solid transparent;
+}
+
+.field-select-item:hover {
+  background-color: rgba(0, 255, 238, 0.1);
+  border-left: 2px solid #0fe;
+}
+
+.field-select-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 索引表格样式改进 */
+.indexes-panel .data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  margin-top: 15px;
+  border: 1px solid rgba(0, 255, 238, 0.3);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.indexes-panel .data-table th {
+  background-color: rgba(0, 255, 238, 0.1);
+  padding: 10px;
+  text-align: left;
+  font-weight: 500;
+  color: #0fe;
+  border-bottom: 1px solid rgba(0, 255, 238, 0.3);
+}
+
+.indexes-panel .data-table td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(0, 255, 238, 0.1);
+  transition: background-color 0.2s;
+}
+
+.indexes-panel .data-table tr:hover td {
+  background-color: rgba(0, 255, 238, 0.05);
+}
+
+.indexes-panel .data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.indexes-panel .empty-message {
+  padding: 20px;
+  text-align: center;
+  color: #aaa;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  margin-top: 15px;
+}
+
+/* 美化添加索引按钮 */
+.indexes-toolbar .add-button {
+  background-color: rgba(0, 255, 238, 0.1);
+  border: 1px solid #0fe;
+  color: #0fe;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+}
+
+.indexes-toolbar .add-button:hover {
+  background-color: rgba(0, 255, 238, 0.2);
+  box-shadow: 0 0 8px rgba(0, 255, 238, 0.5);
+}
+
+.indexes-toolbar .add-button svg {
+  margin-right: 5px;
+}
+
+/* 改进操作按钮 */
+.table-action-btn {
+  border: none;
+  background: transparent;
+  color: #0fe;
+  margin: 0 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 5px;
+  border-radius: 3px;
+}
+
+.table-action-btn:hover {
+  background-color: rgba(0, 255, 238, 0.1);
+  transform: scale(1.1);
+}
+
+.table-action-btn.delete-btn {
+  color: #ff4d4f;
+}
+
+.table-action-btn.delete-btn:hover {
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+/* 索引模态框增强样式 */
+.index-modal {
+  max-width: 650px;
+}
+
+.index-info-section {
+  margin-bottom: 20px;
+}
+
+.index-form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: center;
+}
+
+.unique-index-group {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  justify-content: center;
+}
+
+.index-type-checkbox {
+  display: flex;
+  align-items: center;
+  margin-top: 26px; /* 与索引名称标签对齐 */
+}
+
+.index-type-checkbox .checkbox-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.helper-text {
+  font-size: 12px;
+  color: rgba(200, 200, 255, 0.6);
+  margin-top: 4px;
+}
+
+.fields-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selected-info {
+  margin-left: auto;
   font-size: 14px;
-  color: #a8a8ff;
+  display: flex;
+  align-items: center;
+}
+
+.selected-count {
+  display: inline-block;
+  min-width: 24px;
+  text-align: center;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(15, 20, 40, 0.4);
+  color: rgba(200, 200, 255, 0.8);
+  transition: all 0.3s;
+}
+
+.selected-count.has-selected {
+  background: rgba(5, 217, 232, 0.15);
+  color: #05d9e8;
+  box-shadow: 0 0 5px rgba(5, 217, 232, 0.3);
+}
+
+.field-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.field-search {
+  position: relative;
+  width: 220px;
+}
+
+.search-input {
+  padding-right: 30px;
+  font-size: 13px;
+  background: rgba(10, 12, 26, 0.7);
+}
+
+.search-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(5, 217, 232, 0.6);
+  font-size: 14px;
+}
+
+.field-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.select-all-btn, .clear-all-btn {
+  background: none;
+  border: none;
+  color: rgba(200, 200, 255, 0.7);
+  cursor: pointer;
+  padding: 5px 8px;
+  font-size: 13px;
+  border-radius: 4px;
   transition: all 0.2s;
 }
 
-.custom-checkbox:hover .checkbox-label {
+.select-all-btn:hover {
+  color: #05d9e8;
+  background: rgba(5, 217, 232, 0.1);
+}
+
+.clear-all-btn:hover {
+  color: #ff2a6d;
+  background: rgba(255, 42, 109, 0.1);
+}
+
+.field-select-list {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid rgba(5, 217, 232, 0.2);
+  border-radius: 6px;
+  padding: 8px;
+  background: rgba(10, 12, 26, 0.5);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.field-select-item {
+  position: relative;
+  padding: 8px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.25s;
+  border: 1px solid rgba(5, 217, 232, 0.1);
+  background: rgba(15, 20, 40, 0.4);
+}
+
+.field-select-item:hover {
+  background: rgba(5, 217, 232, 0.08);
+  border-color: rgba(5, 217, 232, 0.3);
+  transform: translateY(-1px);
+}
+
+.field-select-item.selected {
+  background: rgba(5, 217, 232, 0.12);
+  border-color: rgba(5, 217, 232, 0.4);
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.2);
+}
+
+.field-select-item .custom-checkbox {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.field-info {
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.field-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.field-name {
+  font-weight: 500;
+  color: #e0e0ff;
+  font-size: 14px;
+}
+
+.field-details {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(200, 200, 255, 0.6);
+}
+
+.field-code {
+  color: rgba(5, 217, 232, 0.7);
+}
+
+.field-type {
+  color: rgba(162, 57, 202, 0.7);
+}
+
+.field-tag-content .tag-icon {
+  color: #ffc107;
+  font-size: 14px;
+  margin-left: auto;
+}
+
+.field-info-row .primary-key-icon, 
+.field-info-row .not-null-icon {
+  font-size: 14px;
+}
+
+.field-info-row .primary-key-icon {
+  color: #ffc107;
+}
+
+.field-info-row .not-null-icon {
+  color: #4caf50;
+}
+
+.empty-message {
+  padding: 15px;
+  color: rgba(200, 200, 255, 0.6);
+  background: rgba(10, 12, 26, 0.3);
+  border-radius: 5px;
+  text-align: center;
+  font-size: 14px;
+  border: 1px dashed rgba(5, 217, 232, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-message svg {
+  font-size: 20px;
+  opacity: 0.7;
+  margin-bottom: 5px;
+}
+
+/* 下拉式字段选择器样式 */
+.field-selector-wrapper {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.field-selector-trigger {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 6px;
+  background-color: rgba(10, 12, 26, 0.7);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.field-selector-trigger:hover {
+  background: rgba(10, 12, 26, 0.8);
+  border-color: rgba(5, 217, 232, 0.5);
+  box-shadow: 0 0 8px rgba(5, 217, 232, 0.2);
+}
+
+.trigger-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 8px;
+}
+
+.dropdown-icon {
+  color: rgba(5, 217, 232, 0.8);
+  transition: transform 0.3s;
+  font-size: 12px;
+}
+
+.dropdown-icon.open {
+  transform: rotate(180deg);
+}
+
+.field-dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: rgba(16, 18, 35, 0.95);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 5px;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header {
+  padding: 12px;
+  border-bottom: 1px solid rgba(5, 217, 232, 0.15);
+  background: rgba(10, 12, 26, 0.8);
+}
+
+.field-options-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 240px;
+  padding: 8px;
+}
+
+.field-option-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+}
+
+.field-option-item:hover {
+  background: rgba(5, 217, 232, 0.1);
+  border-color: rgba(5, 217, 232, 0.2);
+}
+
+.field-option-item.selected {
+  background: rgba(5, 217, 232, 0.15);
+  border-color: rgba(5, 217, 232, 0.3);
+}
+
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  position: relative;
+}
+
+.dropdown-empty-message {
+  text-align: center;
+  padding: 20px;
+  color: rgba(200, 200, 255, 0.5);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.dropdown-empty-message svg {
+  font-size: 24px;
+  opacity: 0.6;
+}
+
+/* 已选字段显示区域样式 */
+.selected-fields-container {
+  margin-top: 16px;
+  border: 1px solid rgba(5, 217, 232, 0.2);
+  border-radius: 6px;
+  background: rgba(10, 12, 26, 0.4);
+  overflow: hidden;
+}
+
+.selected-fields-header {
+  padding: 10px 16px;
+  background: rgba(5, 217, 232, 0.1);
+  border-bottom: 1px solid rgba(5, 217, 232, 0.15);
+  color: rgba(5, 217, 232, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.selected-fields-list {
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.selected-field-tag {
+  display: flex;
+  align-items: center;
+  background: rgba(5, 217, 232, 0.08);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 4px;
+  padding: 6px 10px;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.selected-field-tag:hover {
+  background: rgba(5, 217, 232, 0.12);
+  border-color: rgba(5, 217, 232, 0.4);
+  box-shadow: 0 0 8px rgba(5, 217, 232, 0.2);
+  transform: translateY(-1px);
+}
+
+.field-tag-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.field-tag-name {
+  font-weight: 500;
+  min-width: 80px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-tag-code {
+  color: rgba(5, 217, 232, 0.8);
+  min-width: 80px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-tag-type {
+  color: rgba(200, 200, 255, 0.7);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.remove-field-btn {
+  background: none;
+  border: none;
+  color: rgba(200, 200, 255, 0.6);
+  cursor: pointer;
+  padding: 2px;
+  margin-left: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+}
+
+.remove-field-btn:hover {
+  color: #ff2a6d;
+  background: rgba(255, 42, 109, 0.1);
+  transform: scale(1.1);
+}
+
+.no-fields-selected {
+  padding: 30px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.empty-selection-message {
+  color: rgba(200, 200, 255, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.empty-selection-message svg {
+  font-size: 24px;
+  opacity: 0.6;
+}
+
+/* 添加字段标签样式，确保垂直对齐 */
+.field-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
   color: #e0e0ff;
 }
 
-.custom-checkbox input[type="checkbox"]:checked ~ .checkbox-label {
-  color: #05d9e8;
-  text-shadow: 0 0 8px rgba(5, 217, 232, 0.3);
+/* 确保复选框和输入框垂直对齐 */
+.cyber-input {
+  height: 38px;
+  padding: 8px 12px;
+  background: rgba(10, 12, 26, 0.7);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 4px;
+  color: #e0e0ff;
+  font-size: 14px;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.cyber-input:focus {
+  border-color: rgba(5, 217, 232, 0.6);
+  box-shadow: 0 0 8px rgba(5, 217, 232, 0.3);
+  outline: none;
+}
+
+/* 调整索引信息部分的样式 */
+.index-info-section {
+  padding: 15px 20px;
 }
 
 /* 表单底部动作按钮 */
@@ -1094,6 +1853,7 @@
   padding: 20px 30px;
   background: rgba(6, 8, 20, 0.6);
   border-top: 1px solid rgba(5, 217, 232, 0.1);
+  margin-top: 20px;
 }
 
 .btn-cancel {
@@ -1138,272 +1898,238 @@
   font-size: 16px;
 }
 
-/* 索引面板 */
-.indexes-panel {
+/* 为必填项添加标记 */
+.required {
+  color: #ff4d4f;
+  margin-right: 4px;
+}
+
+/* 改进表单分组样式 */
+.form-group {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+/* 调整复选框标签样式 */
+.checkbox-label {
+  font-size: 14px;
+  color: #a8a8ff;
+  transition: all 0.2s;
   display: flex;
   flex-direction: column;
-  flex: 1;
 }
 
-.indexes-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 1rem;
-  background-color: rgba(10, 12, 26, 0.3);
-  border-bottom: 1px solid rgba(5, 217, 232, 0.15);
-}
-
-.indexes-table-wrapper {
-  flex: 1;
-  overflow: auto;
-  padding: 1rem;
-}
-
-/* 字段选择区域 */
-.fields-selection {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
-  margin-top: 10px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding: 10px;
-  background-color: rgba(10, 12, 26, 0.2);
-  border-radius: 4px;
-  border: 1px solid rgba(5, 217, 232, 0.1);
-}
-
-/* 索引类型标签 */
-.index-type-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 3px;
+.helper-text {
   font-size: 12px;
-  font-weight: 500;
+  color: rgba(200, 200, 255, 0.6);
+  margin-top: 4px;
 }
 
-.index-type-badge.unique {
-  background-color: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
-  border: 1px solid rgba(255, 193, 7, 0.3);
-}
-
-.index-type-badge.normal {
-  background-color: rgba(0, 123, 255, 0.2);
-  color: #007bff;
-  border: 1px solid rgba(0, 123, 255, 0.3);
-}
-
-/* 非字段标签页下的简化表头 */
-.table-header-simple {
-  padding: 12px 16px;
+/* 改进索引字段选择区域样式 */
+.field-dropdown-panel {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  animation: fadeInDown 0.25s ease-out;
+}
+
+.dropdown-header {
+  padding: 12px;
+  border-bottom: 1px solid rgba(5, 217, 232, 0.15);
+  background: rgba(10, 12, 26, 0.8);
+}
+
+.field-options-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 240px;
+  padding: 8px;
+}
+
+/* 改进复选框容器样式 */
+.custom-checkbox-container {
+  display: flex;
   align-items: center;
-  background-color: rgba(10, 12, 24, 0.8);
-  border-bottom: 1px solid rgba(5, 217, 232, 0.2);
+  justify-content: center;
+  height: 100%;
 }
 
-.table-header-simple h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: #05d9e8;
-  text-shadow: 0 0 8px rgba(5, 217, 232, 0.3);
+/* 优化复选框内容对齐 */
+.checkbox-content {
+  display: flex;
+  flex-direction: column;
+  margin-left: 10px;
 }
 
-/* 拖拽目标样式 */
-.fields-panel.drop-target {
-  background-color: rgba(5, 217, 232, 0.05);
-  border: 2px dashed rgba(5, 217, 232, 0.6) !important;
-  box-shadow: 0 0 15px rgba(5, 217, 232, 0.2);
-  position: relative;
-}
-
-.fields-panel.drop-target::after {
-  content: '拖拽到此处添加字段';
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  padding: 8px 16px;
-  background-color: rgba(5, 217, 232, 0.15);
-  border: 1px solid rgba(5, 217, 232, 0.3);
-  color: #05d9e8;
-  border-radius: 4px;
+.checkbox-label-text {
   font-size: 14px;
-  pointer-events: none;
-  animation: pulse-hint 1.5s infinite;
-  z-index: 10;
+  color: #e0e0ff;
+  font-weight: 500;
 }
 
-@keyframes pulse-hint {
-  0% { opacity: 0.7; }
-  50% { opacity: 1; }
-  100% { opacity: 0.7; }
+/* 优化触发器文本对齐 */
+.trigger-text {
+  font-size: 14px;
+  color: #e0e0ff;
 }
 
-/* 主键行 */
-.primary-key-row {
-  background-color: rgba(249, 200, 14, 0.08);
-}
-
-.primary-key-row:hover td {
-  background-color: rgba(249, 200, 14, 0.12);
-}
-
-/* 选中的行 */
-.selected-row td {
-  background-color: rgba(5, 217, 232, 0.08) !important;
-  border-left: 2px solid #05d9e8;
-}
-
-.selected-row:hover td {
-  background-color: rgba(5, 217, 232, 0.12) !important;
-}
-
-/* 优化工具栏按钮组 */
-.toolbar-left {
+/* 改善下拉菜单触发区域样式 */
+.trigger-content {
   display: flex;
   align-items: center;
-  gap: 8px; /* 减小按钮间距 */
-  flex-wrap: nowrap; /* 确保按钮在一行 */
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 8px;
 }
 
-/* 为每组功能相似的按钮添加分组 */
-.button-group {
+/* 优化下拉图标 */
+.dropdown-icon {
+  color: rgba(5, 217, 232, 0.8);
+  transition: transform 0.3s;
+  font-size: 12px;
+}
+
+.dropdown-icon.open {
+  transform: rotate(180deg);
+}
+
+/* 调整字段选项内容对齐 */
+.field-info {
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 整体优化索引类型复选框对齐 */
+.index-type-checkbox {
   display: flex;
   align-items: center;
-  background: rgba(5, 217, 232, 0.05);
-  border-radius: 6px;
-  padding: 3px;
-  border: 1px solid rgba(5, 217, 232, 0.2);
-  margin-right: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  position: relative;
+  margin-top: 26px; /* 与索引名称标签对齐 */
+}
+
+/* 索引模态框新布局样式 */
+.compact-index-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.compact-index-form .top-row {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 15px;
+  align-items: center;
+}
+
+.compact-index-form .bottom-row {
+  width: 100%;
+}
+
+.index-name-group {
+  margin-bottom: 0;
+}
+
+.compact-textarea {
+  min-height: 60px;
+  max-height: 80px;
+}
+
+/* 字段区域样式增强 */
+.fields-section {
+  flex: 1;
+  padding: 15px 20px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 修改字段横向排列布局 */
+.field-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.field-info-row .field-name {
+  font-weight: 500;
+  color: #e0e0ff;
+  width: 25%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 5px;
+}
+
+.field-info-row .field-code {
+  color: rgba(5, 217, 232, 0.9);
+  width: 25%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.field-info-row .field-type {
+  color: rgba(200, 200, 255, 0.7);
+  width: 25%;
+  text-align: right;
+  font-size: 12px;
+  padding-right: 10px;
+}
+
+.field-option-item {
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+/* 调整已选字段标签展示 */
+.selected-field-tag {
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field-tag-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
   overflow: hidden;
 }
 
-.button-group::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(5, 217, 232, 0.5), 
-    transparent);
+.field-tag-name {
+  font-weight: 500;
+  min-width: 80px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.button-group::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(5, 217, 232, 0.3), 
-    transparent);
+.field-tag-code {
+  color: rgba(5, 217, 232, 0.8);
+  min-width: 80px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 调整按钮组内部的按钮样式 */
-.button-group button {
-  min-width: auto;
-  padding: 6px 8px;
+.field-tag-type {
+  color: rgba(200, 200, 255, 0.7);
   font-size: 12px;
-  border: none;
-  border-right: 1px solid rgba(5, 217, 232, 0.1);
-  margin: 0;
-  background: transparent;
-  color: #05d9e8;
-  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.button-group button:hover {
-  background: rgba(5, 217, 232, 0.1);
-  color: #ffffff;
-  transform: translateY(-1px);
+/* 索引模态框大小调整 */
+.index-modal {
+  max-width: 680px;
 }
 
-.button-group button:last-child {
-  border-right: none;
-}
-
-/* 优化图标按钮样式 */
-.button-group .icon-only {
-  width: 32px;
-  padding: 6px 0;
-}
-
-/* 添加更细腻的过渡动画 */
-.fields-toolbar button {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 美化添加按钮 */
-.add-button {
-  background: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(0, 123, 255, 0.2)) !important;
-  border: 1px solid rgba(5, 217, 232, 0.4) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(5, 217, 232, 0.1) !important;
-  border-radius: 6px !important;
-  padding: 7px 12px !important;
-  color: #05d9e8 !important;
-  font-weight: 500 !important;
-}
-
-.add-button:hover {
-  background: linear-gradient(135deg, rgba(5, 217, 232, 0.25), rgba(0, 123, 255, 0.25)) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(5, 217, 232, 0.2) !important;
-  transform: translateY(-2px) !important;
-}
-
-/* 禁用状态的按钮样式 */
-.fields-toolbar button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-  box-shadow: none !important;
-  transform: none !important;
-  background: rgba(10, 12, 24, 0.3) !important;
-  border-color: rgba(5, 217, 232, 0.1) !important;
-}
-
-/* 优化按钮图标 */
-.fields-toolbar button svg {
-  font-size: 14px;
-  margin-right: 4px;
-  transition: all 0.2s;
-}
-
-.fields-toolbar button:hover svg {
-  transform: scale(1.1);
-  filter: drop-shadow(0 0 2px rgba(5, 217, 232, 0.5));
-}
-
-.fields-toolbar button.icon-only svg {
-  margin-right: 0;
-}
-
-/* 添加工具栏阴影和边框效果 */
-.fields-toolbar {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: relative;
-}
-
-.fields-toolbar::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 5%;
-  width: 90%;
-  height: 1px;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(5, 217, 232, 0.3),
-    rgba(5, 217, 232, 0.3), 
-    transparent);
+.index-info-section {
+  padding-bottom: 15px;
 } 

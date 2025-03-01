@@ -30,6 +30,7 @@ import './TableDetails.css';
 import { useNotificationContext } from '../contexts/NotificationContext';
 import SelectGroupModal from '../components/modals/SelectGroupModal';
 import PopConfirm from '../components/common/PopConfirm';
+import IndexModal, { IndexData as IIndexData, FieldData as IFieldData } from '../components/modals/IndexModal';
 
 // 标准字段库的localStorage键前缀，实际key应该是 prefix + projectId
 const KEY_STANDARD_FIELDS_PREFIX = 'pdmaner_project_';
@@ -107,13 +108,13 @@ const TableDetails: React.FC = () => {
 
   // 添加索引相关状态
   const [isIndexModalOpen, setIsIndexModalOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState<{
-    id?: string;
-    name?: string;
-    fields?: string[];
-    unique?: boolean;
-    comment?: string;
-  } | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<IIndexData>({
+    id: generateUUID(),
+    name: '',
+    fields: [],
+    unique: false,
+    comment: ''
+  });
   const [isEditingIndex, setIsEditingIndex] = useState(false);
 
   // 添加字段入库分组选择模态框状态
@@ -513,20 +514,25 @@ const TableDetails: React.FC = () => {
 
   // 添加新索引
   const handleAddIndex = () => {
-    setSelectedIndex({
+    // 创建一个新的空索引
+    const newIndex: IIndexData = {
+      id: generateUUID(),
       name: '',
       fields: [],
-      unique: false,
-      comment: ''
-    });
+      unique: false
+    };
+    
+    // 设置为新索引模式
     setIsEditingIndex(false);
+    setSelectedIndex(newIndex);
     setIsIndexModalOpen(true);
   };
 
   // 编辑索引
   const handleEditIndex = (index: IndexData) => {
-    setSelectedIndex(index);
+    // 设置为编辑模式
     setIsEditingIndex(true);
+    setSelectedIndex({...index});
     setIsIndexModalOpen(true);
   };
 
@@ -590,32 +596,39 @@ const TableDetails: React.FC = () => {
   const handleSaveIndex = (index: IndexData) => {
     if (!tableData || !currentProject) return;
 
-    let updatedIndexes: IndexData[];
+    // 先检查索引名是否重复（编辑模式下除了自己）
+    const isDuplicate = tableData.indexes.some(i => 
+      i.name === index.name && (isEditingIndex ? i.id !== index.id : true)
+    );
 
-    if (isEditingIndex && selectedIndex) {
+    if (isDuplicate) {
+      showError(`索引名称 '${index.name}' 已存在，请使用其他名称`);
+      return;
+    }
+
+    let updatedIndexes;
+    // 处理保存逻辑
+    if (isEditingIndex) {
       // 更新现有索引
-      updatedIndexes = tableData.indexes.map(idx =>
-        idx.id === selectedIndex.id ? { ...index, id: selectedIndex.id } : idx
+      updatedIndexes = tableData.indexes.map(i => 
+        i.id === index.id ? index : i
       );
     } else {
       // 添加新索引
-      const newIndex = {
-        ...index,
-        id: Date.now().toString() // 简单的ID生成
-      };
-      updatedIndexes = [...tableData.indexes, newIndex];
+      updatedIndexes = [...tableData.indexes, index];
     }
-
-    // 更新本地表数据状态
+    
+    // 创建更新后的表数据
     const updatedTableData = {
       ...tableData,
       indexes: updatedIndexes,
       lastModified: Date.now()
     };
-
+    
+    // 更新本地状态
     setTableData(updatedTableData);
-
-    // 自动保存到项目信息
+    
+    // 直接更新项目数据
     try {
       // 更新项目中的表数据
       const updatedTables = currentProject.tables.map(table =>
@@ -634,12 +647,18 @@ const TableDetails: React.FC = () => {
       // 保存到localStorage
       saveProject(updatedProject);
 
-      successNotification('索引保存成功，项目已自动更新');
+      // 显示成功通知
+      if (isEditingIndex) {
+        success('索引更新成功');
+      } else {
+        success('新索引创建成功');
+      }
     } catch (error) {
-      console.error('保存索引到项目失败:', error);
-      showError('保存索引失败，但索引已添加到表编辑器中，请手动点击"保存表"按钮进行保存');
+      console.error('保存索引失败:', error);
+      showError('保存索引失败，请检查控制台错误日志');
     }
-
+    
+    // 关闭模态框
     setIsIndexModalOpen(false);
   };
 
@@ -1742,154 +1761,17 @@ const TableDetails: React.FC = () => {
         onCancel={() => setPopConfirm(prev => ({ ...prev, visible: false }))}
       />
 
-      {/* 添加IndexModal组件 */}
+      {/* 索引模态框 */}
       {isIndexModalOpen && (
-        <div className="modal-backdrop" onClick={e => {
-          // 仅当点击背景时关闭
-          if (e.target === e.currentTarget) {
-            setIsIndexModalOpen(false);
-          }
-        }}>
-          <div className="modal-container" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{isEditingIndex ? '编辑索引' : '新建索引'}</h2>
-              <button className="close-btn" onClick={() => setIsIndexModalOpen(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <form onSubmit={(e) => {
-                e.preventDefault();
-
-                // 验证
-                if (!selectedIndex?.name || !selectedIndex?.fields?.length) {
-                  showError('索引名称和包含字段不能为空');
-                  return;
-                }
-
-                // 创建索引对象
-                const indexData = {
-                  id: selectedIndex?.id || Date.now().toString(),
-                  name: selectedIndex?.name || '',
-                  fields: selectedIndex?.fields || [],
-                  unique: selectedIndex?.unique || false,
-                  comment: selectedIndex?.comment || ''
-                };
-
-                // 保存索引
-                handleSaveIndex(indexData);
-                setIsIndexModalOpen(false);
-              }}>
-                {/* 索引基本信息 */}
-                <div className="form-section">
-                  <div className="form-section-title">
-                    <InfoCircleOutlined /> 索引信息
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>
-                        <span className="required">*</span> 索引名称:
-                      </label>
-                      <input
-                        type="text"
-                        value={selectedIndex?.name || ''}
-                        onChange={(e) => setSelectedIndex({...selectedIndex, name: e.target.value})}
-                        placeholder="请输入索引名称"
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="custom-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={selectedIndex?.unique || false}
-                          onChange={(e) => setSelectedIndex({...selectedIndex, unique: e.target.checked})}
-                        />
-                        <div className="checkbox-display"></div>
-                        <span className="checkbox-label">唯一索引</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 包含字段 */}
-                <div className="form-section">
-                  <div className="form-section-title">
-                    <TableOutlined /> 包含字段
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>
-                        <span className="required">*</span> 选择字段:
-                      </label>
-                      {tableData?.fields?.length > 0 ? (
-                        <div className="field-select-list">
-                          {tableData.fields.map(field => (
-                            <div key={field.id} className="field-select-item">
-                              <label className="custom-checkbox">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedIndex?.fields?.includes(field.id) || false}
-                                  onChange={(e) => {
-                                    const fields = selectedIndex?.fields || [];
-                                    if (e.target.checked) {
-                                      setSelectedIndex({
-                                        ...selectedIndex,
-                                        fields: [...fields, field.id]
-                                      });
-                                    } else {
-                                      setSelectedIndex({
-                                        ...selectedIndex,
-                                        fields: fields.filter(id => id !== field.id)
-                                      });
-                                    }
-                                  }}
-                                />
-                                <div className="checkbox-display"></div>
-                                <span className="checkbox-label">
-                                  {field.name} ({field.code}) - {field.type}
-                                </span>
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="empty-message">
-                          <InfoCircleOutlined /> 表中暂无字段，请先添加字段
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 备注 */}
-                <div className="form-section">
-                  <div className="form-section-title">
-                    <FileTextOutlined /> 备注说明
-                  </div>
-                  <div className="form-row full-width">
-                    <div className="form-group">
-                      <label>备注:</label>
-                      <textarea
-                        value={selectedIndex?.comment || ''}
-                        onChange={(e) => setSelectedIndex({...selectedIndex, comment: e.target.value})}
-                        placeholder="输入索引备注说明"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 底部按钮 */}
-                <div className="form-actions">
-                  <button type="button" className="btn-cancel" onClick={() => setIsIndexModalOpen(false)}>取消</button>
-                  <button type="submit" className="btn-save">
-                    <SaveOutlined /> 保存
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+        <IndexModal
+          visible={isIndexModalOpen}
+          isEditing={isEditingIndex}
+          indexData={selectedIndex as IIndexData}
+          tableFields={tableData?.fields || []}
+          onClose={() => setIsIndexModalOpen(false)}
+          onSave={handleSaveIndex}
+          showError={showError}
+        />
       )}
     </div>
   );
