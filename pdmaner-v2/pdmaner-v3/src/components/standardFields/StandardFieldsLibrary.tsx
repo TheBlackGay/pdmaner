@@ -93,19 +93,55 @@ const StandardFieldsLibrary: React.FC = () => {
   // 初始化标准字段库数据
   useEffect(() => {
     if (currentProject) {
-      // 从项目中获取标准字段库数据
-      const standardFields = currentProject.standardFields || [];
-      setFieldGroups(standardFields.map(group => ({
-        ...group,
-        expanded: false // 初始状态为折叠
-      })));
-      
-      // 设置初始展开状态
-      const initialExpandedState: Record<string, boolean> = {};
-      standardFields.forEach(group => {
-        initialExpandedState[group.id] = Boolean(group.expanded);
-      });
-      setExpandedGroups(initialExpandedState);
+      try {
+        // 从项目中获取标准字段库数据
+        const standardFields = currentProject.standardFields || [];
+        
+        // 从localStorage加载之前保存的展开状态
+        const savedExpandedStateKey = `pdmaner_expanded_state_${currentProject.info.id}`;
+        const savedExpandedState = localStorage.getItem(savedExpandedStateKey);
+        let parsedExpandedState: Record<string, boolean> = {};
+        
+        if (savedExpandedState) {
+          try {
+            parsedExpandedState = JSON.parse(savedExpandedState);
+            console.log('从缓存加载展开状态:', parsedExpandedState);
+          } catch (e) {
+            console.error('解析保存的展开状态失败:', e);
+          }
+        }
+        
+        // 设置字段组，保留当前展开状态
+        setFieldGroups(standardFields.map(group => ({
+          ...group,
+          // 如果有保存的状态，使用保存的状态；否则默认折叠
+          expanded: parsedExpandedState[group.id] !== undefined 
+            ? parsedExpandedState[group.id] 
+            : Boolean(group.expanded) || false
+        })));
+        
+        // 设置展开状态，优先使用保存的状态
+        const newExpandedState: Record<string, boolean> = {};
+        standardFields.forEach(group => {
+          newExpandedState[group.id] = 
+            parsedExpandedState[group.id] !== undefined
+              ? parsedExpandedState[group.id]
+              : Boolean(group.expanded) || false;
+        });
+        
+        // 如果有现有的展开状态，则保留它们
+        if (Object.keys(expandedGroups).length > 0) {
+          console.log('保留当前展开状态');
+          setExpandedGroups(prev => ({
+            ...newExpandedState,
+            ...prev // 保留现有的展开状态
+          }));
+        } else {
+          setExpandedGroups(newExpandedState);
+        }
+      } catch (error) {
+        console.error('初始化标准字段库数据失败:', error);
+      }
     }
   }, [currentProject]);
   
@@ -113,6 +149,16 @@ const StandardFieldsLibrary: React.FC = () => {
   useEffect(() => {
     const handleStandardFieldsUpdated = (event: Event) => {
       console.log('收到标准字段库更新事件:', (event as CustomEvent).detail);
+      
+      // 检查事件来源，如果是拖拽操作则不刷新
+      const eventSource = (event as CustomEvent).detail?.source;
+      const eventDragOperation = (event as CustomEvent).detail?.isDragOperation;
+      
+      // 跳过拖拽操作触发的更新
+      if (eventDragOperation) {
+        console.log('拖拽操作触发的更新，跳过刷新');
+        return;
+      }
       
       if (currentProject) {
         try {
@@ -125,19 +171,28 @@ const StandardFieldsLibrary: React.FC = () => {
             if (projectConfig.standardFields) {
               console.log('重新加载标准字段库数据:', projectConfig.standardFields);
               
-              // 更新字段分组列表
+              // 先获取当前的展开状态
+              const currentExpandedState = {...expandedGroups};
+              
+              // 更新字段分组列表，但保留当前的展开状态
               setFieldGroups(projectConfig.standardFields.map((group: any) => ({
                 ...group,
-                expanded: expandedGroups[group.id] || false // 保留当前展开状态
+                // 使用当前展开状态，如果不存在则使用默认值
+                expanded: currentExpandedState[group.id] !== undefined 
+                  ? currentExpandedState[group.id] 
+                  : Boolean(group.expanded)
               })));
               
-              // 更新展开状态
-              const newExpandedState: Record<string, boolean> = {...expandedGroups};
+              // 更新展开状态，保留现有的展开状态
+              const newExpandedState: Record<string, boolean> = {...currentExpandedState};
               projectConfig.standardFields.forEach((group: any) => {
-                if (!newExpandedState[group.id]) {
+                // 只为新增的分组设置默认展开状态
+                if (newExpandedState[group.id] === undefined) {
                   newExpandedState[group.id] = Boolean(group.expanded);
                 }
               });
+              
+              // 确保所有分组都有展开状态
               setExpandedGroups(newExpandedState);
             }
           }
@@ -155,6 +210,22 @@ const StandardFieldsLibrary: React.FC = () => {
       document.removeEventListener('standard-fields-updated', handleStandardFieldsUpdated);
     };
   }, [currentProject, expandedGroups]);
+
+  // 保存展开状态到localStorage
+  useEffect(() => {
+    if (currentProject && Object.keys(expandedGroups).length > 0) {
+      try {
+        // 避免初始化时保存空状态
+        if (Object.values(expandedGroups).some(v => v === true)) {
+          const savedExpandedStateKey = `pdmaner_expanded_state_${currentProject.info.id}`;
+          localStorage.setItem(savedExpandedStateKey, JSON.stringify(expandedGroups));
+          console.log('保存展开状态到本地存储:', expandedGroups);
+        }
+      } catch (error) {
+        console.error('保存展开状态失败:', error);
+      }
+    }
+  }, [expandedGroups, currentProject]);
 
   // 自动保存功能
   useEffect(() => {
@@ -205,6 +276,8 @@ const StandardFieldsLibrary: React.FC = () => {
   const handleDragStart = (e: React.DragEvent, field: StandardField) => {
     // 设置拖拽数据
     e.dataTransfer.setData('application/json', JSON.stringify(field));
+    // 添加拖拽源标识
+    e.dataTransfer.setData('drag-source', 'standard-fields-library');
 
     // 设置拖拽图像
     const dragImage = document.createElement('div');

@@ -675,6 +675,9 @@ const TableDetails: React.FC = () => {
       const data = e.dataTransfer.getData('application/json');
       if (!data) return;
 
+      // 检查是否包含源头信息
+      const isDragFromStandardLibrary = e.dataTransfer.getData('drag-source') === 'standard-fields-library';
+      
       const standardField = JSON.parse(data);
       if (!standardField || !standardField.id) return;
 
@@ -744,12 +747,26 @@ const TableDetails: React.FC = () => {
           // 保存到localStorage
           saveProject(updatedProject);
 
+          // 如果来源是标准字段库，触发自定义事件时添加标记
+          if (isDragFromStandardLibrary) {
+            // 通知其他组件项目已更新，但标明这是拖拽操作
+            const updateEvent = new CustomEvent('standard-fields-updated', {
+              detail: { 
+                source: 'table-details', 
+                projectId: currentProject.info.id,
+                isDragOperation: true // 标记这是拖拽操作
+              }
+            });
+            document.dispatchEvent(updateEvent);
+            console.log('已触发拖拽更新事件，标准字段库不会刷新');
+          }
+
           success(`字段 "${fieldName}" 添加成功`);
         }
       }
     } catch (error) {
       console.error('处理拖拽数据失败:', error);
-      showError('添加字段失败，请检查控制台错误日志');
+      showError('处理拖拽数据失败');
     }
   };
 
