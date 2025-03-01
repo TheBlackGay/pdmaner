@@ -19,7 +19,8 @@ import {
   FileTextOutlined,
   VerticalAlignTopOutlined,
   VerticalAlignBottomOutlined,
-  DatabaseOutlined
+  DatabaseOutlined,
+  TableOutlined
 } from '@ant-design/icons';
 import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
@@ -106,7 +107,13 @@ const TableDetails: React.FC = () => {
 
   // 添加索引相关状态
   const [isIndexModalOpen, setIsIndexModalOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState<IndexData | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<{
+    id?: string;
+    name?: string;
+    fields?: string[];
+    unique?: boolean;
+    comment?: string;
+  } | null>(null);
   const [isEditingIndex, setIsEditingIndex] = useState(false);
 
   // 添加字段入库分组选择模态框状态
@@ -506,7 +513,12 @@ const TableDetails: React.FC = () => {
 
   // 添加新索引
   const handleAddIndex = () => {
-    setSelectedIndex(null);
+    setSelectedIndex({
+      name: '',
+      fields: [],
+      unique: false,
+      comment: ''
+    });
     setIsEditingIndex(false);
     setIsIndexModalOpen(true);
   };
@@ -1729,6 +1741,156 @@ const TableDetails: React.FC = () => {
         onConfirm={handlePopConfirmAction}
         onCancel={() => setPopConfirm(prev => ({ ...prev, visible: false }))}
       />
+
+      {/* 添加IndexModal组件 */}
+      {isIndexModalOpen && (
+        <div className="modal-backdrop" onClick={e => {
+          // 仅当点击背景时关闭
+          if (e.target === e.currentTarget) {
+            setIsIndexModalOpen(false);
+          }
+        }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{isEditingIndex ? '编辑索引' : '新建索引'}</h2>
+              <button className="close-btn" onClick={() => setIsIndexModalOpen(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+
+                // 验证
+                if (!selectedIndex?.name || !selectedIndex?.fields?.length) {
+                  showError('索引名称和包含字段不能为空');
+                  return;
+                }
+
+                // 创建索引对象
+                const indexData = {
+                  id: selectedIndex?.id || Date.now().toString(),
+                  name: selectedIndex?.name || '',
+                  fields: selectedIndex?.fields || [],
+                  unique: selectedIndex?.unique || false,
+                  comment: selectedIndex?.comment || ''
+                };
+
+                // 保存索引
+                handleSaveIndex(indexData);
+                setIsIndexModalOpen(false);
+              }}>
+                {/* 索引基本信息 */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <InfoCircleOutlined /> 索引信息
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>
+                        <span className="required">*</span> 索引名称:
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedIndex?.name || ''}
+                        onChange={(e) => setSelectedIndex({...selectedIndex, name: e.target.value})}
+                        placeholder="请输入索引名称"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="custom-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={selectedIndex?.unique || false}
+                          onChange={(e) => setSelectedIndex({...selectedIndex, unique: e.target.checked})}
+                        />
+                        <div className="checkbox-display"></div>
+                        <span className="checkbox-label">唯一索引</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 包含字段 */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <TableOutlined /> 包含字段
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>
+                        <span className="required">*</span> 选择字段:
+                      </label>
+                      {tableData?.fields?.length > 0 ? (
+                        <div className="field-select-list">
+                          {tableData.fields.map(field => (
+                            <div key={field.id} className="field-select-item">
+                              <label className="custom-checkbox">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIndex?.fields?.includes(field.id) || false}
+                                  onChange={(e) => {
+                                    const fields = selectedIndex?.fields || [];
+                                    if (e.target.checked) {
+                                      setSelectedIndex({
+                                        ...selectedIndex,
+                                        fields: [...fields, field.id]
+                                      });
+                                    } else {
+                                      setSelectedIndex({
+                                        ...selectedIndex,
+                                        fields: fields.filter(id => id !== field.id)
+                                      });
+                                    }
+                                  }}
+                                />
+                                <div className="checkbox-display"></div>
+                                <span className="checkbox-label">
+                                  {field.name} ({field.code}) - {field.type}
+                                </span>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty-message">
+                          <InfoCircleOutlined /> 表中暂无字段，请先添加字段
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 备注 */}
+                <div className="form-section">
+                  <div className="form-section-title">
+                    <FileTextOutlined /> 备注说明
+                  </div>
+                  <div className="form-row full-width">
+                    <div className="form-group">
+                      <label>备注:</label>
+                      <textarea
+                        value={selectedIndex?.comment || ''}
+                        onChange={(e) => setSelectedIndex({...selectedIndex, comment: e.target.value})}
+                        placeholder="输入索引备注说明"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 底部按钮 */}
+                <div className="form-actions">
+                  <button type="button" className="btn-cancel" onClick={() => setIsIndexModalOpen(false)}>取消</button>
+                  <button type="submit" className="btn-save">
+                    <SaveOutlined /> 保存
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
