@@ -99,8 +99,15 @@ const SideMenu: React.FC<SideMenuProps> = ({
                         e.nativeEvent.stopImmediatePropagation();
                         e.preventDefault();
                         
-                        // 如果有子项，则切换展开/折叠状态
-                        if (subItem.children && subItem.children.length > 0) {
+                        // 检查是否是特定的菜单类型需要展开而不是导航
+                        const isExpandOnlyMenu = subItem.key.startsWith('tables_') || 
+                                                subItem.key.startsWith('entities_') || 
+                                                subItem.key.startsWith('views_') || 
+                                                subItem.key.startsWith('diagrams_') || 
+                                                subItem.key.startsWith('dictionaries_');
+                        
+                        // 如果有子项或者是特定菜单类型，则切换展开/折叠状态
+                        if ((subItem.children && subItem.children.length > 0) || isExpandOnlyMenu) {
                           onToggleMenuExpand(subItem.key);
                         } else {
                           // 确保使用正确的path

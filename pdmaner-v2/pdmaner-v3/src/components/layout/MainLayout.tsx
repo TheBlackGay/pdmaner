@@ -560,6 +560,24 @@ const MainLayout: React.FC = () => {
       return;
     }
     
+    // 检查是否是一级分类菜单（数据表、逻辑实体、多表透视等）
+    if (['tables', 'entities', 'views', 'diagrams', 'dictionaries'].includes(item.key)) {
+      // 如果是一级菜单，只展开/折叠，不导航
+      toggleMenuExpand(item.key);
+      return;
+    }
+    
+    // 检查是否是主题域下的二级菜单（例如：tables_domainId，entities_domainId等）
+    if (item.key.startsWith('tables_') || 
+        item.key.startsWith('entities_') || 
+        item.key.startsWith('views_') || 
+        item.key.startsWith('diagrams_') || 
+        item.key.startsWith('dictionaries_')) {
+      // 如果是二级菜单，只展开/折叠，不导航
+      toggleMenuExpand(item.key);
+      return;
+    }
+    
     // 如果有path属性，导航到指定路径
     if (item.path) {
       navigate(item.path);
@@ -979,19 +997,15 @@ const MainLayout: React.FC = () => {
               lastModified: Date.now()
             };
             
-            // 更新Redux状态
+            // 更新Redux状态 - 使用不同的方式更新以减少重新渲染
             dispatch(setCurrentProject(updatedProject));
             
             // 保存到localStorage
             saveProject(updatedProject);
             
-            // 更新tableItems状态，添加新表项到对应主题域
-            const updatedTableItems = { ...tableItems };
-            if (!updatedTableItems[domainId]) {
-              updatedTableItems[domainId] = [];
-            }
-            
-            updatedTableItems[domainId].push({
+            // 仅更新对应主题域的表项，避免重新渲染整个菜单
+            // 创建新表项
+            const newTableItem = {
               key: tableId,
               title: name,
               icon: <TableOutlined />,
@@ -999,17 +1013,40 @@ const MainLayout: React.FC = () => {
               comment: comment,
               code: code,
               parentDomainId: domainId
+            };
+            
+            // 使用函数式更新，只更新特定主题域下的表项
+            setTableItems(prevItems => {
+              // 创建prevItems的深拷贝
+              const updatedItems = {...prevItems};
+              
+              // 如果该主题域下还没有表，则初始化为空数组
+              if (!updatedItems[domainId]) {
+                updatedItems[domainId] = [];
+              }
+              
+              // 添加新表项
+              updatedItems[domainId] = [...updatedItems[domainId], newTableItem];
+              
+              return updatedItems;
             });
             
-            setTableItems(updatedTableItems);
-            
             // 确保展开相应的菜单项
-            if (!expandedGroups.includes(`domain_${domainId}`)) {
-              setExpandedGroups(prev => [...prev, `domain_${domainId}`]);
-            }
-            if (!expandedGroups.includes(`tables_${domainId}`)) {
-              setExpandedGroups(prev => [...prev, `tables_${domainId}`]);
-            }
+            setExpandedGroups(prev => {
+              const newExpandedGroups = [...prev];
+              
+              // 确保主题域展开
+              if (!newExpandedGroups.includes(`domain_${domainId}`)) {
+                newExpandedGroups.push(`domain_${domainId}`);
+              }
+              
+              // 确保数据表菜单展开
+              if (!newExpandedGroups.includes(`tables_${domainId}`)) {
+                newExpandedGroups.push(`tables_${domainId}`);
+              }
+              
+              return newExpandedGroups;
+            });
             
             // 添加成功后导航到新建的表页面
             navigate(`/app/table/${tableId}`);
