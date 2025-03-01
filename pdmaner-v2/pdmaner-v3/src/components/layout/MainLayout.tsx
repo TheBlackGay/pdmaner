@@ -388,8 +388,33 @@ const MainLayout: React.FC = () => {
         // 如果已经展开，则折叠
         return prev.filter(key => key !== menuKey);
       } else {
-        // 如果未展开，则展开 - 不再影响其他同级菜单
-        return [...prev, menuKey];
+        // 如果是展开操作，需要处理一些特殊情况
+        let newExpandedGroups = [...prev, menuKey];
+        
+        // 若是数据表、逻辑实体、多表透视等类型，需要关闭同级其他菜单
+        if (menuKey.startsWith('tables_') || 
+            menuKey.startsWith('entities_') || 
+            menuKey.startsWith('views_') || 
+            menuKey.startsWith('diagrams_') || 
+            menuKey.startsWith('dictionaries_')) {
+          // 提取domainId
+          const parts = menuKey.split('_');
+          const type = parts[0];
+          const domainId = parts.slice(1).join('_');
+          
+          // 关闭同一个主题域下的其他同级菜单
+          const siblingKeys = ['tables_', 'entities_', 'views_', 'diagrams_', 'dictionaries_'];
+          
+          siblingKeys.forEach(siblingType => {
+            if (siblingType !== type + '_') {
+              const siblingKey = siblingType + domainId;
+              // 从展开列表中移除兄弟菜单
+              newExpandedGroups = newExpandedGroups.filter(key => key !== siblingKey);
+            }
+          });
+        }
+        
+        return newExpandedGroups;
       }
     });
   };
@@ -490,31 +515,11 @@ const MainLayout: React.FC = () => {
       if (remainingTabs.length > 0) {
         const newActiveTab = remainingTabs[0];
         setActiveTab(newActiveTab.type);
-        
-        // 获取对应的路径
-        const path = findPathByTabType(newActiveTab.type) || '/app';
-        
-        // 使用自定义事件而不是navigate，避免全页面刷新
-        // 静默更新URL
-        window.history.pushState(null, '', path);
-        
-        // 触发自定义事件通知
-        const routeChangeEvent = new CustomEvent('route-change', {
-          detail: { path, tableId: newActiveTab.type }
-        });
-        document.dispatchEvent(routeChangeEvent);
+        navigate(findPathByTabType(newActiveTab.type) || '/app');
       } else {
         // 没有剩余标签，返回首页
         setActiveTab('');
-        
-        // 静默更新URL
-        window.history.pushState(null, '', '/app');
-        
-        // 触发自定义事件通知
-        const routeChangeEvent = new CustomEvent('route-change', {
-          detail: { path: '/app' }
-        });
-        document.dispatchEvent(routeChangeEvent);
+        navigate('/app');
       }
     }
   };
@@ -546,20 +551,9 @@ const MainLayout: React.FC = () => {
 
   // 菜单项点击导航
   const navigateToMenuItem = (item: MenuItem) => {
-    // 保存当前展开的菜单状态
-    const currentExpandedState = [...expandedGroups];
-    
     // 如果是首页，直接导航到/app
     if (item.key === 'home') {
-      // 静默更新URL
-      window.history.pushState(null, '', '/app');
-      
-      // 触发自定义事件
-      const routeChangeEvent = new CustomEvent('route-change', {
-        detail: { path: '/app' }
-      });
-      document.dispatchEvent(routeChangeEvent);
-      
+      navigate('/app');
       setActiveTab(item.key);
       setTabs([]);
       setShowProjectOverview(true); // 显示项目概览
@@ -568,30 +562,7 @@ const MainLayout: React.FC = () => {
     
     // 如果有path属性，导航到指定路径
     if (item.path) {
-      // 如果点击的是域下的items（如：逻辑实体、多表透视等），仅切换该项的展开状态，不要影响其他展开项
-      if (item.parentDomainId && 
-          (item.key.startsWith('entities_') || 
-           item.key.startsWith('views_') || 
-           item.key.startsWith('tables_') ||
-           item.key.startsWith('diagrams_') ||
-           item.key.startsWith('dictionaries_'))) {
-        
-        // 切换展开状态而不导致其他菜单项收起
-        if (!currentExpandedState.includes(item.key)) {
-          // 如果未展开，只展开当前项
-          setExpandedGroups([...currentExpandedState, item.key]);
-        }
-      }
-      
-      // 静默更新URL而不是使用navigate
-      window.history.pushState(null, '', item.path);
-      
-      // 触发自定义事件
-      const routeChangeEvent = new CustomEvent('route-change', {
-        detail: { path: item.path, tableId: item.key }
-      });
-      document.dispatchEvent(routeChangeEvent);
-      
+      navigate(item.path);
       setActiveTab(item.key);
       setShowProjectOverview(false); // 隐藏项目概览
       
@@ -748,19 +719,15 @@ const MainLayout: React.FC = () => {
       return;
     }
     
-    // 查找表数据
-    const table = currentProject?.tables?.find(t => t.id === tableKey);
-    if (!table) {
-      console.log('找不到表数据:', tableKey);
-      return;
-    }
-    
     // 更新选中的表
     setSelectedTableKey(tableKey);
     
-    // 检查标签页是否已存在，如不存在则添加（仅限标签页状态更新，不影响其他部分）
+    // 查找表数据
+    const table = currentProject?.tables?.find(t => t.id === tableKey);
+    
+    // 检查标签页是否已存在
     const existingTab = tabs.find(tab => tab.type === tableKey);
-    if (!existingTab) {
+    if (!existingTab && table) {
       // 添加新标签页
       setTabs(prev => [
         ...prev,
@@ -776,39 +743,8 @@ const MainLayout: React.FC = () => {
     // 设置当前激活的标签页
     setActiveTab(tableKey);
     
-    // 确保必要的菜单保持展开状态
-    const domainKey = `domain_${table.domainId}`;
-    const tablesKey = `tables_${table.domainId}`;
-
-    // 仅当菜单未展开时才添加到expandedGroups，避免不必要的状态更新
-    const expandedGroupsChanged = 
-      !expandedGroups.includes(domainKey) || 
-      !expandedGroups.includes(tablesKey);
-      
-    if (expandedGroupsChanged) {
-      setExpandedGroups(prev => {
-        const newGroups = [...prev];
-        if (!newGroups.includes(domainKey)) {
-          newGroups.push(domainKey);
-        }
-        if (!newGroups.includes(tablesKey)) {
-          newGroups.push(tablesKey);
-        }
-        return newGroups;
-      });
-    }
-    
-    // 使用静默导航 - 更新URL但不触发完整页面刷新
-    // 这只会更新URL，而不会导致React Router重新挂载整个应用
-    const newPath = `/app/table/${tableKey}`;
-    window.history.pushState(null, '', newPath);
-    
-    // 可选：如果需要通知路由变化但不触发完整重新渲染
-    // 你也可以在这里触发一个自定义事件通知内容区域更新，而不是使用navigate
-    const routeChangeEvent = new CustomEvent('route-change', {
-      detail: { path: newPath, tableId: tableKey }
-    });
-    document.dispatchEvent(routeChangeEvent);
+    // 导航到表详情页
+    navigate(`/app/table/${tableKey}`);
   };
 
   // 项目统计信息
@@ -894,30 +830,6 @@ const MainLayout: React.FC = () => {
     return modelRelatedPaths.some(path => location.pathname.startsWith(path));
   };
 
-  // 添加自定义路由事件监听
-  useEffect(() => {
-    // 监听自定义路由变化事件，用于更新内容但不触发完整页面刷新
-    const handleRouteChange = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { path, tableId } = customEvent.detail;
-      
-      console.log('接收到自定义路由变化事件:', path, tableId);
-      
-      // 更新内容区域相关状态，但不使用navigate导航
-      // 这里我们只需确保选中的表ID和活动标签页正确设置
-      if (tableId) {
-        setSelectedTableKey(tableId);
-        setActiveTab(tableId);
-      }
-    };
-    
-    document.addEventListener('route-change', handleRouteChange);
-    
-    return () => {
-      document.removeEventListener('route-change', handleRouteChange);
-    };
-  }, []);
-
   // 根据当前路径判断是否显示标准字段库
   useEffect(() => {
     setShowStandardFields(isDataModelPage());
@@ -963,19 +875,7 @@ const MainLayout: React.FC = () => {
             activeTab={activeTab}
             onTabClick={(type) => {
               setActiveTab(type);
-              
-              // 获取对应的路径
-              const path = findPathByTabType(type) || '/app';
-              
-              // 使用自定义事件而不是navigate，避免全页面刷新
-              // 静默更新URL
-              window.history.pushState(null, '', path);
-              
-              // 触发自定义事件通知
-              const routeChangeEvent = new CustomEvent('route-change', {
-                detail: { path, tableId: type }
-              });
-              document.dispatchEvent(routeChangeEvent);
+              navigate(findPathByTabType(type) || '/app');
             }}
             onCloseTab={closeTab}
           />

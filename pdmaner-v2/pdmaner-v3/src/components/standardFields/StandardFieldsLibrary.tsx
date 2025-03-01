@@ -125,32 +125,20 @@ const StandardFieldsLibrary: React.FC = () => {
             if (projectConfig.standardFields) {
               console.log('重新加载标准字段库数据:', projectConfig.standardFields);
               
-              // 创建一个字段组的副本，保留当前UI状态不变
-              const updatedFieldGroups = [...fieldGroups];
+              // 更新字段分组列表
+              setFieldGroups(projectConfig.standardFields.map((group: any) => ({
+                ...group,
+                expanded: expandedGroups[group.id] || false // 保留当前展开状态
+              })));
               
-              // 只更新字段数据，保持展开状态
-              projectConfig.standardFields.forEach((newGroup: any) => {
-                const existingGroupIndex = updatedFieldGroups.findIndex(g => g.id === newGroup.id);
-                
-                if (existingGroupIndex >= 0) {
-                  // 如果组已存在，只更新字段数据，保持当前展开状态
-                  updatedFieldGroups[existingGroupIndex] = {
-                    ...newGroup,
-                    expanded: updatedFieldGroups[existingGroupIndex].expanded
-                  };
-                } else {
-                  // 如果是新组，添加到列表，默认折叠
-                  updatedFieldGroups.push({
-                    ...newGroup,
-                    expanded: false
-                  });
+              // 更新展开状态
+              const newExpandedState: Record<string, boolean> = {...expandedGroups};
+              projectConfig.standardFields.forEach((group: any) => {
+                if (!newExpandedState[group.id]) {
+                  newExpandedState[group.id] = Boolean(group.expanded);
                 }
               });
-              
-              // 更新字段组列表（只在必要时）
-              setFieldGroups(updatedFieldGroups);
-              
-              // 不更改现有的展开状态 - 保持现状
+              setExpandedGroups(newExpandedState);
             }
           }
         } catch (error) {
@@ -166,7 +154,7 @@ const StandardFieldsLibrary: React.FC = () => {
     return () => {
       document.removeEventListener('standard-fields-updated', handleStandardFieldsUpdated);
     };
-  }, [currentProject, fieldGroups]);
+  }, [currentProject, expandedGroups]);
 
   // 自动保存功能
   useEffect(() => {

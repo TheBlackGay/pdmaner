@@ -955,13 +955,7 @@ const TableDetails: React.FC = () => {
                 {getFilteredFields().length === 0 ? (
                   <tr>
                     <td colSpan={10} className="empty-message">
-                      {searchTerm ? (
-                        // 只有在搜索时没有结果才显示提示
-                        <><InfoCircleOutlined /> 未找到匹配的字段</>
-                      ) : (
-                        // 没有字段时不显示文字
-                        <></>
-                      )}
+                      <InfoCircleOutlined /> 暂无字段，请添加或从标准字段库拖拽字段
                     </td>
                   </tr>
                 ) : (
@@ -1285,6 +1279,13 @@ const TableDetails: React.FC = () => {
       
       // 更新当前组件中的字段分组状态，确保下次打开模态框时显示最新数据
       setFieldGroups([...projectConfig.standardFields]);
+      
+      // 触发自定义事件，通知标准字段库组件刷新数据
+      const refreshEvent = new CustomEvent('standard-fields-updated', {
+        detail: { source: 'table-details', projectId: currentProject.info.id }
+      });
+      document.dispatchEvent(refreshEvent);
+      console.log('已触发刷新标准字段库事件');
       
       // 显示成功通知
       success(`已将字段 "${standardFieldToAdd.name}" 添加到字段库`);
