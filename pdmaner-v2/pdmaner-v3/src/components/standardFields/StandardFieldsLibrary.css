@@ -34,20 +34,21 @@
   position: absolute;
   top: 50%;
   left: -20px;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(162, 57, 202, 0.2));
-  border: 1px solid rgba(5, 217, 232, 0.5);
+  width: 28px;
+  height: 28px;
+  background: rgba(5, 217, 232, 0.15);
+  border: 1px solid rgba(5, 217, 232, 0.4);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 100;
   color: #05d9e8;
+  font-size: 14px;
   transform: translateY(-50%);
-  transition: all 0.3s;
-  box-shadow: 0 0 15px rgba(5, 217, 232, 0.3);
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3), 0 0 8px rgba(5, 217, 232, 0.2);
+  z-index: 1;
 }
 
 .standard-fields-library.collapsed .toggle-button {

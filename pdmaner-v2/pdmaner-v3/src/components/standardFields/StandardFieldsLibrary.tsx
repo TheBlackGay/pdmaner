@@ -93,35 +93,21 @@ const StandardFieldsLibrary: React.FC = () => {
   // 初始化标准字段库数据
   useEffect(() => {
     if (currentProject) {
-      // 保存先前的展开状态
-      const prevExpandedState = {...expandedGroups};
-      
       // 从项目中获取标准字段库数据
       const standardFields = currentProject.standardFields || [];
       setFieldGroups(standardFields.map(group => ({
         ...group,
-        // 使用之前的展开状态，如果没有则默认为折叠
-        expanded: prevExpandedState[group.id] !== undefined ? prevExpandedState[group.id] : false
+        expanded: false // 初始状态为折叠
       })));
       
-      // 初始化展开状态
+      // 设置初始展开状态
       const initialExpandedState: Record<string, boolean> = {};
       standardFields.forEach(group => {
-        // 保持之前的展开状态
-        initialExpandedState[group.id] = prevExpandedState[group.id] !== undefined 
-          ? prevExpandedState[group.id] 
-          : Boolean(group.expanded);
+        initialExpandedState[group.id] = Boolean(group.expanded);
       });
-      
-      // 仅更新新的分组状态，保留已有的
-      setExpandedGroups(prev => ({
-        ...prev,
-        ...initialExpandedState
-      }));
-      
-      console.log('标准字段库已初始化，展开状态:', initialExpandedState);
+      setExpandedGroups(initialExpandedState);
     }
-  }, [currentProject]);  // 不要包含expandedGroups在依赖数组中
+  }, [currentProject]);
   
   // 添加自定义事件监听器，当标准字段库数据更新时刷新
   useEffect(() => {
@@ -565,49 +551,8 @@ const StandardFieldsLibrary: React.FC = () => {
     }
   };
 
-  // 处理拖拽结束
-  const handleDragEnd = (e: React.DragEvent) => {
-    console.log('拖拽结束');
-    
-    // 清理拖拽状态
+  const handleDragEnd = () => {
     setDraggingField(null);
-    
-    // 移除拖拽图像
-    const dragImage = document.querySelector('.dragging-indicator');
-    if (dragImage && dragImage.parentNode) {
-      dragImage.parentNode.removeChild(dragImage);
-    }
-    
-    // 不要在这里重置展开状态
-  };
-
-  // 保存字段库到项目中
-  const saveToProject = () => {
-    if (!currentProject) return;
-    
-    try {
-      // 保留展开状态信息
-      const currentExpandedState = {...expandedGroups};
-      
-      // 更新项目数据，保留字段分组的展开状态
-      const updatedProject = {
-        ...currentProject,
-        standardFields: fieldGroups.map(group => ({
-          ...group,
-          expanded: currentExpandedState[group.id] || false // 使用当前展开状态
-        }))
-      };
-      
-      // 更新Redux状态
-      dispatch(setCurrentProject(updatedProject));
-      
-      // 显示成功提示
-      success('标准字段库已保存');
-      
-      console.log('标准字段库已保存到项目，保留展开状态:', currentExpandedState);
-    } catch (error) {
-      console.error('保存标准字段库失败:', error);
-    }
   };
 
   // 添加字段顺序调整函数
@@ -1314,7 +1259,7 @@ const StandardFieldsLibrary: React.FC = () => {
 
           <div className="modal-footer" style={{borderTop: '1px solid rgba(5, 217, 232, 0.2)'}}>
             <button className="cancel-btn" onClick={closeManagementModal}>取消</button>
-            <button className="confirm-btn save-btn" onClick={saveToProject}>保存</button>
+            <button className="confirm-btn save-btn" onClick={handleSaveStandardFields}>保存</button>
           </div>
         </div>
       </div>,
