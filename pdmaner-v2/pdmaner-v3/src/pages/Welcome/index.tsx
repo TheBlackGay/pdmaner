@@ -14,6 +14,8 @@ import { setLoading, setCurrentProject } from '@store/slices/appSlice';
 import { getRecentProjects, ProjectInfo, createNewProject, deleteProject, getProjectById } from '@utils/projectStorage';
 import NewProjectModal from '@components/modals/NewProjectModal';
 import './Welcome.css';
+import { useNotificationContext } from '../../contexts/NotificationContext';
+import PopConfirm from '@components/common/PopConfirm';
 
 const Welcome: React.FC = () => {
   const [recentProjects, setRecentProjects] = useState<ProjectInfo[]>([]);
@@ -21,6 +23,15 @@ const Welcome: React.FC = () => {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  // 添加弹出式确认对话框状态
+  const [popConfirm, setPopConfirm] = useState({
+    visible: false,
+    title: '',
+    action: '',
+    position: { x: 0, y: 0 },
+    targetId: ''
+  });
 
   // 加载最近项目
   useEffect(() => {
@@ -108,11 +119,30 @@ const Welcome: React.FC = () => {
   const handleDeleteProject = (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
     
-    if (window.confirm('确定要删除此项目吗？此操作不可恢复。')) {
-      deleteProject(projectId);
-      // 更新项目列表
-      setRecentProjects(getRecentProjects());
+    // 显示弹出式确认对话框
+    setPopConfirm({
+      visible: true,
+      title: '确定要删除此项目吗？此操作不可恢复。',
+      action: 'deleteProject',
+      position: { x: e.clientX, y: e.clientY },
+      targetId: projectId
+    });
+  };
+  
+  // 处理确认对话框的操作
+  const handlePopConfirmAction = () => {
+    switch (popConfirm.action) {
+      case 'deleteProject':
+        deleteProject(popConfirm.targetId);
+        // 更新项目列表
+        setRecentProjects(getRecentProjects());
+        break;
+      default:
+        console.log('未处理的操作:', popConfirm.action);
     }
+    
+    // 关闭确认对话框
+    setPopConfirm(prev => ({ ...prev, visible: false }));
   };
 
   return (
@@ -214,6 +244,15 @@ const Welcome: React.FC = () => {
         isOpen={isProjectModalOpen}
         onClose={() => setIsProjectModalOpen(false)}
         onConfirm={handleConfirmCreateProject}
+      />
+
+      {/* 添加 PopConfirm 组件到组件底部 */}
+      <PopConfirm
+        visible={popConfirm.visible}
+        title={popConfirm.title}
+        position={popConfirm.position}
+        onConfirm={handlePopConfirmAction}
+        onCancel={() => setPopConfirm(prev => ({ ...prev, visible: false }))}
       />
     </div>
   );

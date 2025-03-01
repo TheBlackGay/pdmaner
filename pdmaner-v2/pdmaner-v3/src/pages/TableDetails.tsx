@@ -28,6 +28,7 @@ import { generateUUID } from '@utils/uuid';
 import './TableDetails.css';
 import { useNotificationContext } from '../contexts/NotificationContext';
 import SelectGroupModal from '../components/modals/SelectGroupModal';
+import PopConfirm from '../components/common/PopConfirm';
 
 // 标准字段库的localStorage键前缀，实际key应该是 prefix + projectId
 const KEY_STANDARD_FIELDS_PREFIX = 'pdmaner_project_';
@@ -113,6 +114,15 @@ const TableDetails: React.FC = () => {
   const [standardFieldToAdd, setStandardFieldToAdd] = useState<any>(null);
   const [fieldGroups, setFieldGroups] = useState<any[]>([]);
 
+  // 添加弹出式确认对话框状态
+  const [popConfirm, setPopConfirm] = useState({
+    visible: false,
+    title: '',
+    action: '',
+    position: { x: 0, y: 0 },
+    targetId: ''
+  });
+
   // 数据类型选项
   const dataTypeOptions = [
     { value: "BIGINT", label: "BIGINT" },
@@ -157,11 +167,11 @@ const TableDetails: React.FC = () => {
     // 初始化标准字段库
     try {
       console.log('初始化标准字段库并预加载字段分组数据...');
-      
+
       // 直接使用getStandardFieldsGroups获取分组数据
       const groupsData = getStandardFieldsGroups();
       console.log('字段分组数据加载完成:', groupsData);
-      
+
       // 更新UI状态
       setFieldGroups(groupsData);
     } catch (error) {
@@ -230,45 +240,58 @@ const TableDetails: React.FC = () => {
   };
 
   // 删除字段
-  const handleDeleteField = (fieldId: string) => {
+  const handleDeleteField = (fieldId: string, event?: React.MouseEvent) => {
     if (!tableData || !currentProject) return;
+    
+    // 如果有事件，获取鼠标位置显示确认对话框
+    if (event) {
+      event.stopPropagation(); // 阻止事件冒泡
+      
+      setPopConfirm({
+        visible: true,
+        title: '确定要删除这个字段吗？',
+        action: 'deleteField',
+        position: { x: event.clientX, y: event.clientY },
+        targetId: fieldId
+      });
+      return;
+    }
 
-    if (window.confirm('确定要删除这个字段吗？')) {
-      const updatedFields = tableData.fields.filter(field => field.id !== fieldId);
+    // 如果没有事件，直接执行删除逻辑（用于确认后回调）
+    const updatedFields = tableData.fields.filter(field => field.id !== fieldId);
 
-      // 更新本地表数据
-      const updatedTableData = {
-        ...tableData,
-        fields: updatedFields,
+    // 更新本地表数据
+    const updatedTableData = {
+      ...tableData,
+      fields: updatedFields,
+      lastModified: Date.now()
+    };
+
+    setTableData(updatedTableData);
+
+    // 自动保存到项目信息
+    try {
+      // 更新项目中的表数据
+      const updatedTables = currentProject.tables.map(table =>
+        table.id === updatedTableData.id ? updatedTableData : table
+      );
+
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables,
         lastModified: Date.now()
       };
 
-      setTableData(updatedTableData);
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
 
-      // 自动保存到项目信息
-      try {
-        // 更新项目中的表数据
-        const updatedTables = currentProject.tables.map(table =>
-          table.id === updatedTableData.id ? updatedTableData : table
-        );
+      // 保存到localStorage
+      saveProject(updatedProject);
 
-        const updatedProject = {
-          ...currentProject,
-          tables: updatedTables,
-          lastModified: Date.now()
-        };
-
-        // 更新Redux状态
-        dispatch(setCurrentProject(updatedProject));
-
-        // 保存到localStorage
-        saveProject(updatedProject);
-
-        successNotification('字段删除成功，项目已自动更新');
-      } catch (error) {
-        console.error('删除字段并保存项目失败:', error);
-        showError('删除字段失败，请检查控制台错误日志');
-      }
+      successNotification('字段删除成功，项目已自动更新');
+    } catch (error) {
+      console.error('删除字段并保存项目失败:', error);
+      showError('删除字段失败，请检查控制台错误日志');
     }
   };
 
@@ -496,45 +519,58 @@ const TableDetails: React.FC = () => {
   };
 
   // 删除索引
-  const handleDeleteIndex = (indexId: string) => {
+  const handleDeleteIndex = (indexId: string, event?: React.MouseEvent) => {
     if (!tableData || !currentProject) return;
 
-    if (window.confirm('确定要删除这个索引吗？')) {
-      const updatedIndexes = tableData.indexes.filter(index => index.id !== indexId);
+    // 如果有事件，获取鼠标位置显示确认对话框
+    if (event) {
+      event.stopPropagation(); // 阻止事件冒泡
+      
+      setPopConfirm({
+        visible: true,
+        title: '确定要删除这个索引吗？',
+        action: 'deleteIndex',
+        position: { x: event.clientX, y: event.clientY },
+        targetId: indexId
+      });
+      return;
+    }
 
-      // 更新本地表数据
-      const updatedTableData = {
-        ...tableData,
-        indexes: updatedIndexes,
+    // 如果没有事件，直接执行删除逻辑（用于确认后回调）
+    const updatedIndexes = tableData.indexes.filter(index => index.id !== indexId);
+
+    // 更新本地表数据
+    const updatedTableData = {
+      ...tableData,
+      indexes: updatedIndexes,
+      lastModified: Date.now()
+    };
+
+    setTableData(updatedTableData);
+
+    // 自动保存到项目信息
+    try {
+      // 更新项目中的表数据
+      const updatedTables = currentProject.tables.map(table =>
+        table.id === updatedTableData.id ? updatedTableData : table
+      );
+
+      const updatedProject = {
+        ...currentProject,
+        tables: updatedTables,
         lastModified: Date.now()
       };
 
-      setTableData(updatedTableData);
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
 
-      // 自动保存到项目信息
-      try {
-        // 更新项目中的表数据
-        const updatedTables = currentProject.tables.map(table =>
-          table.id === updatedTableData.id ? updatedTableData : table
-        );
+      // 保存到localStorage
+      saveProject(updatedProject);
 
-        const updatedProject = {
-          ...currentProject,
-          tables: updatedTables,
-          lastModified: Date.now()
-        };
-
-        // 更新Redux状态
-        dispatch(setCurrentProject(updatedProject));
-
-        // 保存到localStorage
-        saveProject(updatedProject);
-
-        successNotification('索引删除成功，项目已自动更新');
-      } catch (error) {
-        console.error('删除索引并保存项目失败:', error);
-        showError('删除索引失败，请检查控制台错误日志');
-      }
+      successNotification('索引删除成功，项目已自动更新');
+    } catch (error) {
+      console.error('删除索引并保存项目失败:', error);
+      showError('删除索引失败，请检查控制台错误日志');
     }
   };
 
@@ -677,7 +713,7 @@ const TableDetails: React.FC = () => {
 
       // 检查是否包含源头信息
       const isDragFromStandardLibrary = e.dataTransfer.getData('drag-source') === 'standard-fields-library';
-      
+
       const standardField = JSON.parse(data);
       if (!standardField || !standardField.id) return;
 
@@ -700,7 +736,7 @@ const TableDetails: React.FC = () => {
           fieldCode = generateUniqueFieldCode(fieldCode);
         }
 
-        success(`字段名称或代码已存在，已自动调整为 "${fieldName}" (${fieldCode})`);
+        // success(`字段名称或代码已存在，已自动调整为 "${fieldName}" (${fieldCode})`);
       }
 
       // 创建新字段对象
@@ -751,8 +787,8 @@ const TableDetails: React.FC = () => {
           if (isDragFromStandardLibrary) {
             // 通知其他组件项目已更新，但标明这是拖拽操作
             const updateEvent = new CustomEvent('standard-fields-updated', {
-              detail: { 
-                source: 'table-details', 
+              detail: {
+                source: 'table-details',
                 projectId: currentProject.info.id,
                 isDragOperation: true // 标记这是拖拽操作
               }
@@ -761,7 +797,7 @@ const TableDetails: React.FC = () => {
             console.log('已触发拖拽更新事件，标准字段库不会刷新');
           }
 
-          success(`字段 "${fieldName}" 添加成功`);
+          // success(`字段 "${fieldName}" 添加成功`);
         }
       }
     } catch (error) {
@@ -847,12 +883,12 @@ const TableDetails: React.FC = () => {
             >
               <PlusOutlined /> 添加字段
             </button>
-            
+
             <div className="button-group">
-              <button 
-                className="edit-button" 
+              <button
+                className="edit-button"
                 disabled={!selectedField}
-                onClick={() => {
+                onClick={(e) => {
                   if (selectedField) {
                     handleEditField(selectedField);
                   }
@@ -860,10 +896,10 @@ const TableDetails: React.FC = () => {
               >
                 <EditOutlined /> 编辑
               </button>
-              <button 
-                className="copy-button" 
+              <button
+                className="copy-button"
                 disabled={!selectedField}
-                onClick={() => {
+                onClick={(e) => {
                   if (selectedField) {
                     handleCopyField(selectedField);
                   }
@@ -874,33 +910,33 @@ const TableDetails: React.FC = () => {
               <button
                 className="delete-button"
                 disabled={!selectedField}
-                onClick={() => {
+                onClick={(e) => {
                   if (selectedField) {
-                    handleDeleteField(selectedField.id);
+                    handleDeleteField(selectedField.id, e);
                   }
                 }}
               >
                 <DeleteOutlined /> 删除
               </button>
             </div>
-            
+
             <div className="button-group">
-              <button 
-                className="add-to-library-button" 
-                onClick={handleAddToLibrary} 
+              <button
+                className="add-to-library-button"
+                onClick={handleAddToLibrary}
                 title="将选中的字段添加到标准字段库"
                 disabled={!selectedField}
               >
                 <SaveOutlined /> 字段入库
               </button>
             </div>
-            
+
             <div className="button-group">
-              <button 
+              <button
                 className="move-button icon-only"
                 title="置顶"
                 disabled={!selectedField}
-                onClick={() => {
+                onClick={(e) => {
                   if (selectedField) {
                     handleMoveField(selectedField.id, 'top');
                   }
@@ -908,11 +944,11 @@ const TableDetails: React.FC = () => {
               >
                 <VerticalAlignTopOutlined />
               </button>
-              <button 
+              <button
                 className="move-button icon-only"
                 title="上移一位"
                 disabled={!selectedField}
-                onClick={() => {
+                onClick={(e) => {
                   if (selectedField) {
                     handleMoveField(selectedField.id, 'up');
                   }
@@ -920,11 +956,11 @@ const TableDetails: React.FC = () => {
               >
                 <UpOutlined />
               </button>
-              <button 
+              <button
                 className="move-button icon-only"
                 title="下移一位"
                 disabled={!selectedField}
-                onClick={() => {
+                onClick={(e) => {
                   if (selectedField) {
                     handleMoveField(selectedField.id, 'down');
                   }
@@ -932,11 +968,11 @@ const TableDetails: React.FC = () => {
               >
                 <DownOutlined />
               </button>
-              <button 
+              <button
                 className="move-button icon-only"
                 title="置底"
                 disabled={!selectedField}
-                onClick={() => {
+                onClick={(e) => {
                   if (selectedField) {
                     handleMoveField(selectedField.id, 'bottom');
                   }
@@ -1070,7 +1106,7 @@ const TableDetails: React.FC = () => {
                           className="table-action-btn delete-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteIndex(index.id);
+                            handleDeleteIndex(index.id, e);
                           }}
                         >
                           <DeleteOutlined />
@@ -1097,18 +1133,18 @@ const TableDetails: React.FC = () => {
     // 获取当前项目的配置键
     const projectKey = `${KEY_STANDARD_FIELDS_PREFIX}${currentProject.info.id}`;
     console.log(`检查项目配置键: ${projectKey}`);
-    
+
     // 获取项目配置
     const projectConfig = localStorage.getItem(projectKey);
     if (!projectConfig) {
       console.error('项目配置不存在');
       return [];
     }
-    
+
     try {
       // 解析项目配置
       const config = JSON.parse(projectConfig);
-      
+
       // 检查项目配置中是否包含标准字段库数据
       if (!config.standardFields) {
         console.log('项目配置中不存在标准字段库，初始化默认结构');
@@ -1128,11 +1164,11 @@ const TableDetails: React.FC = () => {
             fields: []
           }
         ];
-        
+
         // 保存更新后的配置
         localStorage.setItem(projectKey, JSON.stringify(config));
       }
-      
+
       return config.standardFields || [];
     } catch (e) {
       console.error('解析项目配置失败:', e);
@@ -1150,22 +1186,22 @@ const TableDetails: React.FC = () => {
     // 获取当前项目的配置键
     const projectKey = `${KEY_STANDARD_FIELDS_PREFIX}${currentProject.info.id}`;
     console.log(`从项目配置 ${projectKey} 中获取标准字段库分组`);
-    
+
     // 获取项目配置
     const projectConfig = localStorage.getItem(projectKey);
     if (!projectConfig) {
       console.error('项目配置不存在');
       return [];
     }
-    
+
     try {
       // 解析项目配置
       const config = JSON.parse(projectConfig);
-      
+
       // 获取标准字段库数据
       const standardFields = config.standardFields || [];
       console.log('从项目配置中获取的标准字段库分组:', standardFields);
-      
+
       return standardFields;
     } catch (e) {
       console.error('解析项目配置失败:', e);
@@ -1203,7 +1239,7 @@ const TableDetails: React.FC = () => {
     // 设置字段分组列表和要添加的字段
     setFieldGroups(latestGroups);
     setStandardFieldToAdd(standardField);
-    
+
     // 打开分组选择模态框
     setIsSelectGroupModalOpen(true);
   };
@@ -1211,17 +1247,17 @@ const TableDetails: React.FC = () => {
   // 处理添加字段到选定分组
   const handleAddFieldToGroup = (groupId: string) => {
     console.log('添加字段到分组，分组ID:', groupId);
-    
+
     if (!standardFieldToAdd || !currentProject?.info?.id) {
       console.error('没有要添加的字段数据或项目ID不存在');
       setIsSelectGroupModalOpen(false);
       return;
     }
-    
+
     // 获取当前项目的配置键
     const projectKey = `${KEY_STANDARD_FIELDS_PREFIX}${currentProject.info.id}`;
     console.log(`使用项目配置键: ${projectKey}`);
-    
+
     try {
       // 获取项目配置
       const projectConfigStr = localStorage.getItem(projectKey);
@@ -1230,22 +1266,22 @@ const TableDetails: React.FC = () => {
         setIsSelectGroupModalOpen(false);
         return;
       }
-      
+
       // 解析项目配置
       console.log('正在解析项目配置...');
       const projectConfig = JSON.parse(projectConfigStr);
       console.log('项目配置解析成功:', projectConfig);
-      
+
       // 确保标准字段库存在
       if (!projectConfig.standardFields) {
         console.log('标准字段库不存在，初始化空数组');
         projectConfig.standardFields = [];
       }
-      
+
       // 查找选定的分组
       const groupIndex = projectConfig.standardFields.findIndex((group: any) => group.id === groupId);
       console.log('找到的分组索引:', groupIndex, '分组ID:', groupId);
-      
+
       // 添加字段到选定分组或默认分组
       if (groupIndex === -1) {
         console.log('未找到指定分组，创建默认分组');
@@ -1265,18 +1301,18 @@ const TableDetails: React.FC = () => {
         if (!projectConfig.standardFields[groupIndex].fields) {
           projectConfig.standardFields[groupIndex].fields = [];
         }
-        
+
         // 检查字段是否已存在
         const fieldExists = projectConfig.standardFields[groupIndex].fields.some(
           (field: any) => field.id === standardFieldToAdd.id || field.code === standardFieldToAdd.code
         );
-        
+
         if (fieldExists) {
           console.log('字段已存在于该分组，更新字段');
           // 更新已存在的字段
           projectConfig.standardFields[groupIndex].fields = projectConfig.standardFields[groupIndex].fields.map(
-            (field: any) => (field.id === standardFieldToAdd.id || field.code === standardFieldToAdd.code) 
-              ? standardFieldToAdd 
+            (field: any) => (field.id === standardFieldToAdd.id || field.code === standardFieldToAdd.code)
+              ? standardFieldToAdd
               : field
           );
         } else {
@@ -1285,28 +1321,28 @@ const TableDetails: React.FC = () => {
           console.log('添加新字段成功:', standardFieldToAdd);
         }
       }
-      
+
       // 输出更新后的标准字段库数据
       console.log('更新后的标准字段库:', projectConfig.standardFields);
-      
+
       // 保存更新后的配置
       const updatedConfig = JSON.stringify(projectConfig);
       localStorage.setItem(projectKey, updatedConfig);
       console.log('配置保存成功，大小:', updatedConfig.length, '字节');
-      
+
       // 更新当前组件中的字段分组状态，确保下次打开模态框时显示最新数据
       setFieldGroups([...projectConfig.standardFields]);
-      
+
       // 触发自定义事件，通知标准字段库组件刷新数据
       const refreshEvent = new CustomEvent('standard-fields-updated', {
         detail: { source: 'table-details', projectId: currentProject.info.id }
       });
       document.dispatchEvent(refreshEvent);
       console.log('已触发刷新标准字段库事件');
-      
+
       // 显示成功通知
       success(`已将字段 "${standardFieldToAdd.name}" 添加到字段库`);
-      
+
       // 清除临时状态并关闭模态框
       setStandardFieldToAdd(null);
       setIsSelectGroupModalOpen(false);
@@ -1315,6 +1351,23 @@ const TableDetails: React.FC = () => {
       showError('添加字段到分组失败，请检查控制台日志');
       setIsSelectGroupModalOpen(false);
     }
+  };
+
+  // 处理确认对话框的操作
+  const handlePopConfirmAction = () => {
+    switch (popConfirm.action) {
+      case 'deleteField':
+        handleDeleteField(popConfirm.targetId);
+        break;
+      case 'deleteIndex':
+        handleDeleteIndex(popConfirm.targetId);
+        break;
+      default:
+        console.log('未处理的操作:', popConfirm.action);
+    }
+    
+    // 关闭确认对话框
+    setPopConfirm(prev => ({ ...prev, visible: false }));
   };
 
   if (!tableData) {
@@ -1470,13 +1523,13 @@ const TableDetails: React.FC = () => {
             <div className="modal-body">
               <form onSubmit={(e) => {
                 e.preventDefault();
-                
+
                 // 验证
                 if (!selectedField?.name || !selectedField?.code) {
                   showError('字段名称和代码不能为空');
                   return;
                 }
-                
+
                 // 检查字段名是否已存在（仅限于添加新字段时）
                 if (!isEditing && tableData?.fields.some(f => f.name === selectedField?.name)) {
                   showError(`字段名 "${selectedField?.name}" 已存在，请使用其他名称`);
@@ -1488,7 +1541,7 @@ const TableDetails: React.FC = () => {
                   showError(`字段代码 "${selectedField?.code}" 已存在，请使用其他代码`);
                   return;
                 }
-                
+
                 // 创建字段对象
                 const fieldData = {
                   id: selectedField?.id || Date.now().toString(),
@@ -1503,7 +1556,7 @@ const TableDetails: React.FC = () => {
                   defaultValue: selectedField?.defaultValue,
                   comment: selectedField?.comment
                 };
-                
+
                 // 保存字段
                 handleSaveField(fieldData);
                 setIsFieldModalOpen(false);
@@ -1539,7 +1592,7 @@ const TableDetails: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* 数据类型部分 */}
                 <div className="form-section">
                   <div className="form-section-title">
@@ -1590,7 +1643,7 @@ const TableDetails: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* 约束与设置部分 */}
                 <div className="form-section">
                   <div className="form-section-title">
@@ -1606,7 +1659,7 @@ const TableDetails: React.FC = () => {
                       <div className="checkbox-display"></div>
                       <span className="checkbox-label">主键</span>
                     </label>
-                    
+
                     <label className="custom-checkbox">
                       <input
                         type="checkbox"
@@ -1616,7 +1669,7 @@ const TableDetails: React.FC = () => {
                       <div className="checkbox-display"></div>
                       <span className="checkbox-label">不为空</span>
                     </label>
-                    
+
                     <label className="custom-checkbox">
                       <input
                         type="checkbox"
@@ -1628,7 +1681,7 @@ const TableDetails: React.FC = () => {
                     </label>
                   </div>
                 </div>
-                
+
                 {/* 备注部分 */}
                 <div className="form-section">
                   <div className="form-section-title">
@@ -1645,7 +1698,7 @@ const TableDetails: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* 底部按钮 */}
                 <div className="form-actions">
                   <button type="button" className="btn-cancel" onClick={() => setIsFieldModalOpen(false)}>取消</button>
@@ -1666,6 +1719,15 @@ const TableDetails: React.FC = () => {
         onConfirm={handleAddFieldToGroup}
         groups={fieldGroups}
         fieldName={selectedField?.name}
+      />
+
+      {/* 添加 PopConfirm 组件到组件底部 */}
+      <PopConfirm
+        visible={popConfirm.visible}
+        title={popConfirm.title}
+        position={popConfirm.position}
+        onConfirm={handlePopConfirmAction}
+        onCancel={() => setPopConfirm(prev => ({ ...prev, visible: false }))}
       />
     </div>
   );

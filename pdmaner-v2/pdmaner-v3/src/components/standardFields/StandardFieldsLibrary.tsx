@@ -35,6 +35,7 @@ import { RootState } from '@store/index';
 import { setCurrentProject } from '@store/slices/appSlice';
 import { useNotificationContext } from '../../contexts/NotificationContext';
 import './StandardFieldsLibrary.css';
+import PopConfirm from '../common/PopConfirm';
 
 // 定义字段组和字段数据接口
 interface StandardField {
@@ -72,7 +73,7 @@ const StandardFieldsLibrary: React.FC = () => {
   // 获取redux中的状态和dispatch方法
   const dispatch = useDispatch();
   const currentProject = useSelector((state: RootState) => state.app.currentProject);
-  const { success } = useNotificationContext();
+  const { success, error } = useNotificationContext();
 
   // 状态
   const [collapsed, setCollapsed] = useState(false);
@@ -89,6 +90,14 @@ const StandardFieldsLibrary: React.FC = () => {
   const [draggingField, setDraggingField] = useState<DraggingField | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedField, setSelectedField] = useState<StandardField | null>(null);
+  const [popConfirm, setPopConfirm] = useState({
+    visible: false,
+    title: '',
+    action: '',
+    position: { x: 0, y: 0 },
+    targetId: '',
+    additionalData: {} as Record<string, any>
+  });
 
   // 初始化标准字段库数据
   useEffect(() => {
@@ -370,59 +379,118 @@ const StandardFieldsLibrary: React.FC = () => {
   };
 
   // 删除字段
-  const handleDeleteField = (groupId: string, fieldId: string, skipConfirm = false) => {
+  const handleDeleteField = (groupId: string, fieldId: string, skipConfirm = false, event?: React.MouseEvent) => {
     // 找到要删除的字段名称，用于提示
     const fieldToDelete = fieldGroups.find(g => g.id === groupId)?.fields.find(f => f.id === fieldId);
 
     console.log(`删除字段操作触发：字段名="${fieldToDelete?.name || '未知'}", ID=${fieldId}, 分组ID=${groupId}`);
 
     // 如果skipConfirm为true，则跳过确认对话框直接删除
-    if (skipConfirm || window.confirm(`确定要删除字段 "${fieldToDelete?.name || ''}" 吗？`)) {
-      console.log(`确认删除字段: 字段名="${fieldToDelete?.name || '未知'}", ID=${fieldId}, 分组ID=${groupId}`);
-
-      // 使用函数式更新确保拿到最新状态
-      setFieldGroups(prevGroups => {
-        // 找到当前分组和当前字段
-        const targetGroup = prevGroups.find(g => g.id === groupId);
-        const targetField = targetGroup?.fields.find(f => f.id === fieldId);
-
-        console.log(`目标分组: ${targetGroup?.name || '未找到'}, 目标字段: ${targetField?.name || '未找到'}`);
-
-        // 过滤掉要删除的字段
-        const updatedGroups = prevGroups.map(group =>
-          group.id === groupId
-            ? {
-                ...group,
-                fields: group.fields.filter(field => field.id !== fieldId)
-              }
-            : group
-        );
-
-        console.log(`更新后的字段数: ${updatedGroups.find(g => g.id === groupId)?.fields.length || 0}`);
-        return updatedGroups;
+    if (skipConfirm) {
+      performDeleteField(groupId, fieldId);
+    } else if (event) {
+      // 显示弹出式确认对话框
+      setPopConfirm({
+        visible: true,
+        title: `确定要删除字段 "${fieldToDelete?.name || ''}" 吗？`,
+        action: 'deleteField',
+        position: { x: event.clientX, y: event.clientY },
+        targetId: fieldId,
+        additionalData: { groupId }
       });
-
-      // 显示成功提示
-      success(`字段 "${fieldToDelete?.name || ''}" 已删除`);
+    } else {
+      performDeleteField(groupId, fieldId);
     }
   };
 
+  // 执行删除字段操作
+  const performDeleteField = (groupId: string, fieldId: string) => {
+    const fieldToDelete = fieldGroups.find(g => g.id === groupId)?.fields.find(f => f.id === fieldId);
+    console.log(`确认删除字段: 字段名="${fieldToDelete?.name || '未知'}", ID=${fieldId}, 分组ID=${groupId}`);
+
+    // 使用函数式更新确保拿到最新状态
+    setFieldGroups(prevGroups => {
+      // 找到当前分组和当前字段
+      const targetGroup = prevGroups.find(g => g.id === groupId);
+      const targetField = targetGroup?.fields.find(f => f.id === fieldId);
+
+      console.log(`目标分组: ${targetGroup?.name || '未找到'}, 目标字段: ${targetField?.name || '未找到'}`);
+
+      if (!targetGroup || !targetField) {
+        console.log('未找到要删除的分组或字段，删除失败');
+        return prevGroups;
+      }
+
+      // 删除该分组中的该字段
+      const updatedGroups = prevGroups.map(group => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            fields: group.fields.filter(field => field.id !== fieldId)
+          };
+        }
+        return group;
+      });
+
+      console.log(`更新后的分组数据:`, updatedGroups);
+
+      // 保存到项目中
+      if (currentProject && dispatch) {
+        dispatch(setCurrentProject({
+          ...currentProject,
+          standardFields: updatedGroups
+        }));
+      }
+
+      return updatedGroups;
+    });
+
+    // 显示成功提示
+    success(`字段 "${fieldToDelete?.name || ''}" 已删除`);
+  };
+
   // 删除分组
-  const handleDeleteGroup = (groupId: string) => {
+  const handleDeleteGroup = (groupId: string, event?: React.MouseEvent) => {
     // 找到要删除的分组名称，用于提示
     const groupToDelete = fieldGroups.find(g => g.id === groupId);
 
-    if (window.confirm(`确定要删除分组 "${groupToDelete?.name || ''}" 及其所有字段吗？`)) {
-      setFieldGroups(fieldGroups.filter(group => group.id !== groupId));
-
-      // 如果删除的是当前活动的分组，清除活动分组
-      if (activeGroup && activeGroup.id === groupId) {
-        setActiveGroup(null);
-      }
-
-      // 显示成功提示
-      success(`分组 "${groupToDelete?.name || ''}" 已删除`);
+    if (event) {
+      // 显示弹出式确认对话框
+      setPopConfirm({
+        visible: true,
+        title: `确定要删除分组 "${groupToDelete?.name || ''}" 及其所有字段吗？`,
+        action: 'deleteGroup',
+        position: { x: event.clientX, y: event.clientY },
+        targetId: groupId,
+        additionalData: {}
+      });
+    } else {
+      performDeleteGroup(groupId);
     }
+  };
+
+  // 执行删除分组操作
+  const performDeleteGroup = (groupId: string) => {
+    const groupToDelete = fieldGroups.find(g => g.id === groupId);
+    const updatedGroups = fieldGroups.filter(group => group.id !== groupId);
+    
+    setFieldGroups(updatedGroups);
+
+    // 如果删除的是当前活动的分组，清除活动分组
+    if (activeGroup && activeGroup.id === groupId) {
+      setActiveGroup(null);
+    }
+
+    // 保存到项目中
+    if (currentProject && dispatch) {
+      dispatch(setCurrentProject({
+        ...currentProject,
+        standardFields: updatedGroups
+      }));
+    }
+
+    // 显示成功提示
+    success(`分组 "${groupToDelete?.name || ''}" 已删除`);
   };
 
   // 保存标准字段库配置
@@ -484,48 +552,93 @@ const StandardFieldsLibrary: React.FC = () => {
     }
   };
 
-  // 导入标准字段库
-  const importStandardFields = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // 处理导入确认
+  const handleImportConfirm = (importedGroups: any[], event?: React.MouseEvent) => {
+    if (event) {
+      // 显示弹出式确认对话框
+      setPopConfirm({
+        visible: true,
+        title: `确定要导入这些字段分组吗？这将替换当前的标准字段库。\n发现 ${importedGroups.length} 个分组，共 ${importedGroups.reduce((sum, group) => sum + group.fields.length, 0)} 个字段。`,
+        action: 'importGroups',
+        position: { x: event.clientX, y: event.clientY },
+        targetId: '',
+        additionalData: { importedGroups }
+      });
+    } else {
+      performImportGroups(importedGroups);
+    }
+  };
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const importedGroups = JSON.parse(content) as FieldGroup[];
+  // 执行导入分组操作
+  const performImportGroups = (importedGroups: any[]) => {
+    setFieldGroups(importedGroups);
 
-        // 验证导入的数据
-        if (!Array.isArray(importedGroups)) {
-          throw new Error('导入的数据格式不正确');
-        }
+    // 保存到项目中
+    if (currentProject && dispatch) {
+      dispatch(setCurrentProject({
+        ...currentProject,
+        standardFields: importedGroups
+      }));
+    }
 
-        // 确认导入
-        if (window.confirm(`确定要导入这些字段分组吗？这将替换当前的标准字段库。\n发现 ${importedGroups.length} 个分组，共 ${importedGroups.reduce((sum, group) => sum + group.fields.length, 0)} 个字段。`)) {
-          setFieldGroups(importedGroups);
+    success('标准字段库导入成功');
+  };
 
-          // 保存到项目中
-          if (currentProject && dispatch) {
-            dispatch(setCurrentProject({
-              ...currentProject,
-              standardFields: importedGroups
-            }));
+  // 修改文件导入处理，使用事件参数
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>, event?: React.MouseEvent) => {
+    // ... 保持原有的文件处理逻辑 ...
+    // 修改确认导入的部分如下:
+    
+    try {
+      const file = e.target.files?.[0];
+      if (!file) {
+        error('请选择文件');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+          const importedGroups = JSON.parse(content) as FieldGroup[];
+
+          // 验证导入的数据
+          if (!Array.isArray(importedGroups)) {
+            throw new Error('导入的数据格式不正确');
           }
 
-          success('标准字段库导入成功');
+          // 确认导入
+          handleImportConfirm(importedGroups, event);
+        } catch (err) {
+          console.error('解析导入文件失败:', err);
+          error('解析导入文件失败，请确保是有效的JSON格式');
         }
-      } catch (error) {
-        console.error('导入失败', error);
-        alert('导入失败，请确保文件格式正确');
-      }
+      };
+      reader.readAsText(file);
+    } catch (err) {
+      console.error('导入失败:', err);
+      error('导入失败，请检查文件格式');
+    }
+  };
 
-      // 重置文件输入，以便可以再次选择同一文件
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    };
-
-    reader.readAsText(file);
+  // 处理确认对话框的操作
+  const handlePopConfirmAction = () => {
+    switch (popConfirm.action) {
+      case 'deleteField':
+        performDeleteField(popConfirm.additionalData.groupId, popConfirm.targetId);
+        break;
+      case 'deleteGroup':
+        performDeleteGroup(popConfirm.targetId);
+        break;
+      case 'importGroups':
+        performImportGroups(popConfirm.additionalData.importedGroups);
+        break;
+      default:
+        console.log('未处理的操作:', popConfirm.action);
+    }
+    
+    // 关闭确认对话框
+    setPopConfirm(prev => ({ ...prev, visible: false }));
   };
 
   // 拖拽排序相关函数
@@ -1154,9 +1267,7 @@ const StandardFieldsLibrary: React.FC = () => {
                         title="删除分组"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`确定要删除分组 "${group.name}" 吗？此操作不可撤销。`)) {
-                            handleDeleteGroup(group.id);
-                          }
+                          handleDeleteGroup(group.id, e);
                         }}
                       >
                         <DeleteOutlined />
@@ -1228,7 +1339,7 @@ const StandardFieldsLibrary: React.FC = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               if (selectedField) {
-                                handleDeleteField(currentActiveGroup.id, selectedField.id);
+                                handleDeleteField(currentActiveGroup.id, selectedField.id, false, e);
                               } else {
                                 alert("请先选择一个字段");
                               }
@@ -1425,7 +1536,16 @@ const StandardFieldsLibrary: React.FC = () => {
         ref={fileInputRef}
         style={{ display: 'none' }}
         accept=".json"
-        onChange={importStandardFields}
+        onChange={(e) => handleFileImport(e, e.nativeEvent as unknown as React.MouseEvent)}
+      />
+
+      {/* 添加 PopConfirm 组件 */}
+      <PopConfirm
+        visible={popConfirm.visible}
+        title={popConfirm.title}
+        position={popConfirm.position}
+        onConfirm={handlePopConfirmAction}
+        onCancel={() => setPopConfirm(prev => ({ ...prev, visible: false }))}
       />
     </div>
   );

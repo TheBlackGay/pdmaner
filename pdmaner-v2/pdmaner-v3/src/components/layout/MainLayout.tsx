@@ -32,6 +32,8 @@ import StandardFieldsLibrary from '../standardFields/StandardFieldsLibrary';
 import NewDomainModal from '@components/modals/NewDomainModal';
 import NewTableModal from '@components/modals/NewTableModal';
 import RenameTableModal from '@components/modals/RenameTableModal';
+import EditTableModal from '@components/modals/EditTableModal';
+import PopConfirm from '@components/common/PopConfirm';
 
 // 样式
 import './MainLayout.css';
@@ -119,6 +121,19 @@ const MainLayout: React.FC = () => {
   // 重命名表模态框状态
   const [isRenameTableModalOpen, setIsRenameTableModalOpen] = useState(false);
   const [tableToRename, setTableToRename] = useState<{id: string, name: string} | null>(null);
+  
+  // 编辑表模态框状态
+  const [isEditTableModalOpen, setIsEditTableModalOpen] = useState(false);
+  const [tableToEdit, setTableToEdit] = useState<{id: string, name: string, code: string, comment?: string, domainId: string, type: string} | null>(null);
+  
+  // 冒泡确认状态
+  const [popConfirm, setPopConfirm] = useState({
+    visible: false,
+    title: '',
+    action: '',
+    position: { x: 0, y: 0 },
+    targetId: ''
+  });
   
   // 项目概览显示状态
   const [showProjectOverview, setShowProjectOverview] = useState(true);
@@ -626,8 +641,32 @@ const MainLayout: React.FC = () => {
         }
         break;
       
+      case 'edit':
+        // 表编辑操作 - 打开编辑表模态框
+        if (contextMenu.targetId && contextMenu.type === 'table' && currentProject) {
+          const tableId = contextMenu.targetId;
+          
+          // 查找表数据
+          const table = currentProject.tables.find(t => t.id === tableId);
+          if (table) {
+            // 设置要编辑的表信息
+            setTableToEdit({
+              id: table.id,
+              name: table.name,
+              code: table.code,
+              comment: table.comment,
+              domainId: table.domainId,
+              type: table.type
+            });
+            
+            // 打开编辑表模态框
+            setIsEditTableModalOpen(true);
+          }
+        }
+        break;
+      
       case 'rename':
-        // 表重命名
+        // 表重命名操作
         if (contextMenu.targetId && contextMenu.type === 'table') {
           const tableId = contextMenu.targetId;
           
@@ -643,59 +682,108 @@ const MainLayout: React.FC = () => {
         }
         break;
       
+      case 'copy':
+        // 表复制操作
+        if (contextMenu.targetId && contextMenu.type === 'table' && currentProject) {
+          const tableId = contextMenu.targetId;
+          
+          // 查找表数据
+          const tableToCopy = currentProject.tables.find(t => t.id === tableId);
+          if (!tableToCopy) return;
+          
+          try {
+            // 创建表的副本
+            const now = Date.now();
+            const newTableId = generateUUID();
+            
+            // 创建新的表对象（深拷贝）
+            const newTable = {
+              ...JSON.parse(JSON.stringify(tableToCopy)),
+              id: newTableId,
+              name: `${tableToCopy.name}_copy`, // 名称添加_copy后缀
+              code: `${tableToCopy.code}_copy`, // 代码添加_copy后缀
+              createTime: now,
+              lastModified: now
+            };
+            
+            // 更新项目数据
+            const updatedTables = [...currentProject.tables, newTable];
+            const updatedProject = {
+              ...currentProject,
+              tables: updatedTables,
+              lastModified: now
+            };
+            
+            // 更新Redux状态
+            dispatch(setCurrentProject(updatedProject));
+            
+            // 保存到localStorage
+            saveProject(updatedProject);
+            
+            // 确保相关菜单展开
+            const domainId = newTable.domainId;
+            const needExpandDomain = !expandedGroups.includes(`domain_${domainId}`);
+            const needExpandTables = !expandedGroups.includes(`tables_${domainId}`);
+            
+            if (needExpandDomain || needExpandTables) {
+              setExpandedGroups(prev => {
+                const newExpandedGroups = [...prev];
+                
+                if (needExpandDomain) {
+                  newExpandedGroups.push(`domain_${domainId}`);
+                }
+                
+                if (needExpandTables) {
+                  newExpandedGroups.push(`tables_${domainId}`);
+                }
+                
+                return newExpandedGroups;
+              });
+            }
+            
+            // 显示成功消息
+            success(`表 "${tableToCopy.name}" 已成功复制`);
+          } catch (err) {
+            console.error('复制表失败:', err);
+            error('复制表失败，请检查控制台错误日志');
+          }
+        }
+        break;
+      
+      case 'delete':
+        // 表删除操作
+        if (contextMenu.targetId && contextMenu.type === 'table' && currentProject) {
+          const tableId = contextMenu.targetId;
+          
+          // 查找表数据
+          const tableToDelete = currentProject.tables.find(t => t.id === tableId);
+          if (!tableToDelete) return;
+          
+          // 显示确认弹窗
+          setPopConfirm({
+            visible: true,
+            title: `确定要删除表 "${tableToDelete.name}" 吗？此操作不可恢复。`,
+            action: 'delete',
+            position: { x: contextMenu.x, y: contextMenu.y },
+            targetId: tableId
+          });
+        }
+        break;
+      
       case 'deleteDomain':
         // 主题域删除
         if (contextMenu.targetId && contextMenu.type === 'domain' && currentProject) {
           const domainId = contextMenu.targetId.split('_').slice(1).join('_');
+          const domainName = getDomainNameById(domainId);
           
-          // 确认是否要删除
-          if (window.confirm(`确定要删除主题域 "${getDomainNameById(domainId)}" 吗？删除主题域将同时删除其下所有数据表。`)) {
-            // 获取要删除的主题域
-            const domainToDelete = currentProject.domains.find(d => d.id === domainId);
-            if (!domainToDelete) return;
-            
-            try {
-              // 筛选出不属于该主题域的表
-              const filteredTables = currentProject.tables.filter(table => table.domainId !== domainId);
-              
-              // 筛选出不是该要删除的主题域
-              const filteredDomains = currentProject.domains.filter(domain => domain.id !== domainId);
-              
-              // 更新项目数据
-              const updatedProject = {
-                ...currentProject,
-                domains: filteredDomains,
-                tables: filteredTables,
-                lastModified: Date.now()
-              };
-              
-              // 更新Redux状态
-              dispatch(setCurrentProject(updatedProject));
-              
-              // 保存到localStorage
-              saveProject(updatedProject);
-              
-              // 关闭所有与该域相关的标签页
-              const domainTables = currentProject.tables.filter(t => t.domainId === domainId);
-              const tableIds = domainTables.map(t => t.id);
-              
-              // 筛选出不在要删除的表中的标签页
-              const filteredTabs = tabs.filter(tab => !tableIds.includes(tab.id));
-              setTabs(filteredTabs);
-              
-              // 如果正在显示的标签页属于被删除的，就切换到首页
-              if (activeTab && tableIds.includes(activeTab)) {
-                setActiveTab('dashboard');
-                navigate('/app/dashboard');
-              }
-              
-              // 展示成功消息
-              success(`主题域 "${domainToDelete.name}" 及其所有数据表已成功删除`);
-            } catch (err) {
-              console.error('删除主题域失败:', err);
-              error('删除主题域失败，请检查控制台错误日志');
-            }
-          }
+          // 显示确认弹窗
+          setPopConfirm({
+            visible: true,
+            title: `确定要删除主题域 "${domainName}" 吗？删除主题域将同时删除其下所有数据表。`,
+            action: 'deleteDomain',
+            position: { x: contextMenu.x, y: contextMenu.y },
+            targetId: contextMenu.targetId
+          });
         }
         break;
       
@@ -817,12 +905,13 @@ const MainLayout: React.FC = () => {
 
   // 关闭项目
   const handleCloseProject = () => {
-    if (window.confirm('确定要关闭当前项目吗？未保存的更改将丢失。')) {
-      // 清除当前项目
-      dispatch(setCurrentProject(null));
-      // 返回欢迎页面
-      navigate('/');
-    }
+    setPopConfirm({
+      visible: true,
+      title: '确定要关闭当前项目吗？未保存的更改将丢失。',
+      action: 'closeProject',
+      position: { x: window.innerWidth / 2 - 150, y: window.innerHeight / 2 - 80 },
+      targetId: ''
+    });
   };
 
   // 检查当前是否在数据模型相关页面
@@ -1040,11 +1129,260 @@ const MainLayout: React.FC = () => {
         onClose={() => setIsRenameTableModalOpen(false)}
         onConfirm={(newName) => {
           // 处理重命名表逻辑
-          // 这里需要实现重命名表的逻辑
-          console.log('重命名表:', tableToRename?.id, newName);
+          if (!tableToRename || !currentProject) {
+            setIsRenameTableModalOpen(false);
+            return;
+          }
+          
+          try {
+            // 查找要重命名的表
+            const tableIndex = currentProject.tables.findIndex(t => t.id === tableToRename.id);
+            if (tableIndex === -1) {
+              error('找不到要重命名的表');
+              setIsRenameTableModalOpen(false);
+              return;
+            }
+            
+            // 创建更新后的表对象
+            const updatedTable = {
+              ...currentProject.tables[tableIndex],
+              name: newName,
+              lastModified: Date.now()
+            };
+            
+            // 更新项目数据
+            const updatedTables = [...currentProject.tables];
+            updatedTables[tableIndex] = updatedTable;
+            
+            const updatedProject = {
+              ...currentProject,
+              tables: updatedTables,
+              lastModified: Date.now()
+            };
+            
+            // 更新Redux状态
+            dispatch(setCurrentProject(updatedProject));
+            
+            // 保存到localStorage
+            saveProject(updatedProject);
+            
+            // 如果有相关的标签页，也需要更新标签页标题
+            setTabs(prev => prev.map(tab => 
+              tab.id === tableToRename.id 
+                ? { ...tab, title: newName }
+                : tab
+            ));
+            
+            // 显示成功消息
+            success(`表已重命名为 "${newName}"`);
+          } catch (err) {
+            console.error('重命名表失败:', err);
+            error('重命名表失败，请检查控制台错误日志');
+          }
+          
+          // 关闭模态框并清除状态
           setIsRenameTableModalOpen(false);
+          setTableToRename(null);
         }}
         currentName={tableToRename?.name || ''}
+      />
+
+      {/* 编辑表模态框 */}
+      <EditTableModal 
+        isOpen={isEditTableModalOpen}
+        onClose={() => setIsEditTableModalOpen(false)}
+        onConfirm={(newName, newCode, newComment, newDomainId, newType) => {
+          // 处理编辑表逻辑
+          if (!tableToEdit || !currentProject) {
+            setIsEditTableModalOpen(false);
+            return;
+          }
+          
+          try {
+            // 查找要编辑的表
+            const tableIndex = currentProject.tables.findIndex(t => t.id === tableToEdit.id);
+            if (tableIndex === -1) {
+              error('找不到要编辑的表');
+              setIsEditTableModalOpen(false);
+              return;
+            }
+            
+            // 创建更新后的表对象
+            const updatedTable = {
+              ...currentProject.tables[tableIndex],
+              name: newName,
+              code: newCode,
+              comment: newComment,
+              domainId: newDomainId,
+              type: newType,
+              lastModified: Date.now()
+            };
+            
+            // 更新项目数据
+            const updatedTables = [...currentProject.tables];
+            updatedTables[tableIndex] = updatedTable;
+            
+            const updatedProject = {
+              ...currentProject,
+              tables: updatedTables,
+              lastModified: Date.now()
+            };
+            
+            // 更新Redux状态
+            dispatch(setCurrentProject(updatedProject));
+            
+            // 保存到localStorage
+            saveProject(updatedProject);
+            
+            // 如果有相关的标签页，也需要更新标签页标题
+            setTabs(prev => prev.map(tab => 
+              tab.id === tableToEdit.id 
+                ? { ...tab, title: newName }
+                : tab
+            ));
+            
+            // 显示成功消息
+            success(`表已成功编辑`);
+          } catch (err) {
+            console.error('编辑表失败:', err);
+            error('编辑表失败，请检查控制台错误日志');
+          }
+          
+          // 关闭模态框并清除状态
+          setIsEditTableModalOpen(false);
+          setTableToEdit(null);
+        }}
+        table={tableToEdit}
+      />
+      
+      {/* 冒泡确认 */}
+      <PopConfirm
+        visible={popConfirm.visible}
+        title={popConfirm.title}
+        position={popConfirm.position}
+        onConfirm={() => {
+          // 根据操作类型处理确认逻辑
+          switch (popConfirm.action) {
+            case 'delete':
+              // 执行删除表操作
+              if (popConfirm.targetId && currentProject) {
+                const tableId = popConfirm.targetId;
+                const tableToDelete = currentProject.tables.find(t => t.id === tableId);
+                
+                if (tableToDelete) {
+                  try {
+                    // 筛选出要保留的表
+                    const filteredTables = currentProject.tables.filter(t => t.id !== tableId);
+                    
+                    // 更新项目数据
+                    const updatedProject = {
+                      ...currentProject,
+                      tables: filteredTables,
+                      lastModified: Date.now()
+                    };
+                    
+                    // 更新Redux状态
+                    dispatch(setCurrentProject(updatedProject));
+                    
+                    // 保存到localStorage
+                    saveProject(updatedProject);
+                    
+                    // 如果当前选中的表就是被删除的表，需要清除选中状态
+                    if (selectedTableKey === tableId) {
+                      setSelectedTableKey('');
+                    }
+                    
+                    // 从标签页中移除该表
+                    setTabs(prev => prev.filter(tab => tab.id !== tableId));
+                    
+                    // 如果当前激活的标签页是被删除的表，需要导航到首页
+                    if (activeTab === tableId) {
+                      setActiveTab('');
+                      navigate('/app');
+                    }
+                    
+                    // 显示成功消息
+                    success(`表 "${tableToDelete.name}" 已成功删除`);
+                  } catch (err) {
+                    console.error('删除表失败:', err);
+                    error('删除表失败，请检查控制台错误日志');
+                  }
+                }
+              }
+              break;
+              
+            case 'deleteDomain':
+              // 执行删除主题域操作
+              if (popConfirm.targetId && currentProject) {
+                const domainId = popConfirm.targetId.split('_').slice(1).join('_');
+                const domainToDelete = currentProject.domains.find(d => d.id === domainId);
+                
+                if (domainToDelete) {
+                  try {
+                    // 筛选出不属于该主题域的表
+                    const filteredTables = currentProject.tables.filter(table => table.domainId !== domainId);
+                    
+                    // 筛选出不是该要删除的主题域
+                    const filteredDomains = currentProject.domains.filter(domain => domain.id !== domainId);
+                    
+                    // 更新项目数据
+                    const updatedProject = {
+                      ...currentProject,
+                      domains: filteredDomains,
+                      tables: filteredTables,
+                      lastModified: Date.now()
+                    };
+                    
+                    // 更新Redux状态
+                    dispatch(setCurrentProject(updatedProject));
+                    
+                    // 保存到localStorage
+                    saveProject(updatedProject);
+                    
+                    // 关闭所有与该域相关的标签页
+                    const domainTables = currentProject.tables.filter(t => t.domainId === domainId);
+                    const tableIds = domainTables.map(t => t.id);
+                    
+                    // 筛选出不在要删除的表中的标签页
+                    const filteredTabs = tabs.filter(tab => !tableIds.includes(tab.id));
+                    setTabs(filteredTabs);
+                    
+                    // 如果正在显示的标签页属于被删除的，就切换到首页
+                    if (activeTab && tableIds.includes(activeTab)) {
+                      setActiveTab('dashboard');
+                      navigate('/app/dashboard');
+                    }
+                    
+                    // 展示成功消息
+                    success(`主题域 "${domainToDelete.name}" 及其所有数据表已成功删除`);
+                  } catch (err) {
+                    console.error('删除主题域失败:', err);
+                    error('删除主题域失败，请检查控制台错误日志');
+                  }
+                }
+              }
+              break;
+              
+            case 'closeProject':
+              // 执行关闭项目操作
+              dispatch(setCurrentProject(null));
+              // 返回欢迎页面
+              navigate('/');
+              break;
+              
+            // 可以添加其他需要确认的操作
+              
+            default:
+              console.log('未处理的确认操作:', popConfirm.action);
+          }
+          
+          // 关闭确认框
+          setPopConfirm(prev => ({ ...prev, visible: false }));
+        }}
+        onCancel={() => {
+          // 关闭确认框
+          setPopConfirm(prev => ({ ...prev, visible: false }));
+        }}
       />
     </div>
   );
