@@ -55,3 +55,38 @@
   color: #05d9e8;
   box-shadow: 0 0 8px rgba(5, 217, 232, 0.5);
 }
+
+/* 导入SQL按钮样式 */
+.import-sql-btn {
+  position: relative;
+  overflow: visible;
+  margin-left: 5px !important;
+}
+
+.import-sql-btn::before {
+  content: 'SQL';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 9px;
+  background: #05d9e8;
+  color: #14152b;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 0 5px rgba(5, 217, 232, 0.7);
+  opacity: 0.9;
+  letter-spacing: -0.5px;
+  transform: scale(0.9);
+  transition: all 0.3s;
+}
+
+.import-sql-btn:hover::before {
+  transform: scale(1);
+  opacity: 1;
+  box-shadow: 0 0 8px rgba(5, 217, 232, 0.9);
+}

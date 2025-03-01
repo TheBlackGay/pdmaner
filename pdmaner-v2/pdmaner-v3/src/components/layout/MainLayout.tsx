@@ -33,6 +33,7 @@ import NewDomainModal from '@components/modals/NewDomainModal';
 import NewTableModal from '@components/modals/NewTableModal';
 import RenameTableModal from '@components/modals/RenameTableModal';
 import EditTableModal from '@components/modals/EditTableModal';
+import ImportSQLModal from '@components/modals/ImportSQLModal';
 import PopConfirm from '@components/common/PopConfirm';
 
 // 样式
@@ -926,6 +927,97 @@ const MainLayout: React.FC = () => {
     setShowStandardFields(isDataModelPage());
   }, [location.pathname]);
 
+  // 添加导入SQL模态框状态
+  const [isImportSQLModalOpen, setIsImportSQLModalOpen] = useState(false);
+  
+  // 处理导入SQL
+  const handleImportSQL = () => {
+    setIsImportSQLModalOpen(true);
+  };
+  
+  // 处理导入解析后的SQL结果
+  const handleImportSQLResult = (statements: any[], dbType: string) => {
+    if (!currentProject) return;
+    
+    try {
+      // 复制当前项目
+      const updatedProject = { ...currentProject };
+      
+      // 查找默认主题域
+      let defaultDomain = updatedProject.domains.find(d => d.code === 'default');
+      
+      // 如果不存在，则创建一个默认主题域
+      if (!defaultDomain) {
+        const newDomainId = generateUUID();
+        defaultDomain = {
+          id: newDomainId,
+          name: '默认主题域',
+          code: 'default',
+          createTime: Date.now(),
+          lastModified: Date.now()
+        };
+        
+        updatedProject.domains = [...updatedProject.domains, defaultDomain];
+      }
+      
+      // 创建新表并添加到项目
+      const newTables = statements.map(stmt => {
+        const tableId = generateUUID();
+        const now = Date.now();
+        
+        return {
+          id: tableId,
+          name: stmt.name,
+          code: stmt.code,
+          comment: stmt.comment || '',
+          domainId: defaultDomain.id,
+          type: 'table',
+          fields: stmt.fields.map((field: any) => ({
+            ...field,
+            id: generateUUID() // 确保字段有唯一ID
+          })),
+          indexes: stmt.indexes.map((index: any) => ({
+            ...index,
+            id: generateUUID() // 确保索引有唯一ID
+          })),
+          createTime: now,
+          lastModified: now
+        };
+      });
+      
+      // 添加新表到项目
+      updatedProject.tables = [...updatedProject.tables, ...newTables];
+      updatedProject.lastModified = Date.now();
+      
+      // 更新Redux状态
+      dispatch(setCurrentProject(updatedProject));
+      
+      // 保存到localStorage
+      saveProject(updatedProject);
+      
+      // 确保模型组展开
+      if (!expandedGroups.includes('model')) {
+        setExpandedGroups(prev => [...prev, 'model']);
+      }
+      
+      // 确保默认主题域展开
+      if (!expandedGroups.includes(`domain_${defaultDomain.id}`)) {
+        setExpandedGroups(prev => [...prev, `domain_${defaultDomain.id}`]);
+      }
+      
+      // 确保表组展开
+      if (!expandedGroups.includes(`tables_${defaultDomain.id}`)) {
+        setExpandedGroups(prev => [...prev, `tables_${defaultDomain.id}`]);
+      }
+      
+      // 显示成功消息
+      success(`成功导入 ${newTables.length} 个表`);
+    } catch (err) {
+      console.error('导入SQL失败', err);
+      error('导入SQL失败，请检查控制台错误日志');
+    }
+  };
+
   return (
     <div className={`app-layout ${darkMode ? 'dark-mode' : ''}`}>
       {/* 头部组件 */}
@@ -941,6 +1033,7 @@ const MainLayout: React.FC = () => {
         onSaveProject={() => handleSaveProject()}
         onToggleAutoSave={toggleAutoSave}
         onToggleDarkMode={handleToggleDarkMode}
+        onImportSQL={handleImportSQL}
         autoSaveEnabled={autoSaveEnabled}
         darkMode={darkMode}
       />
@@ -1383,6 +1476,13 @@ const MainLayout: React.FC = () => {
           // 关闭确认框
           setPopConfirm(prev => ({ ...prev, visible: false }));
         }}
+      />
+
+      {/* 导入SQL模态框 */}
+      <ImportSQLModal
+        isOpen={isImportSQLModalOpen}
+        onClose={() => setIsImportSQLModalOpen(false)}
+        onImport={handleImportSQLResult}
       />
     </div>
   );

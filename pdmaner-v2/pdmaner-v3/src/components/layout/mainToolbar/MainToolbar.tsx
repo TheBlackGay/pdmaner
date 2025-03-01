@@ -9,7 +9,8 @@ import {
   CheckCircleOutlined,
   SyncOutlined,
   QuestionCircleOutlined,
-  SearchOutlined
+  SearchOutlined,
+  CodeOutlined
 } from '@ant-design/icons';
 import './MainToolbar.css';
 
@@ -17,6 +18,7 @@ interface MainToolbarProps {
   onSaveProject: () => void;
   onToggleAutoSave: () => void;
   onToggleDarkMode: () => void;
+  onImportSQL?: () => void;
   autoSaveEnabled: boolean;
   darkMode: boolean;
 }
@@ -25,6 +27,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   onSaveProject,
   onToggleAutoSave,
   onToggleDarkMode,
+  onImportSQL,
   autoSaveEnabled,
   darkMode
 }) => {
@@ -34,6 +37,13 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         <button title="保存项目" onClick={onSaveProject}><SaveOutlined /></button>
         <button title="导入"><ImportOutlined /></button>
         <button title="导出"><ExportOutlined /></button>
+        <button 
+          title="导入SQL" 
+          onClick={onImportSQL}
+          className="import-sql-btn"
+        >
+          <CodeOutlined />
+        </button>
       </div>
       <div className="toolbar-group">
         <button title="撤销"><span>↩</span></button>
