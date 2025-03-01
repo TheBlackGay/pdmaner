@@ -7,10 +7,18 @@
   position: relative;
 }
 
+.diagram-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  width: 100%;
+}
+
 .diagram-container {
   flex: 1;
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 /* 加载指示器 */
@@ -456,4 +464,30 @@
   .sidebar-tools {
     width: 100%;
   }
+}
+
+/* 确保X6图形容器占满整个空间 */
+.x6-graph-scroller {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 移除可能造成内边距的样式 */
+.x6-graph {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.diagram-editor {
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.x6-graph-container {
+  width: 100% !important;
+  height: 100% !important;
 } 

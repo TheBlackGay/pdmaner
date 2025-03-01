@@ -15,28 +15,27 @@ import {
   SnippetsOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons';
 import './DiagramToolbar.css';
 
 interface DiagramToolbarProps {
-  onZoomIn: () => void;
-  onZoomOut: () => void;
+  onToggleFullscreen: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onSave: () => void;
   onExportPNG: () => void;
   onExportSVG: () => void;
-  onAddTable: () => void;
-  onAddAssociation: () => void;
   onAutoLayout: () => void;
   onDelete: () => void;
   onCopy: () => void;
   onCut: () => void;
   onPaste: () => void;
-  onToggleFullscreen: () => void;
-  onResetView: () => void;
+  onToggleSidebar: () => void;
   isFullscreen: boolean;
+  showSidebar: boolean;
   canUndo: boolean;
   canRedo: boolean;
   canCopy: boolean;
@@ -46,23 +45,20 @@ interface DiagramToolbarProps {
 }
 
 const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
-  onZoomIn,
-  onZoomOut,
+  onToggleFullscreen,
   onUndo,
   onRedo,
   onSave,
   onExportPNG,
   onExportSVG,
-  onAddTable,
-  onAddAssociation,
   onAutoLayout,
   onDelete,
   onCopy,
   onCut,
   onPaste,
-  onToggleFullscreen,
-  onResetView,
+  onToggleSidebar,
   isFullscreen,
+  showSidebar,
   canUndo,
   canRedo,
   canCopy,
@@ -75,28 +71,24 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
       <div className="toolbar-group">
         <button
           className="toolbar-button"
-          onClick={onZoomIn}
-          title="放大"
+          onClick={onToggleSidebar}
+          title={showSidebar ? "隐藏侧边栏" : "显示侧边栏"}
         >
-          <ZoomInOutlined />
+          {showSidebar ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />}
         </button>
+        
+        <div className="toolbar-divider"></div>
+        
         <button
           className="toolbar-button"
-          onClick={onZoomOut}
-          title="缩小"
+          onClick={onSave}
+          title="保存"
         >
-          <ZoomOutOutlined />
+          <SaveOutlined />
         </button>
-        <button
-          className="toolbar-button"
-          onClick={onResetView}
-          title="重置视图"
-        >
-          <ReloadOutlined />
-        </button>
-      </div>
-
-      <div className="toolbar-group">
+        
+        <div className="toolbar-divider"></div>
+        
         <button
           className="toolbar-button"
           onClick={onUndo}
@@ -105,6 +97,7 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
         >
           <UndoOutlined />
         </button>
+        
         <button
           className="toolbar-button"
           onClick={onRedo}
@@ -113,33 +106,9 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
         >
           <RedoOutlined />
         </button>
-      </div>
-
-      <div className="toolbar-group">
-        <button
-          className="toolbar-button"
-          onClick={onAddTable}
-          title="添加表"
-        >
-          <TableOutlined />
-        </button>
-        <button
-          className="toolbar-button"
-          onClick={onAddAssociation}
-          title="添加关联"
-        >
-          <NodeIndexOutlined />
-        </button>
-        <button
-          className="toolbar-button"
-          onClick={onAutoLayout}
-          title="自动布局"
-        >
-          <LayoutOutlined />
-        </button>
-      </div>
-
-      <div className="toolbar-group">
+        
+        <div className="toolbar-divider"></div>
+        
         <button
           className="toolbar-button"
           onClick={onCopy}
@@ -148,6 +117,7 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
         >
           <CopyOutlined />
         </button>
+        
         <button
           className="toolbar-button"
           onClick={onCut}
@@ -156,6 +126,7 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
         >
           <ScissorOutlined />
         </button>
+        
         <button
           className="toolbar-button"
           onClick={onPaste}
@@ -164,6 +135,7 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
         >
           <SnippetsOutlined />
         </button>
+        
         <button
           className="toolbar-button"
           onClick={onDelete}
@@ -172,16 +144,19 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
         >
           <DeleteOutlined />
         </button>
-      </div>
-
-      <div className="toolbar-group">
+        
+        <div className="toolbar-divider"></div>
+        
         <button
           className="toolbar-button"
-          onClick={onSave}
-          title="保存"
+          onClick={onAutoLayout}
+          title="自动布局"
         >
-          <SaveOutlined />
+          <LayoutOutlined />
         </button>
+        
+        <div className="toolbar-divider"></div>
+        
         <div className="toolbar-dropdown">
           <button
             className="toolbar-button"
@@ -204,6 +179,9 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
             </button>
           </div>
         </div>
+        
+        <div className="toolbar-divider"></div>
+        
         <button
           className="toolbar-button"
           onClick={onToggleFullscreen}

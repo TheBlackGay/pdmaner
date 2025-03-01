@@ -1664,6 +1664,13 @@ const MainLayout: React.FC = () => {
         visible={popConfirm.visible}
         title={popConfirm.title}
         position={popConfirm.position}
+        onCancel={() => setPopConfirm({
+          visible: false,
+          title: '',
+          position: { x: 0, y: 0 },
+          action: '',
+          targetId: ''
+        })}
         onConfirm={() => {
           // 根据操作类型处理确认逻辑
           switch (popConfirm.action) {
@@ -1756,6 +1763,13 @@ const MainLayout: React.FC = () => {
               console.log('未实现的菜单操作:', popConfirm.action);
           }
         }}
+      />
+
+      {/* 添加ImportSQL模态框 */}
+      <ImportSQLModal
+        isOpen={isImportSQLModalOpen}
+        onClose={() => setIsImportSQLModalOpen(false)}
+        onImport={handleImportSQLResult}
       />
     </div>
   );

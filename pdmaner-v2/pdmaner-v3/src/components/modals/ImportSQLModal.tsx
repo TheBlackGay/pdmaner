@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileTextOutlined,
   DatabaseOutlined,
@@ -32,6 +32,32 @@ const ImportSQLModal: React.FC<ImportSQLModalProps> = ({
     data?: any[];
     errors?: string[];
   } | null>(null);
+  
+  // 引用解析结果容器，用于滚动控制
+  const resultContainerRef = useRef<HTMLDivElement>(null);
+  
+  // 重置所有状态
+  const resetState = () => {
+    setSqlInput('');
+    setDbType('MySQL');
+    setIsParsing(false);
+    setParseResult(null);
+  };
+  
+  // 关闭弹窗时重置状态
+  const handleClose = () => {
+    resetState();
+    onClose();
+  };
+  
+  // 确认导入时重置状态
+  const handleConfirmImport = () => {
+    if (parseResult?.success && parseResult.data) {
+      onImport(parseResult.data, dbType);
+      resetState();
+      onClose();
+    }
+  };
 
   // 解析SQL语句
   const handleParse = () => {
@@ -68,6 +94,11 @@ const ImportSQLModal: React.FC<ImportSQLModalProps> = ({
           message: `成功解析 ${parsedStatements.length} 个表结构`,
           data: parsedStatements
         });
+        
+        // 解析成功后，滚动到结果区域
+        setTimeout(() => {
+          resultContainerRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
     } catch (error) {
       console.error('解析SQL出错:', error);
@@ -78,14 +109,6 @@ const ImportSQLModal: React.FC<ImportSQLModalProps> = ({
       });
     } finally {
       setIsParsing(false);
-    }
-  };
-
-  // 导入解析的数据
-  const handleConfirmImport = () => {
-    if (parseResult?.success && parseResult.data) {
-      onImport(parseResult.data, dbType);
-      onClose();
     }
   };
 
@@ -268,28 +291,47 @@ CREATE TABLE orders (
 
   return (
     <div className="modal-backdrop" onClick={e => {
-      if (e.target === e.currentTarget) onClose();
+      if (e.target === e.currentTarget) handleClose();
     }}>
-      <div className="modal-container cyber-modal large" onClick={e => e.stopPropagation()}>
+      <div className="modal-container cyber-modal large import-sql-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>导入SQL</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <button className="close-btn" onClick={handleClose}>×</button>
         </div>
-        <div className="modal-body">
+        
+        <div className="modal-body compact">
+          {/* 数据库类型选择 - 移至顶部 */}
+          <div className="db-type-selector">
+            <div className="form-group db-type-group">
+              <label><DatabaseOutlined /> 数据库类型</label>
+              <select
+                className="cyber-select"
+                value={dbType}
+                onChange={e => setDbType(e.target.value)}
+              >
+                <option value="MySQL">MySQL</option>
+                <option value="PostgreSQL">PostgreSQL</option>
+                <option value="Oracle">Oracle</option>
+                <option value="SQLServer">SQL Server</option>
+              </select>
+            </div>
+          </div>
+          
+          {/* SQL输入区域 */}
           <div className="form-section">
             <div className="cyber-section-title">
               <FileTextOutlined /> SQL 语句
             </div>
 
             <div className="form-row full-width">
-              <div className="form-group">
+              <div className="form-group sql-input-group">
                 <div className="sql-input-container">
                   <textarea
                     className="sql-input"
                     value={sqlInput}
                     onChange={e => setSqlInput(e.target.value)}
                     placeholder="请输入 CREATE TABLE 语句..."
-                    rows={12}
+                    rows={10}
                   />
                 </div>
                 <div className="sql-input-helper">
@@ -307,30 +349,15 @@ CREATE TABLE orders (
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>数据库类型</label>
-                <select
-                  className="cyber-select"
-                  value={dbType}
-                  onChange={e => setDbType(e.target.value)}
-                >
-                  <option value="MySQL">MySQL</option>
-                  <option value="PostgreSQL">PostgreSQL</option>
-                  <option value="Oracle">Oracle</option>
-                  <option value="SQLServer">SQL Server</option>
-                </select>
-              </div>
-              <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="parse-btn"
-                  onClick={handleParse}
-                  disabled={isParsing || !sqlInput.trim()}
-                >
-                  {isParsing ? <LoadingOutlined /> : <DatabaseOutlined />} 解析 SQL
-                </button>
-              </div>
+            <div className="form-row parse-button-row">
+              <button
+                type="button"
+                className="parse-btn"
+                onClick={handleParse}
+                disabled={isParsing || !sqlInput.trim()}
+              >
+                {isParsing ? <LoadingOutlined /> : <DatabaseOutlined />} 解析 SQL
+              </button>
             </div>
           </div>
 
@@ -341,8 +368,12 @@ CREATE TABLE orders (
             </div>
           )}
 
+          {/* 解析结果区域 */}
           {parseResult && (
-            <div className={`form-section parse-result ${parseResult.success ? 'success' : 'error'}`}>
+            <div 
+              ref={resultContainerRef}
+              className={`form-section parse-result ${parseResult.success ? 'success' : 'error'}`}
+            >
               <div className="result-header">
                 {parseResult.success ? (
                   <>
@@ -358,7 +389,7 @@ CREATE TABLE orders (
               </div>
 
               {parseResult.success ? (
-                <>
+                <div className="parse-success-content">
                   <div className="parse-stats">
                     <div className="stat-item">
                       <TableOutlined />
@@ -399,7 +430,7 @@ CREATE TABLE orders (
                       ))}
                     </div>
                   </div>
-                </>
+                </div>
               ) : (
                 <div className="error-list">
                   <h4>解析错误</h4>
@@ -415,7 +446,7 @@ CREATE TABLE orders (
         </div>
 
         <div className="modal-footer">
-          <button type="button" className="cancel-btn" onClick={onClose}>取消</button>
+          <button type="button" className="cancel-btn" onClick={handleClose}>取消</button>
           {parseResult?.success && parseResult.data && (
             <button
               type="button" 
