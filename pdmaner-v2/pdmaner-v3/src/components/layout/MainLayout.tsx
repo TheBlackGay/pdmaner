@@ -388,33 +388,8 @@ const MainLayout: React.FC = () => {
         // 如果已经展开，则折叠
         return prev.filter(key => key !== menuKey);
       } else {
-        // 如果是展开操作，需要处理一些特殊情况
-        let newExpandedGroups = [...prev, menuKey];
-        
-        // 若是数据表、逻辑实体、多表透视等类型，需要关闭同级其他菜单
-        if (menuKey.startsWith('tables_') || 
-            menuKey.startsWith('entities_') || 
-            menuKey.startsWith('views_') || 
-            menuKey.startsWith('diagrams_') || 
-            menuKey.startsWith('dictionaries_')) {
-          // 提取domainId
-          const parts = menuKey.split('_');
-          const type = parts[0];
-          const domainId = parts.slice(1).join('_');
-          
-          // 关闭同一个主题域下的其他同级菜单
-          const siblingKeys = ['tables_', 'entities_', 'views_', 'diagrams_', 'dictionaries_'];
-          
-          siblingKeys.forEach(siblingType => {
-            if (siblingType !== type + '_') {
-              const siblingKey = siblingType + domainId;
-              // 从展开列表中移除兄弟菜单
-              newExpandedGroups = newExpandedGroups.filter(key => key !== siblingKey);
-            }
-          });
-        }
-        
-        return newExpandedGroups;
+        // 如果是展开操作，简单添加到展开列表中，不影响其他菜单
+        return [...prev, menuKey];
       }
     });
   };
