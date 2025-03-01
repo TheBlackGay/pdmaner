@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -105,7 +105,6 @@ const MainLayout: React.FC = () => {
     type: ''
   });
   const [isNewDomainModalOpen, setIsNewDomainModalOpen] = useState(false);
-  const [tableItems, setTableItems] = useState<{[domainId: string]: MenuItem[]}>({});
   const [selectedTableKey, setSelectedTableKey] = useState<string>('');
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]); // 添加展开的组状态
   
@@ -129,6 +128,33 @@ const MainLayout: React.FC = () => {
 
   // 当前选中的菜单项
   const [selectedMenuKey, setSelectedMenuKey] = useState<string>('');
+
+  // 使用单独的useMemo来处理表项，这样就不会导致整个菜单重新渲染
+  const domainTables = useMemo(() => {
+    // 从项目中提取表项信息
+    const result: {[domainId: string]: MenuItem[]} = {};
+    
+    if (currentProject?.tables && currentProject.tables.length > 0) {
+      // 按domainId分组表
+      currentProject.tables.forEach(table => {
+        if (!result[table.domainId]) {
+          result[table.domainId] = [];
+        }
+        
+        result[table.domainId].push({
+          key: table.id,
+          title: table.name,
+          icon: <TableOutlined />,
+          path: `/app/table/${table.id}`,
+          comment: table.comment,
+          code: table.code,
+          parentDomainId: table.domainId
+        });
+      });
+    }
+    
+    return result;
+  }, [currentProject?.tables]);
 
   // 从当前项目获取主题域信息
   useEffect(() => {
@@ -154,32 +180,6 @@ const MainLayout: React.FC = () => {
       }
       
       setExpandedGroups(defaultExpandedGroups);
-      
-      // 初始化项目中的表项
-      const domainTables: {[domainId: string]: MenuItem[]} = {};
-      
-      // 表应该从project.tables中获取，而不是domain的属性
-      if (currentProject.tables && currentProject.tables.length > 0) {
-        // 按domainId分组表
-        currentProject.tables.forEach(table => {
-          if (!domainTables[table.domainId]) {
-            domainTables[table.domainId] = [];
-          }
-          
-          domainTables[table.domainId].push({
-            key: table.id,
-            title: table.name,
-            icon: <TableOutlined />,
-            path: `/app/table/${table.id}`,
-            comment: table.comment,
-            code: table.code,
-            parentDomainId: table.domainId
-          });
-        });
-      }
-      
-      // 更新tableItems状态
-      setTableItems(domainTables);
       
       // 初始化为项目概览首页
       if (location.pathname === '/app') {
@@ -298,7 +298,7 @@ const MainLayout: React.FC = () => {
                 path: `/app/entity/${domain.id}/tables`,
                 expanded: expandedGroups.includes(`tables_${domain.id}`),
                 parentDomainId: domain.id,
-                children: tableItems[domain.id] || []
+                children: domainTables[domain.id] || []
               },
               {
                 key: `entities_${domain.id}`,
@@ -712,31 +712,37 @@ const MainLayout: React.FC = () => {
       return;
     }
     
-    // 更新选中的表
-    setSelectedTableKey(tableKey);
+    // 批量更新状态，减少重渲染次数
+    const batchedUpdates = () => {
+      // 更新选中的表
+      setSelectedTableKey(tableKey);
+      
+      // 查找表数据
+      const table = currentProject?.tables?.find(t => t.id === tableKey);
+      
+      // 检查标签页是否已存在
+      const existingTab = tabs.find(tab => tab.type === tableKey);
+      if (!existingTab && table) {
+        // 添加新标签页
+        setTabs(prev => [
+          ...prev,
+          {
+            id: tableKey,
+            title: table.name,
+            type: tableKey,
+            icon: <TableOutlined />
+          }
+        ]);
+      }
+      
+      // 设置当前激活的标签页
+      setActiveTab(tableKey);
+    };
     
-    // 查找表数据
-    const table = currentProject?.tables?.find(t => t.id === tableKey);
+    // 执行批量更新
+    batchedUpdates();
     
-    // 检查标签页是否已存在
-    const existingTab = tabs.find(tab => tab.type === tableKey);
-    if (!existingTab && table) {
-      // 添加新标签页
-      setTabs(prev => [
-        ...prev,
-        {
-          id: tableKey,
-          title: table.name,
-          type: tableKey,
-          icon: <TableOutlined />
-        }
-      ]);
-    }
-    
-    // 设置当前激活的标签页
-    setActiveTab(tableKey);
-    
-    // 导航到表详情页
+    // 导航到表详情页 - 路由变化会在最后执行
     navigate(`/app/table/${tableKey}`);
   };
 
@@ -828,6 +834,16 @@ const MainLayout: React.FC = () => {
     setShowStandardFields(isDataModelPage());
   }, [location.pathname]);
 
+  // 使用useMemo优化菜单项的生成
+  const menuItems = useMemo(() => {
+    // 我们不再直接依赖tableItems，而是在getFixedMenuItems中使用domainTables
+    return getMenuItems();
+  }, [
+    // 只有当这些依赖变化时才重新计算，移除tableItems依赖
+    currentProject?.domains,
+    expandedGroups
+  ]);
+
   return (
     <div className={`app-layout ${darkMode ? 'dark-mode' : ''}`}>
       {/* 头部组件 */}
@@ -848,9 +864,9 @@ const MainLayout: React.FC = () => {
       />
 
       <div className="main-container">
-        {/* 侧边菜单 */}
+        {/* 侧边菜单 - 使用缓存的menuItems而不是每次重新生成 */}
         <SideMenu 
-          menuItems={getMenuItems()}
+          menuItems={menuItems}
           collapsed={collapsed}
           selectedTableKey={selectedTableKey}
           activeTab={activeTab}
@@ -972,39 +988,11 @@ const MainLayout: React.FC = () => {
               lastModified: Date.now()
             };
             
-            // 更新Redux状态 - 使用不同的方式更新以减少重新渲染
+            // 更新Redux状态
             dispatch(setCurrentProject(updatedProject));
             
             // 保存到localStorage
             saveProject(updatedProject);
-            
-            // 仅更新对应主题域的表项，避免重新渲染整个菜单
-            // 创建新表项
-            const newTableItem = {
-              key: tableId,
-              title: name,
-              icon: <TableOutlined />,
-              path: `/app/table/${tableId}`,
-              comment: comment,
-              code: code,
-              parentDomainId: domainId
-            };
-            
-            // 使用函数式更新，只更新特定主题域下的表项
-            setTableItems(prevItems => {
-              // 创建prevItems的深拷贝
-              const updatedItems = {...prevItems};
-              
-              // 如果该主题域下还没有表，则初始化为空数组
-              if (!updatedItems[domainId]) {
-                updatedItems[domainId] = [];
-              }
-              
-              // 添加新表项
-              updatedItems[domainId] = [...updatedItems[domainId], newTableItem];
-              
-              return updatedItems;
-            });
             
             // 确保展开相应的菜单项
             setExpandedGroups(prev => {

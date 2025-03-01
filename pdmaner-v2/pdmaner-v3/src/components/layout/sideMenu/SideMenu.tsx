@@ -253,4 +253,15 @@ const SideMenu: React.FC<SideMenuProps> = ({
   );
 };
 
-export default SideMenu; 
+// 使用React.memo包装组件，增加性能优化
+export default React.memo(SideMenu, (prevProps, nextProps) => {
+  // 只有这些属性变化时才重新渲染
+  return (
+    prevProps.collapsed === nextProps.collapsed &&
+    prevProps.selectedTableKey === nextProps.selectedTableKey &&
+    prevProps.activeTab === nextProps.activeTab &&
+    // 对于menuItems，我们只检查引用相等，因为深比较可能很昂贵
+    // 但是我们信任父组件不会不必要地创建新的menuItems数组
+    prevProps.menuItems === nextProps.menuItems
+  );
+}); 
