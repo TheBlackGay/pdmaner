@@ -27,6 +27,10 @@ import { saveProject } from '@utils/projectStorage';
 import { generateUUID } from '@utils/uuid';
 import './TableDetails.css';
 import { useNotificationContext } from '../contexts/NotificationContext';
+import SelectGroupModal from '../components/modals/SelectGroupModal';
+
+// 标准字段库的localStorage键前缀，实际key应该是 prefix + projectId
+const KEY_STANDARD_FIELDS_PREFIX = 'pdmaner_project_';
 
 // 字段接口定义
 interface FieldData {
@@ -69,6 +73,15 @@ interface TableData {
 // 表标签页类型
 type TableTabType = 'fields' | 'indexes' | 'sql' | 'code' | 'check';
 
+// 定义一个字段组接口类型
+interface FieldGroup {
+  id: string;
+  name: string;
+  code: string;
+  expanded?: boolean;
+  fields: any[];
+}
+
 const TableDetails: React.FC = () => {
   const { tableId } = useParams<{ tableId: string }>();
   const navigate = useNavigate();
@@ -94,6 +107,11 @@ const TableDetails: React.FC = () => {
   const [isIndexModalOpen, setIsIndexModalOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<IndexData | null>(null);
   const [isEditingIndex, setIsEditingIndex] = useState(false);
+
+  // 添加字段入库分组选择模态框状态
+  const [isSelectGroupModalOpen, setIsSelectGroupModalOpen] = useState(false);
+  const [standardFieldToAdd, setStandardFieldToAdd] = useState<any>(null);
+  const [fieldGroups, setFieldGroups] = useState<any[]>([]);
 
   // 数据类型选项
   const dataTypeOptions = [
@@ -133,6 +151,23 @@ const TableDetails: React.FC = () => {
       }
     }
   }, [currentProject, tableId, navigate, showError]);
+
+  // 初始化标准字段库
+  useEffect(() => {
+    // 初始化标准字段库
+    try {
+      console.log('初始化标准字段库并预加载字段分组数据...');
+      
+      // 直接使用getStandardFieldsGroups获取分组数据
+      const groupsData = getStandardFieldsGroups();
+      console.log('字段分组数据加载完成:', groupsData);
+      
+      // 更新UI状态
+      setFieldGroups(groupsData);
+    } catch (error) {
+      console.error('初始化标准字段库失败:', error);
+    }
+  }, [currentProject?.info?.id]); // 依赖项添加currentProject.info.id，确保项目变化时重新加载
 
   // 定制success通知的显示时间为1秒
   const successNotification = (message: string) => {
@@ -834,6 +869,17 @@ const TableDetails: React.FC = () => {
             
             <div className="button-group">
               <button 
+                className="add-to-library-button" 
+                onClick={handleAddToLibrary} 
+                title="将选中的字段添加到标准字段库"
+                disabled={!selectedField}
+              >
+                <SaveOutlined /> 字段入库
+              </button>
+            </div>
+            
+            <div className="button-group">
+              <button 
                 className="move-button icon-only"
                 title="置顶"
                 disabled={!selectedField}
@@ -884,14 +930,7 @@ const TableDetails: React.FC = () => {
             </div>
           </div>
           <div className="toolbar-right">
-            <button 
-              className="add-to-library-button" 
-              onClick={handleAddToLibrary} 
-              title="将选中的字段添加到标准字段库"
-              disabled={!selectedField}
-            >
-              <SaveOutlined /> 字段入库
-            </button>
+            {/* 字段入库按钮已移至左侧 */}
           </div>
         </div>
 
@@ -1031,6 +1070,92 @@ const TableDetails: React.FC = () => {
     );
   };
 
+  // 确保标准字段库存在，如果不存在则初始化
+  const ensureStandardFieldsLibrary = () => {
+    if (!currentProject?.info?.id) {
+      console.error('当前项目ID不存在，无法获取标准字段库');
+      return [];
+    }
+
+    // 获取当前项目的配置键
+    const projectKey = `${KEY_STANDARD_FIELDS_PREFIX}${currentProject.info.id}`;
+    console.log(`检查项目配置键: ${projectKey}`);
+    
+    // 获取项目配置
+    const projectConfig = localStorage.getItem(projectKey);
+    if (!projectConfig) {
+      console.error('项目配置不存在');
+      return [];
+    }
+    
+    try {
+      // 解析项目配置
+      const config = JSON.parse(projectConfig);
+      
+      // 检查项目配置中是否包含标准字段库数据
+      if (!config.standardFields) {
+        console.log('项目配置中不存在标准字段库，初始化默认结构');
+        config.standardFields = [
+          {
+            id: 'default',
+            name: '默认分组',
+            code: 'default',
+            expanded: true,
+            fields: []
+          },
+          {
+            id: 'common',
+            name: '常用字段',
+            code: 'common',
+            expanded: false,
+            fields: []
+          }
+        ];
+        
+        // 保存更新后的配置
+        localStorage.setItem(projectKey, JSON.stringify(config));
+      }
+      
+      return config.standardFields || [];
+    } catch (e) {
+      console.error('解析项目配置失败:', e);
+      return [];
+    }
+  };
+
+  // 获取标准字段库中的所有分组数据
+  const getStandardFieldsGroups = () => {
+    if (!currentProject?.info?.id) {
+      console.error('当前项目ID不存在，无法获取标准字段库');
+      return [];
+    }
+
+    // 获取当前项目的配置键
+    const projectKey = `${KEY_STANDARD_FIELDS_PREFIX}${currentProject.info.id}`;
+    console.log(`从项目配置 ${projectKey} 中获取标准字段库分组`);
+    
+    // 获取项目配置
+    const projectConfig = localStorage.getItem(projectKey);
+    if (!projectConfig) {
+      console.error('项目配置不存在');
+      return [];
+    }
+    
+    try {
+      // 解析项目配置
+      const config = JSON.parse(projectConfig);
+      
+      // 获取标准字段库数据
+      const standardFields = config.standardFields || [];
+      console.log('从项目配置中获取的标准字段库分组:', standardFields);
+      
+      return standardFields;
+    } catch (e) {
+      console.error('解析项目配置失败:', e);
+      return [];
+    }
+  };
+
   // 将选中的字段添加到标准字段库
   const handleAddToLibrary = () => {
     if (!selectedField) {
@@ -1053,52 +1178,126 @@ const TableDetails: React.FC = () => {
       comment: selectedField.comment
     };
 
-    // 通过localStorage获取已保存的标准字段库数据
-    const savedLibrary = localStorage.getItem('pdmaner_standard_fields');
-    let libraryData = savedLibrary ? JSON.parse(savedLibrary) : [];
+    // 获取最新分组数据
+    console.log('调用getStandardFieldsGroups获取最新分组数据');
+    const latestGroups = getStandardFieldsGroups();
+    console.log('获取到的最新分组数据:', latestGroups);
 
-    // 如果没有默认分组，创建一个
-    if (libraryData.length === 0) {
-      libraryData.push({
-        id: 'default',
-        name: '默认分组',
-        code: 'default',
-        expanded: true,
-        fields: []
-      });
+    // 设置字段分组列表和要添加的字段
+    setFieldGroups(latestGroups);
+    setStandardFieldToAdd(standardField);
+    
+    // 打开分组选择模态框
+    setIsSelectGroupModalOpen(true);
+  };
+
+  // 处理添加字段到选定分组
+  const handleAddFieldToGroup = (groupId: string) => {
+    console.log('添加字段到分组，分组ID:', groupId);
+    
+    if (!standardFieldToAdd || !currentProject?.info?.id) {
+      console.error('没有要添加的字段数据或项目ID不存在');
+      setIsSelectGroupModalOpen(false);
+      return;
     }
-
-    // 将字段添加到默认分组
-    // 确保对数组进行深拷贝，避免直接修改冻结对象
-    libraryData = JSON.parse(JSON.stringify(libraryData));
-    libraryData[0].fields.push(standardField);
-
-    // 保存回localStorage
-    localStorage.setItem('pdmaner_standard_fields', JSON.stringify(libraryData));
-
-    // 如果当前项目中存在standardFields，也更新它
-    if (currentProject) {
-      // 创建项目数据的深拷贝
-      const updatedProject = JSON.parse(JSON.stringify(currentProject));
-      if (!updatedProject.standardFields) {
-        updatedProject.standardFields = libraryData;
+    
+    // 获取当前项目的配置键
+    const projectKey = `${KEY_STANDARD_FIELDS_PREFIX}${currentProject.info.id}`;
+    console.log(`使用项目配置键: ${projectKey}`);
+    
+    try {
+      // 获取项目配置
+      const projectConfigStr = localStorage.getItem(projectKey);
+      if (!projectConfigStr) {
+        console.error('项目配置不存在，无法更新标准字段库');
+        setIsSelectGroupModalOpen(false);
+        return;
+      }
+      
+      // 解析项目配置
+      console.log('正在解析项目配置...');
+      const projectConfig = JSON.parse(projectConfigStr);
+      console.log('项目配置解析成功:', projectConfig);
+      
+      // 确保标准字段库存在
+      if (!projectConfig.standardFields) {
+        console.log('标准字段库不存在，初始化空数组');
+        projectConfig.standardFields = [];
+      }
+      
+      // 查找选定的分组
+      const groupIndex = projectConfig.standardFields.findIndex((group: any) => group.id === groupId);
+      console.log('找到的分组索引:', groupIndex, '分组ID:', groupId);
+      
+      // 添加字段到选定分组或默认分组
+      if (groupIndex === -1) {
+        console.log('未找到指定分组，创建默认分组');
+        // 创建默认分组并添加字段
+        const defaultGroup = {
+          id: 'default',
+          name: '默认分组',
+          code: 'default',
+          expanded: true,
+          fields: [standardFieldToAdd]
+        };
+        projectConfig.standardFields.push(defaultGroup);
+        console.log('添加默认分组成功:', defaultGroup);
       } else {
-        // 找到默认分组
-        const defaultGroup = updatedProject.standardFields.find(g => g.id === 'default');
-        if (defaultGroup) {
-          // 确保对数组进行深拷贝
-          defaultGroup.fields = [...defaultGroup.fields, standardField];
+        // 添加到选定分组
+        console.log(`添加字段到分组 "${projectConfig.standardFields[groupIndex].name}"`);
+        if (!projectConfig.standardFields[groupIndex].fields) {
+          projectConfig.standardFields[groupIndex].fields = [];
+        }
+        
+        // 检查字段是否已存在
+        const fieldExists = projectConfig.standardFields[groupIndex].fields.some(
+          (field: any) => field.id === standardFieldToAdd.id || field.code === standardFieldToAdd.code
+        );
+        
+        if (fieldExists) {
+          console.log('字段已存在于该分组，更新字段');
+          // 更新已存在的字段
+          projectConfig.standardFields[groupIndex].fields = projectConfig.standardFields[groupIndex].fields.map(
+            (field: any) => (field.id === standardFieldToAdd.id || field.code === standardFieldToAdd.code) 
+              ? standardFieldToAdd 
+              : field
+          );
         } else {
-          updatedProject.standardFields.push(libraryData[0]);
+          // 添加新字段
+          projectConfig.standardFields[groupIndex].fields.push(standardFieldToAdd);
+          console.log('添加新字段成功:', standardFieldToAdd);
         }
       }
-
-      // 更新项目数据
-      dispatch(setCurrentProject(updatedProject));
+      
+      // 输出更新后的标准字段库数据
+      console.log('更新后的标准字段库:', projectConfig.standardFields);
+      
+      // 保存更新后的配置
+      const updatedConfig = JSON.stringify(projectConfig);
+      localStorage.setItem(projectKey, updatedConfig);
+      console.log('配置保存成功，大小:', updatedConfig.length, '字节');
+      
+      // 更新当前组件中的字段分组状态，确保下次打开模态框时显示最新数据
+      setFieldGroups([...projectConfig.standardFields]);
+      
+      // 触发自定义事件，通知标准字段库组件刷新数据
+      const refreshEvent = new CustomEvent('standard-fields-updated', {
+        detail: { source: 'table-details', projectId: currentProject.info.id }
+      });
+      document.dispatchEvent(refreshEvent);
+      console.log('已触发刷新标准字段库事件');
+      
+      // 显示成功通知
+      success(`已将字段 "${standardFieldToAdd.name}" 添加到字段库`);
+      
+      // 清除临时状态并关闭模态框
+      setStandardFieldToAdd(null);
+      setIsSelectGroupModalOpen(false);
+    } catch (e) {
+      console.error('更新标准字段库失败:', e);
+      showError('添加字段到分组失败，请检查控制台日志');
+      setIsSelectGroupModalOpen(false);
     }
-
-    // 显示成功消息
-    successNotification(`字段 "${selectedField.name}" 已成功添加到标准字段库`);
   };
 
   if (!tableData) {
@@ -1442,6 +1641,15 @@ const TableDetails: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 添加字段入库分组选择模态框 */}
+      <SelectGroupModal
+        isOpen={isSelectGroupModalOpen}
+        onClose={() => setIsSelectGroupModalOpen(false)}
+        onConfirm={handleAddFieldToGroup}
+        groups={fieldGroups}
+        fieldName={selectedField?.name}
+      />
     </div>
   );
 };

@@ -103,7 +103,22 @@ const SideMenu: React.FC<SideMenuProps> = ({
                         if (subItem.children && subItem.children.length > 0) {
                           onToggleMenuExpand(subItem.key);
                         } else {
-                          onMenuItemClick(subItem);
+                          // 确保使用正确的path
+                          if (subItem.parentDomainId && subItem.path) {
+                            // 确保path中包含正确的domainId
+                            const pathParts = subItem.path.split('/');
+                            const correctPath = `/app/${pathParts[2]}/${subItem.parentDomainId}/${pathParts[4] || ''}`;
+                            
+                            // 创建修正后的菜单项
+                            const fixedItem = {
+                              ...subItem,
+                              path: correctPath
+                            };
+                            
+                            onMenuItemClick(fixedItem);
+                          } else {
+                            onMenuItemClick(subItem);
+                          }
                         }
                       }}
                       onContextMenu={(e) => {

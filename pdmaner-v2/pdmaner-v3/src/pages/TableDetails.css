@@ -502,24 +502,37 @@
   left: 100%;
 }
 
-/* 字段入库按钮 */
+/* 字段入库按钮 - 修改为与其他工具栏按钮一致 */
 .add-to-library-button {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background-color: rgba(162, 57, 202, 0.15);
-  border: 1px solid rgba(162, 57, 202, 0.3);
-  border-radius: 6px;
-  color: #a239ca;
+  background: rgba(15, 20, 40, 0.4);
+  border: 1px solid rgba(5, 217, 232, 0.2);
+  border-radius: 4px;
+  color: #e0e0ff;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
-  margin-left: 8px;
 }
 
+.add-to-library-button:hover {
+  background-color: rgba(5, 217, 232, 0.15);
+  border-color: rgba(5, 217, 232, 0.4);
+  color: #05d9e8;
+  transform: translateY(-2px);
+}
+
+.add-to-library-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 与其他按钮保持一致的hover效果 */
 .add-to-library-button::before {
   content: '';
   position: absolute;
@@ -527,13 +540,8 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(162, 57, 202, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(5, 217, 232, 0.1), transparent);
   transition: all 0.6s;
-}
-
-.add-to-library-button:hover {
-  background-color: rgba(162, 57, 202, 0.25);
-  box-shadow: 0 0 10px rgba(162, 57, 202, 0.3);
 }
 
 .add-to-library-button:hover::before {

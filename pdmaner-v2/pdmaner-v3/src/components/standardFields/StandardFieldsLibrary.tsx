@@ -99,73 +99,62 @@ const StandardFieldsLibrary: React.FC = () => {
         ...group,
         expanded: false // 初始状态为折叠
       })));
-
-      // 如果没有字段组，创建初始示例组
-      if (standardFields.length === 0) {
-        const initialGroups: FieldGroup[] = [
-          {
-            id: 'common',
-            name: '通用规范(common)',
-            code: 'common',
-            expanded: true,
-            fields: [
-              {
-                id: 'id',
-                name: 'id(主键id)',
-                code: 'id',
-                type: 'BIGINT',
-                primaryKey: true,
-                notNull: true,
-                autoIncrement: true,
-                comment: '主键ID'
-              },
-              {
-                id: 'create_time',
-                name: 'create_time(创建时间)',
-                code: 'create_time',
-                type: 'DATETIME',
-                primaryKey: false,
-                notNull: true,
-                autoIncrement: false,
-                comment: '创建时间'
-              },
-              {
-                id: 'update_time',
-                name: 'update_time(更新时间)',
-                code: 'update_time',
-                type: 'DATETIME',
-                primaryKey: false,
-                notNull: true,
-                autoIncrement: false,
-                comment: '更新时间'
-              }
-            ]
-          },
-          {
-            id: 'order',
-            name: '订单相关(order)',
-            code: 'order',
-            expanded: false,
-            fields: [
-              {
-                id: 'order_no',
-                name: 'order_no(订单编号)',
-                code: 'order_no',
-                type: 'VARCHAR',
-                length: 64,
-                primaryKey: false,
-                notNull: true,
-                autoIncrement: false,
-                comment: '订单编号'
-              }
-            ]
-          }
-        ];
-
-        setFieldGroups(initialGroups);
-      }
+      
+      // 设置初始展开状态
+      const initialExpandedState: Record<string, boolean> = {};
+      standardFields.forEach(group => {
+        initialExpandedState[group.id] = Boolean(group.expanded);
+      });
+      setExpandedGroups(initialExpandedState);
     }
   }, [currentProject]);
+  
+  // 添加自定义事件监听器，当标准字段库数据更新时刷新
+  useEffect(() => {
+    const handleStandardFieldsUpdated = (event: Event) => {
+      console.log('收到标准字段库更新事件:', (event as CustomEvent).detail);
+      
+      if (currentProject) {
+        try {
+          // 获取最新的项目配置
+          const projectKey = `pdmaner_project_${currentProject.info.id}`;
+          const projectConfigStr = localStorage.getItem(projectKey);
+          
+          if (projectConfigStr) {
+            const projectConfig = JSON.parse(projectConfigStr);
+            if (projectConfig.standardFields) {
+              console.log('重新加载标准字段库数据:', projectConfig.standardFields);
+              
+              // 更新字段分组列表
+              setFieldGroups(projectConfig.standardFields.map((group: any) => ({
+                ...group,
+                expanded: expandedGroups[group.id] || false // 保留当前展开状态
+              })));
+              
+              // 更新展开状态
+              const newExpandedState: Record<string, boolean> = {...expandedGroups};
+              projectConfig.standardFields.forEach((group: any) => {
+                if (!newExpandedState[group.id]) {
+                  newExpandedState[group.id] = Boolean(group.expanded);
+                }
+              });
+              setExpandedGroups(newExpandedState);
+            }
+          }
+        } catch (error) {
+          console.error('刷新标准字段库数据失败:', error);
+        }
+      }
+    };
+    
+    // 添加事件监听器
+    document.addEventListener('standard-fields-updated', handleStandardFieldsUpdated);
+    
+    // 清理函数
+    return () => {
+      document.removeEventListener('standard-fields-updated', handleStandardFieldsUpdated);
+    };
+  }, [currentProject, expandedGroups]);
 
   // 自动保存功能
   useEffect(() => {

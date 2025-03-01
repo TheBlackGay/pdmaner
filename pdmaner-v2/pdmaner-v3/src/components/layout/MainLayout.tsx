@@ -14,10 +14,9 @@ import {
 } from '@ant-design/icons';
 import { toggleDarkMode, setLoading, setCurrentProject, updateCurrentProject } from '@store/slices/appSlice';
 import { RootState } from '@store/index';
-import { ProjectData, DomainData, saveProject, createNewDomain } from '@utils/projectStorage';
+import { ProjectData as ProjectDataImport, DomainData as DomainDataImport, saveProject, createNewDomain } from '@utils/projectStorage';
 import { generateUUID } from '@utils/uuid';
 import { useNotificationContext } from '../../contexts/NotificationContext';
-import { message } from 'antd';
 
 // 导入拆分的组件
 import Header from './header/Header';
@@ -38,7 +37,7 @@ import RenameTableModal from '@components/modals/RenameTableModal';
 import './MainLayout.css';
 
 // 定义接口
-interface TableData {
+interface TableDataType {
   id: string;
   name: string;
   code: string;
@@ -50,13 +49,13 @@ interface TableData {
   lastModified: number;
 }
 
-interface DomainData {
+interface DomainDataType {
   id: string;
   code: string;
   name: string;
   createTime: number;
   lastModified: number;
-  tables?: TableData[];
+  tables?: TableDataType[];
 }
 
 interface ProjectInfo {
@@ -66,10 +65,10 @@ interface ProjectInfo {
   lastModified: number;
 }
 
-interface ProjectData {
+interface ProjectDataType {
   id: string;
   info: ProjectInfo;
-  domains: DomainData[];
+  domains: DomainDataType[];
 }
 
 // 标签页数据接口
@@ -473,7 +472,7 @@ const MainLayout: React.FC = () => {
     const now = Date.now();
     
     // 创建新的主题域
-    const newDomain: DomainData = {
+    const newDomain: DomainDataType = {
       id: domainId,
       code,
       name,
@@ -598,10 +597,10 @@ const MainLayout: React.FC = () => {
 
   // 获取主题域名称
   const getDomainNameById = (id: string): string => {
-    if (!currentProject) return "未知主题域";
+    if (!currentProject) return '';
     
     const domain = currentProject.domains.find(d => d.id === id);
-    return domain ? domain.name : "未知主题域";
+    return domain ? domain.name : '';
   };
 
   // 处理上下文菜单操作
@@ -644,6 +643,62 @@ const MainLayout: React.FC = () => {
             
             // 打开重命名模态框
             setIsRenameTableModalOpen(true);
+          }
+        }
+        break;
+      
+      case 'deleteDomain':
+        // 主题域删除
+        if (contextMenu.targetId && contextMenu.type === 'domain' && currentProject) {
+          const domainId = contextMenu.targetId.split('_').slice(1).join('_');
+          
+          // 确认是否要删除
+          if (window.confirm(`确定要删除主题域 "${getDomainNameById(domainId)}" 吗？删除主题域将同时删除其下所有数据表。`)) {
+            // 获取要删除的主题域
+            const domainToDelete = currentProject.domains.find(d => d.id === domainId);
+            if (!domainToDelete) return;
+            
+            try {
+              // 筛选出不属于该主题域的表
+              const filteredTables = currentProject.tables.filter(table => table.domainId !== domainId);
+              
+              // 筛选出不是该要删除的主题域
+              const filteredDomains = currentProject.domains.filter(domain => domain.id !== domainId);
+              
+              // 更新项目数据
+              const updatedProject = {
+                ...currentProject,
+                domains: filteredDomains,
+                tables: filteredTables,
+                lastModified: Date.now()
+              };
+              
+              // 更新Redux状态
+              dispatch(setCurrentProject(updatedProject));
+              
+              // 保存到localStorage
+              saveProject(updatedProject);
+              
+              // 关闭所有与该域相关的标签页
+              const domainTables = currentProject.tables.filter(t => t.domainId === domainId);
+              const tableIds = domainTables.map(t => t.id);
+              
+              // 筛选出不在要删除的表中的标签页
+              const filteredTabs = tabs.filter(tab => !tableIds.includes(tab.id));
+              setTabs(filteredTabs);
+              
+              // 如果正在显示的标签页属于被删除的，就切换到首页
+              if (activeTab && tableIds.includes(activeTab)) {
+                setActiveTab('dashboard');
+                navigate('/app/dashboard');
+              }
+              
+              // 展示成功消息
+              success(`主题域 "${domainToDelete.name}" 及其所有数据表已成功删除`);
+            } catch (err) {
+              console.error('删除主题域失败:', err);
+              error('删除主题域失败，请检查控制台错误日志');
+            }
           }
         }
         break;
@@ -894,13 +949,83 @@ const MainLayout: React.FC = () => {
         onClose={() => setIsNewTableModalOpen(false)}
         onConfirm={(code, name, comment, tableType, domainId) => {
           // 处理添加表逻辑
-          // 这里需要实现添加表的逻辑
-          console.log('添加表:', code, name, comment, tableType, domainId);
+          if (!currentProject) return;
+          
+          try {
+            // 生成表ID
+            const tableId = generateUUID();
+            const now = Date.now();
+            
+            // 创建新表对象
+            const newTable = {
+              id: tableId,
+              name,
+              code,
+              comment,
+              domainId,  // 确保使用正确的domainId
+              type: tableType,
+              fields: [],  // 初始化空字段数组
+              indexes: [], // 初始化空索引数组
+              createTime: now,
+              lastModified: now
+            };
+            
+            // 更新项目数据，添加新表
+            const updatedTables = [...currentProject.tables, newTable];
+            
+            const updatedProject = {
+              ...currentProject,
+              tables: updatedTables,
+              lastModified: Date.now()
+            };
+            
+            // 更新Redux状态
+            dispatch(setCurrentProject(updatedProject));
+            
+            // 保存到localStorage
+            saveProject(updatedProject);
+            
+            // 更新tableItems状态，添加新表项到对应主题域
+            const updatedTableItems = { ...tableItems };
+            if (!updatedTableItems[domainId]) {
+              updatedTableItems[domainId] = [];
+            }
+            
+            updatedTableItems[domainId].push({
+              key: tableId,
+              title: name,
+              icon: <TableOutlined />,
+              path: `/app/table/${tableId}`,
+              comment: comment,
+              code: code,
+              parentDomainId: domainId
+            });
+            
+            setTableItems(updatedTableItems);
+            
+            // 确保展开相应的菜单项
+            if (!expandedGroups.includes(`domain_${domainId}`)) {
+              setExpandedGroups(prev => [...prev, `domain_${domainId}`]);
+            }
+            if (!expandedGroups.includes(`tables_${domainId}`)) {
+              setExpandedGroups(prev => [...prev, `tables_${domainId}`]);
+            }
+            
+            // 添加成功后导航到新建的表页面
+            navigate(`/app/table/${tableId}`);
+            
+            success('表创建成功');
+          } catch (err) {
+            console.error('创建表失败', err);
+            error('创建表失败，请检查控制台错误日志');
+          }
+          
+          // 关闭模态框
           setIsNewTableModalOpen(false);
         }}
         domainId={currentDomainId}
         domainName={currentDomainName}
-        existingTableCodes={[]} // 应该填充已存在的表代码列表
+        existingTableCodes={currentProject?.tables?.map(t => t.code) || []} // 填充已存在的表代码列表
       />
 
       {/* 重命名表模态框 */}
