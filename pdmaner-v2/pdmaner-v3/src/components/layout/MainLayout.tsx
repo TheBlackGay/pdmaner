@@ -129,6 +129,9 @@ const MainLayout: React.FC = () => {
   // 当前选中的菜单项
   const [selectedMenuKey, setSelectedMenuKey] = useState<string>('');
 
+  // 添加本地存储键常量
+  const EXPANDED_GROUPS_STORAGE_KEY = 'pdmaner_expanded_menu_groups';
+
   // 使用单独的useMemo来处理表项，这样就不会导致整个菜单重新渲染
   const domainTables = useMemo(() => {
     // 从项目中提取表项信息
@@ -159,23 +162,39 @@ const MainLayout: React.FC = () => {
   // 从当前项目获取主题域信息
   useEffect(() => {
     if (currentProject) {
-      // 初始化必要的菜单项展开状态
-      const defaultExpandedGroups = ['model']; // 默认展开模型组
+      // 从localStorage加载保存的展开状态
+      const savedExpandedGroups = localStorage.getItem(EXPANDED_GROUPS_STORAGE_KEY);
+      let defaultExpandedGroups: string[] = [];
       
-      // 如果项目中有表数据，则默认展开第一个主题域及其数据表菜单
-      if (currentProject.tables && currentProject.tables.length > 0) {
-        // 获取第一个有表的主题域
-        const firstDomainWithTables = currentProject.domains.find(domain => 
-          currentProject.tables.some(table => table.domainId === domain.id)
-        );
+      if (savedExpandedGroups) {
+        try {
+          // 如果存在保存的状态，则使用它
+          defaultExpandedGroups = JSON.parse(savedExpandedGroups);
+          console.log('从localStorage恢复菜单展开状态:', defaultExpandedGroups);
+        } catch (e) {
+          console.error('解析菜单展开状态出错:', e);
+          // 如果解析出错，使用默认值
+          defaultExpandedGroups = ['model'];
+        }
+      } else {
+        // 如果没有保存的状态，使用默认值
+        defaultExpandedGroups = ['model']; // 默认展开模型组
         
-        if (firstDomainWithTables) {
-          // 添加主题域到展开列表
-          const domainKey = `domain_${firstDomainWithTables.id}`;
-          defaultExpandedGroups.push(domainKey);
+        // 如果项目中有表数据，则默认展开第一个主题域及其数据表菜单
+        if (currentProject.tables && currentProject.tables.length > 0) {
+          // 获取第一个有表的主题域
+          const firstDomainWithTables = currentProject.domains.find(domain => 
+            currentProject.tables.some(table => table.domainId === domain.id)
+          );
           
-          // 添加该主题域下的数据表菜单到展开列表
-          defaultExpandedGroups.push(`tables_${firstDomainWithTables.id}`);
+          if (firstDomainWithTables) {
+            // 添加主题域到展开列表
+            const domainKey = `domain_${firstDomainWithTables.id}`;
+            defaultExpandedGroups.push(domainKey);
+            
+            // 添加该主题域下的数据表菜单到展开列表
+            defaultExpandedGroups.push(`tables_${firstDomainWithTables.id}`);
+          }
         }
       }
       
@@ -209,6 +228,15 @@ const MainLayout: React.FC = () => {
       }
     }
   }, [currentProject, location.pathname]);
+
+  // 保存菜单展开状态到localStorage
+  useEffect(() => {
+    // 只在expandedGroups变化且不为空时保存
+    if (expandedGroups.length > 0) {
+      localStorage.setItem(EXPANDED_GROUPS_STORAGE_KEY, JSON.stringify(expandedGroups));
+      console.log('保存菜单展开状态到localStorage:', expandedGroups);
+    }
+  }, [expandedGroups]);
 
   // 设置自动保存
   useEffect(() => {
@@ -268,8 +296,9 @@ const MainLayout: React.FC = () => {
     return result;
   };
 
-  // 获取基础菜单项
-  const getFixedMenuItems = (): MenuItem[] => {
+  // 将菜单生成逻辑完全重构
+  // 使用useMemo优化菜单项的生成
+  const menuItems = useMemo(() => {
     return [
       {
         key: 'home',
@@ -298,7 +327,8 @@ const MainLayout: React.FC = () => {
                 path: `/app/entity/${domain.id}/tables`,
                 expanded: expandedGroups.includes(`tables_${domain.id}`),
                 parentDomainId: domain.id,
-                children: domainTables[domain.id] || []
+                // 使用特殊标记而不是直接包含表项
+                tablesDomainId: domain.id
               },
               {
                 key: `entities_${domain.id}`,
@@ -349,36 +379,11 @@ const MainLayout: React.FC = () => {
         path: '/app/projects'
       }
     ];
-  };
-
-  // 将菜单分组为固定菜单项
-  const getMenuItems = (existingMenuItems?: MenuItem[]): MenuItem[] => {
-    // 如果已有菜单项，则优先使用现有的
-    if (existingMenuItems) {
-      return existingMenuItems;
-    }
-
-    return getFixedMenuItems();
-  };
-
-  // 检查菜单项是否已展开
-  const isMenuItemExpanded = (menuKey: string): boolean => {
-    // 找到菜单项
-    const findMenuItem = (items: MenuItem[]): boolean => {
-      for (const item of items) {
-        if (item.key === menuKey) {
-          return !!item.expanded;
-        }
-        if (item.children) {
-          const found = findMenuItem(item.children);
-          if (found) return true;
-        }
-      }
-      return false;
-    };
-    
-    return findMenuItem(getMenuItems());
-  };
+  }, [
+    // 只有当这些依赖变化时才重新计算，不依赖于表数据
+    currentProject?.domains,
+    expandedGroups
+  ]);
 
   // 切换菜单项的展开/折叠状态
   const toggleMenuExpand = (menuKey: string) => {
@@ -535,20 +540,18 @@ const MainLayout: React.FC = () => {
       return;
     }
     
-    // 检查是否是一级分类菜单（数据表、逻辑实体、多表透视等）
-    if (['tables', 'entities', 'views', 'diagrams', 'dictionaries'].includes(item.key)) {
-      // 如果是一级菜单，只展开/折叠，不导航
-      toggleMenuExpand(item.key);
-      return;
-    }
+    // 检查是否是可展开的菜单项（model、domain或子菜单组）
+    const isExpandableItem = 
+      item.key === 'model' || 
+      item.key.startsWith('domain_') || 
+      item.key.startsWith('tables_') || 
+      item.key.startsWith('entities_') || 
+      item.key.startsWith('views_') || 
+      item.key.startsWith('diagrams_') || 
+      item.key.startsWith('dictionaries_');
     
-    // 检查是否是主题域下的二级菜单（例如：tables_domainId，entities_domainId等）
-    if (item.key.startsWith('tables_') || 
-        item.key.startsWith('entities_') || 
-        item.key.startsWith('views_') || 
-        item.key.startsWith('diagrams_') || 
-        item.key.startsWith('dictionaries_')) {
-      // 如果是二级菜单，只展开/折叠，不导航
+    // 如果是可展开的菜单项，则切换其展开状态
+    if (isExpandableItem) {
       toggleMenuExpand(item.key);
       return;
     }
@@ -834,16 +837,6 @@ const MainLayout: React.FC = () => {
     setShowStandardFields(isDataModelPage());
   }, [location.pathname]);
 
-  // 使用useMemo优化菜单项的生成
-  const menuItems = useMemo(() => {
-    // 我们不再直接依赖tableItems，而是在getFixedMenuItems中使用domainTables
-    return getMenuItems();
-  }, [
-    // 只有当这些依赖变化时才重新计算，移除tableItems依赖
-    currentProject?.domains,
-    expandedGroups
-  ]);
-
   return (
     <div className={`app-layout ${darkMode ? 'dark-mode' : ''}`}>
       {/* 头部组件 */}
@@ -875,6 +868,7 @@ const MainLayout: React.FC = () => {
           onMenuItemClick={navigateToMenuItem}
           onTableItemClick={handleTableItemClick}
           onContextMenu={showContextMenu}
+          domainTables={domainTables}
         />
 
         <div className="content-area">
@@ -988,28 +982,40 @@ const MainLayout: React.FC = () => {
               lastModified: Date.now()
             };
             
-            // 更新Redux状态
+            // 检查相关菜单项是否已经展开，避免不必要的状态更新
+            const needExpandDomain = !expandedGroups.includes(`domain_${domainId}`);
+            const needExpandTables = !expandedGroups.includes(`tables_${domainId}`);
+            const needExpandModel = !expandedGroups.includes('model');
+            
+            // 只有在需要展开时才更新expandedGroups状态
+            if (needExpandDomain || needExpandTables || needExpandModel) {
+              setExpandedGroups(prev => {
+                const newExpandedGroups = [...prev];
+                
+                // 确保模型组展开
+                if (needExpandModel) {
+                  newExpandedGroups.push('model');
+                }
+                
+                // 确保主题域展开
+                if (needExpandDomain) {
+                  newExpandedGroups.push(`domain_${domainId}`);
+                }
+                
+                // 确保数据表菜单展开
+                if (needExpandTables) {
+                  newExpandedGroups.push(`tables_${domainId}`);
+                }
+                
+                return newExpandedGroups;
+              });
+            }
+            
+            // 先更新Redux状态，以便domainTables可以获取到最新数据
             dispatch(setCurrentProject(updatedProject));
             
             // 保存到localStorage
             saveProject(updatedProject);
-            
-            // 确保展开相应的菜单项
-            setExpandedGroups(prev => {
-              const newExpandedGroups = [...prev];
-              
-              // 确保主题域展开
-              if (!newExpandedGroups.includes(`domain_${domainId}`)) {
-                newExpandedGroups.push(`domain_${domainId}`);
-              }
-              
-              // 确保数据表菜单展开
-              if (!newExpandedGroups.includes(`tables_${domainId}`)) {
-                newExpandedGroups.push(`tables_${domainId}`);
-              }
-              
-              return newExpandedGroups;
-            });
             
             // 添加成功后导航到新建的表页面
             navigate(`/app/table/${tableId}`);
