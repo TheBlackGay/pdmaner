@@ -1,0 +1,320 @@
+.diagram-list-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: #0c0c14;
+  color: #e0e0ff;
+}
+
+.diagram-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.domain-info h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #05d9e8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.domain-info p {
+  margin: 8px 0 0;
+  color: #8d8dba;
+  font-size: 14px;
+}
+
+.diagram-search {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.search-input {
+  display: flex;
+  align-items: center;
+  background-color: rgba(16, 18, 38, 0.6);
+  border: 1px solid rgba(5, 217, 232, 0.2);
+  border-radius: 6px;
+  padding: 0 12px;
+  width: 280px;
+  transition: all 0.2s;
+}
+
+.search-input:hover,
+.search-input:focus-within {
+  border-color: rgba(5, 217, 232, 0.5);
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.2);
+}
+
+.search-input svg {
+  color: #05d9e8;
+  margin-right: 8px;
+}
+
+.search-input input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #e0e0ff;
+  padding: 10px 0;
+  outline: none;
+  font-size: 14px;
+}
+
+.add-diagram-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.2), rgba(162, 57, 202, 0.2));
+  border: 1px solid rgba(5, 217, 232, 0.4);
+  border-radius: 6px;
+  color: #05d9e8;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
+}
+
+.add-diagram-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: all 0.6s;
+}
+
+.add-diagram-btn:hover {
+  background: linear-gradient(135deg, rgba(5, 217, 232, 0.3), rgba(162, 57, 202, 0.3));
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.4);
+  transform: translateY(-2px);
+}
+
+.add-diagram-btn:hover::before {
+  left: 100%;
+}
+
+.diagram-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 10px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.diagram-item {
+  background-color: rgba(16, 18, 38, 0.4);
+  border: 1px solid rgba(5, 217, 232, 0.15);
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.diagram-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #05d9e8, #a239ca);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.diagram-item:hover {
+  background-color: rgba(16, 18, 38, 0.6);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  border-color: rgba(5, 217, 232, 0.3);
+}
+
+.diagram-item:hover::before {
+  opacity: 1;
+}
+
+.diagram-item.selected {
+  background-color: rgba(5, 217, 232, 0.1);
+  border-color: rgba(5, 217, 232, 0.5);
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.3);
+}
+
+.diagram-item.selected::before {
+  opacity: 1;
+}
+
+.diagram-thumbnail {
+  height: 140px;
+  background-color: rgba(10, 12, 24, 0.6);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  border: 1px solid rgba(5, 217, 232, 0.1);
+}
+
+.diagram-thumbnail svg {
+  font-size: 48px;
+  color: rgba(5, 217, 232, 0.5);
+}
+
+.diagram-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.diagram-info h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #e0e0ff;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diagram-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.diagram-key {
+  color: rgba(5, 217, 232, 0.8);
+}
+
+.diagram-stats {
+  color: #8d8dba;
+}
+
+.diagram-comment {
+  font-size: 13px;
+  color: rgba(224, 224, 255, 0.7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+.empty-diagrams {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: rgba(5, 217, 232, 0.3);
+  margin-bottom: 20px;
+}
+
+.empty-diagrams h3 {
+  font-size: 20px;
+  color: #e0e0ff;
+  margin: 0 0 10px;
+}
+
+.empty-diagrams p {
+  color: #8d8dba;
+  max-width: 400px;
+  margin: 0 0 30px;
+}
+
+/* 适应暗色主题 */
+.dark-mode .diagram-list-page {
+  background-color: #0c0c14;
+}
+
+.dark-mode .search-input {
+  background-color: rgba(16, 18, 38, 0.5);
+}
+
+.dark-mode .diagram-item {
+  background-color: rgba(16, 18, 38, 0.3);
+}
+
+.dark-mode .diagram-thumbnail {
+  background-color: rgba(10, 12, 24, 0.5);
+}
+
+/* 修饰元素效果 */
+@keyframes glow {
+  0% { box-shadow: 0 0 5px rgba(5, 217, 232, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(5, 217, 232, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(5, 217, 232, 0.3); }
+}
+
+.diagram-item.selected {
+  animation: glow 3s infinite;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .diagram-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .diagram-search {
+    width: 100%;
+  }
+  
+  .search-input {
+    flex: 1;
+  }
+  
+  .diagram-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .diagram-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 滚动条样式 */
+.diagram-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.diagram-grid::-webkit-scrollbar-track {
+  background: rgba(12, 12, 20, 0.8);
+}
+
+.diagram-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgba(5, 217, 232, 0.5), rgba(162, 57, 202, 0.5));
+  border-radius: 4px;
+}
+
+.diagram-grid::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, rgba(5, 217, 232, 0.7), rgba(162, 57, 202, 0.7));
+} 

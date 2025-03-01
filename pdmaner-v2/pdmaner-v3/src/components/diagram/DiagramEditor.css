@@ -1,0 +1,244 @@
+/* 关系图编辑器容器 */
+.diagram-editor {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: #0c0c14;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(5, 217, 232, 0.05) 0%, transparent 80%),
+    linear-gradient(to right, rgba(162, 57, 202, 0.05) 0%, transparent 100%);
+}
+
+/* 画布容器 */
+.diagram-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* 加载指示器 */
+.diagram-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(12, 12, 20, 0.8);
+  z-index: 10;
+  backdrop-filter: blur(5px);
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(5, 217, 232, 0.3);
+  border-radius: 50%;
+  border-top-color: #05d9e8;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.5);
+}
+
+.loading-text {
+  color: #05d9e8;
+  font-size: 16px;
+  text-shadow: 0 0 10px rgba(5, 217, 232, 0.7);
+  letter-spacing: 1px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* X6图表样式覆盖 */
+.x6-graph {
+  background-color: transparent !important;
+}
+
+/* 节点样式 */
+.x6-node {
+  transition: all 0.3s ease;
+}
+
+.x6-node:hover {
+  filter: drop-shadow(0 0 8px rgba(5, 217, 232, 0.6));
+}
+
+/* 节点被选中时 */
+.x6-node.selected {
+  filter: drop-shadow(0 0 12px rgba(5, 217, 232, 0.8));
+}
+
+.x6-node.selected rect {
+  stroke: #05d9e8 !important;
+  stroke-width: 2px !important;
+}
+
+/* 连接线样式 */
+.x6-edge .x6-edge-path {
+  stroke: rgba(5, 217, 232, 0.6);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 2px rgba(5, 217, 232, 0.5));
+  transition: all 0.3s ease;
+}
+
+/* 连接线被选中时 */
+.x6-edge.selected .x6-edge-path {
+  stroke: #05d9e8 !important;
+  stroke-width: 2 !important;
+  filter: drop-shadow(0 0 5px rgba(5, 217, 232, 0.7)) !important;
+}
+
+/* 连接点样式 */
+.x6-port-body {
+  stroke: rgba(5, 217, 232, 0.8);
+  fill: #0c0c14;
+  r: 5;
+  transition: all 0.3s;
+}
+
+.x6-port-body:hover {
+  fill: #05d9e8;
+  r: 6;
+  filter: drop-shadow(0 0 5px rgba(5, 217, 232, 0.8));
+}
+
+/* 网格样式 */
+.x6-grid-layer {
+  opacity: 0.6;
+}
+
+/* 迷你地图样式 */
+.x6-widget-minimap {
+  background-color: rgba(12, 12, 20, 0.7);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.x6-widget-minimap-viewport {
+  border: 1px solid #05d9e8;
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.5);
+}
+
+/* 工具栏样式 */
+.x6-toolbar {
+  background-color: rgba(12, 12, 20, 0.8);
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 6px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.x6-toolbar-content button {
+  color: #c8c8ff;
+  background-color: transparent;
+  border: 1px solid rgba(5, 217, 232, 0.2);
+  transition: all 0.3s;
+}
+
+.x6-toolbar-content button:hover {
+  color: #05d9e8;
+  background-color: rgba(5, 217, 232, 0.1);
+  border-color: rgba(5, 217, 232, 0.5);
+}
+
+/* 自定义节点样式 */
+.er-table-node {
+  filter: drop-shadow(0 0 5px rgba(5, 217, 232, 0.3));
+}
+
+.er-table-header {
+  background-color: rgba(5, 217, 232, 0.15);
+  color: #05d9e8;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(5, 217, 232, 0.3);
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+.er-table-body {
+  background-color: rgba(16, 18, 38, 0.8);
+  padding: 8px 0;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.er-table-field {
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(5, 217, 232, 0.1);
+}
+
+.er-table-field:last-child {
+  border-bottom: none;
+}
+
+.er-table-field-name {
+  flex: 1;
+  color: #e0e0ff;
+  font-size: 12px;
+}
+
+.er-table-field-type {
+  color: #8d8dba;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.er-table-field-pk {
+  color: #ffc107;
+  margin-right: 5px;
+}
+
+/* 关系标签样式 */
+.x6-edge-labels {
+  pointer-events: none;
+}
+
+.x6-edge-label {
+  fill: #05d9e8;
+  font-size: 12px;
+  text-shadow: 0 0 5px rgba(5, 217, 232, 0.5);
+}
+
+/* 缩放控制器样式 */
+.x6-graph-scroller {
+  background-color: transparent;
+}
+
+/* 滚动条样式 */
+.x6-graph-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.x6-graph-scroller::-webkit-scrollbar-track {
+  background: rgba(12, 12, 20, 0.5);
+}
+
+.x6-graph-scroller::-webkit-scrollbar-thumb {
+  background: rgba(5, 217, 232, 0.3);
+  border-radius: 4px;
+}
+
+.x6-graph-scroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 217, 232, 0.5);
+}
+
+/* 动画效果 */
+@keyframes glow {
+  0% { filter: drop-shadow(0 0 5px rgba(5, 217, 232, 0.3)); }
+  50% { filter: drop-shadow(0 0 15px rgba(5, 217, 232, 0.5)); }
+  100% { filter: drop-shadow(0 0 5px rgba(5, 217, 232, 0.3)); }
+}
+
+.x6-node.highlight {
+  animation: glow 2s infinite;
+} 

@@ -27,6 +27,7 @@ export interface MenuItem {
   comment?: string;
   parentDomainId?: string;
   tablesDomainId?: string; // 标记需要从domainTables获取数据的节点
+  diagramsDomainId?: string; // 标记需要从domainDiagrams获取数据的节点
 }
 
 // 组件属性接口
@@ -41,6 +42,7 @@ interface SideMenuProps {
   onTableItemClick: (tableKey: string) => void;
   onContextMenu: (e: React.MouseEvent, type: string, key: string) => void;
   domainTables?: {[domainId: string]: MenuItem[]}; // 表项数据，按domainId分组
+  domainDiagrams?: {[domainId: string]: MenuItem[]}; // 关系图项数据，按domainId分组
 }
 
 // 表项组件，使用memo优化渲染性能
@@ -121,7 +123,8 @@ const SideMenu: React.FC<SideMenuProps> = ({
   onMenuItemClick,
   onTableItemClick,
   onContextMenu,
-  domainTables = {} // 默认为空对象
+  domainTables = {}, // 默认为空对象
+  domainDiagrams = {} // 默认为空对象
 }) => {
   // 内部状态，用于跟踪当前选中的表项
   const [internalSelectedKey, setInternalSelectedKey] = useState(selectedTableKey);
@@ -182,7 +185,9 @@ const SideMenu: React.FC<SideMenuProps> = ({
                         e.stopPropagation();
 
                         // 如果子项有子菜单或者是表格组，则切换展开/折叠状态
-                        if ((subItem.children && subItem.children.length > 0) || subItem.tablesDomainId) {
+                        if ((subItem.children && subItem.children.length > 0) || 
+                            subItem.tablesDomainId || 
+                            subItem.diagramsDomainId) {
                           onToggleMenuExpand(subItem.key);
                         } else {
                           // 否则导航到页面
@@ -203,7 +208,9 @@ const SideMenu: React.FC<SideMenuProps> = ({
                     >
                       {React.isValidElement(subItem.icon) ? subItem.icon : null}
                       <span>{subItem.title}</span>
-                      {(subItem.children && subItem.children.length > 0) || subItem.tablesDomainId ? (
+                      {(subItem.children && subItem.children.length > 0) || 
+                        subItem.tablesDomainId || 
+                        subItem.diagramsDomainId ? (
                         subItem.expanded ?
                         <CaretDownOutlined className="expand-icon-small" style={{marginLeft: 'auto'}} /> :
                         <CaretRightOutlined className="expand-icon-small" style={{marginLeft: 'auto'}} />
@@ -218,6 +225,14 @@ const SideMenu: React.FC<SideMenuProps> = ({
                           <TableItemsList
                             domainId={subItem.tablesDomainId}
                             tables={domainTables[subItem.tablesDomainId]}
+                            selectedTableKey={internalSelectedKey}
+                            onTableItemClick={handleTableItemClick}
+                            onContextMenu={onContextMenu}
+                          />
+                        ) : subItem.diagramsDomainId && domainDiagrams[subItem.diagramsDomainId] ? (
+                          <TableItemsList
+                            domainId={subItem.diagramsDomainId}
+                            tables={domainDiagrams[subItem.diagramsDomainId]}
                             selectedTableKey={internalSelectedKey}
                             onTableItemClick={handleTableItemClick}
                             onContextMenu={onContextMenu}

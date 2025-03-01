@@ -66,6 +66,9 @@ export interface Diagram {
   canvasData: CanvasData;
   entityIds: string[];
   associations: any[];
+  domainId: string;          // 所属主题域ID
+  createTime: number;        // 创建时间戳
+  lastModified: number;      // 最后修改时间戳
 }
 
 // 关系图实用工具类型

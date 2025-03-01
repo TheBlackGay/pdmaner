@@ -1,0 +1,108 @@
+.context-menu {
+  position: fixed;
+  background-color: #17182b;
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 6px;
+  min-width: 180px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(5, 217, 232, 0.2);
+  z-index: 1000;
+  overflow: hidden;
+  animation: menuFadeIn 0.15s ease-out;
+}
+
+@keyframes menuFadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.menu-item {
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  color: #e0e0ff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-item:hover {
+  background-color: rgba(5, 217, 232, 0.1);
+  color: #05d9e8;
+}
+
+.menu-item.danger:hover {
+  background-color: rgba(255, 42, 109, 0.1);
+  color: #ff2a6d;
+}
+
+.menu-icon {
+  font-size: 15px;
+  margin-right: 10px;
+  opacity: 0.7;
+}
+
+.menu-item:hover .menu-icon {
+  opacity: 1;
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba(5, 217, 232, 0.15);
+  margin: 5px 0;
+}
+
+/* 对右键菜单设置定位点 */
+.diagram-context-menu {
+  transform-origin: top left;
+}
+
+/* 右键菜单项禁用状态 */
+.menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 子菜单样式 */
+.submenu-arrow {
+  margin-left: auto;
+  color: #a8a8ff;
+}
+
+.menu-item:hover .submenu-arrow {
+  color: #05d9e8;
+}
+
+/* 高效率模式 - 更紧凑的菜单 */
+.compact-menu .menu-item {
+  padding: 8px 12px;
+}
+
+/* 黑暗模式增强 */
+.dark-mode .context-menu {
+  background-color: #0d0e1d;
+  border-color: rgba(5, 217, 232, 0.4);
+}
+
+/* 菜单滚动时的样式 */
+.context-menu.scrollable {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.context-menu.scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.context-menu.scrollable::-webkit-scrollbar-track {
+  background: rgba(12, 12, 20, 0.8);
+}
+
+.context-menu.scrollable::-webkit-scrollbar-thumb {
+  background: rgba(5, 217, 232, 0.5);
+  border-radius: 3px;
+}
+
+.context-menu.scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 217, 232, 0.7);
+} 

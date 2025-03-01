@@ -175,6 +175,34 @@ const MainLayout: React.FC = () => {
     return result;
   }, [currentProject?.tables]);
 
+  // 使用单独的useMemo来处理关系图项，类似于domainTables
+  const domainDiagrams = useMemo(() => {
+    // 从项目中提取关系图项信息
+    const result: {[domainId: string]: MenuItem[]} = {};
+    
+    if (currentProject?.diagrams && currentProject.diagrams.length > 0) {
+      // 按domainId分组关系图
+      currentProject.diagrams.forEach(diagram => {
+        if (!result[diagram.domainId]) {
+          result[diagram.domainId] = [];
+        }
+        
+        result[diagram.domainId].push({
+          key: diagram.id,
+          title: diagram.defName,
+          icon: <BranchesOutlined />,
+          path: `/app/diagram/edit/${diagram.id}`,
+          comment: diagram.comment,
+          code: diagram.defKey,
+          parentDomainId: diagram.domainId,
+          diagramsDomainId: diagram.domainId
+        });
+      });
+    }
+    
+    return result;
+  }, [currentProject?.diagrams]);
+
   // 从当前项目获取主题域信息
   useEffect(() => {
     if (currentProject) {
@@ -368,7 +396,8 @@ const MainLayout: React.FC = () => {
                 icon: <BranchesOutlined />,
                 path: `/app/diagram/${domain.id}`,
                 expanded: expandedGroups.includes(`diagrams_${domain.id}`),
-                parentDomainId: domain.id
+                parentDomainId: domain.id,
+                diagramsDomainId: domain.id
               },
               {
                 key: `dictionaries_${domain.id}`,
@@ -398,6 +427,7 @@ const MainLayout: React.FC = () => {
   }, [
     // 只有当这些依赖变化时才重新计算，不依赖于表数据
     currentProject?.domains,
+    currentProject?.diagrams,
     expandedGroups
   ]);
 
@@ -751,6 +781,247 @@ const MainLayout: React.FC = () => {
         }
         break;
       
+      case 'addDiagram':
+        if (contextMenu.targetId && currentProject) {
+          // 从targetId中提取domainId
+          const domainId = contextMenu.targetId.split('_').slice(1).join('_');
+          
+          // 直接创建新关系图
+          const newDiagramId = generateUUID();
+          const now = Date.now();
+          
+          const newDiagram = {
+            id: newDiagramId,
+            domainId,
+            defKey: `diagram_${now}`,
+            defName: `新建关系图`,
+            comment: '',
+            createTime: now,
+            lastModified: now,
+            canvasData: { cells: [] },
+            entityIds: [],
+            associations: []
+          };
+          
+          // 更新项目数据
+          const updatedDiagrams = [...(currentProject.diagrams || []), newDiagram];
+          
+          const updatedProject = {
+            ...currentProject,
+            diagrams: updatedDiagrams,
+            lastModified: now
+          };
+          
+          // 更新Redux状态
+          dispatch(setCurrentProject(updatedProject));
+          
+          // 保存到localStorage
+          saveProject(updatedProject);
+          
+          // 确保关系图菜单展开
+          const diagramsKey = `diagrams_${domainId}`;
+          const domainKey = `domain_${domainId}`;
+          
+          if (!expandedGroups.includes(domainKey) || !expandedGroups.includes(diagramsKey)) {
+            setExpandedGroups(prev => {
+              const newExpandedGroups = [...prev];
+              
+              if (!newExpandedGroups.includes(domainKey)) {
+                newExpandedGroups.push(domainKey);
+              }
+              
+              if (!newExpandedGroups.includes(diagramsKey)) {
+                newExpandedGroups.push(diagramsKey);
+              }
+              
+              return newExpandedGroups;
+            });
+          }
+          
+          // 显示成功通知
+          success('关系图创建成功');
+          
+          // 导航到关系图编辑器
+          navigate(`/app/diagram/edit/${newDiagramId}`);
+        }
+        break;
+      
+      case 'copyDiagrams':
+        if (contextMenu.targetId && currentProject) {
+          // 从targetId中提取domainId
+          const domainId = contextMenu.targetId.split('_').slice(1).join('_');
+          
+          // 查找当前主题域下的所有关系图
+          const diagrams = currentProject.diagrams?.filter(d => d.domainId === domainId) || [];
+          
+          if (diagrams.length > 0) {
+            // 保存到剪贴板
+            localStorage.setItem('diagram_clipboard', JSON.stringify({
+              action: 'copy',
+              domainId,
+              diagrams,
+              timestamp: Date.now()
+            }));
+            
+            // 显示成功通知
+            success(`已复制 ${diagrams.length} 个关系图到剪贴板`);
+          } else {
+            error('当前主题域下没有关系图可复制');
+          }
+        }
+        break;
+      
+      case 'cutDiagrams':
+        if (contextMenu.targetId && currentProject) {
+          // 从targetId中提取domainId
+          const domainId = contextMenu.targetId.split('_').slice(1).join('_');
+          
+          // 查找当前主题域下的所有关系图
+          const diagrams = currentProject.diagrams?.filter(d => d.domainId === domainId) || [];
+          
+          if (diagrams.length > 0) {
+            // 保存到剪贴板
+            localStorage.setItem('diagram_clipboard', JSON.stringify({
+              action: 'cut',
+              domainId,
+              diagrams,
+              timestamp: Date.now()
+            }));
+            
+            // 显示成功通知
+            success(`已剪切 ${diagrams.length} 个关系图到剪贴板`);
+          } else {
+            error('当前主题域下没有关系图可剪切');
+          }
+        }
+        break;
+      
+      case 'pasteDiagrams':
+        if (contextMenu.targetId && currentProject) {
+          // 从targetId中提取domainId
+          const targetDomainId = contextMenu.targetId.split('_').slice(1).join('_');
+          
+          // 获取剪贴板数据
+          const clipboardData = localStorage.getItem('diagram_clipboard');
+          
+          if (clipboardData) {
+            try {
+              const { action, diagrams, domainId } = JSON.parse(clipboardData);
+              
+              if (!diagrams || !Array.isArray(diagrams) || diagrams.length === 0) {
+                error('剪贴板中没有有效的关系图数据');
+                return;
+              }
+              
+              // 创建新的关系图
+              const now = Date.now();
+              const newDiagrams = diagrams.map(diagram => ({
+                ...diagram,
+                id: generateUUID(),
+                domainId: targetDomainId,
+                defKey: `${diagram.defKey}_copy`,
+                defName: `${diagram.defName} (复制)`,
+                createTime: now,
+                lastModified: now
+              }));
+              
+              // 更新项目数据
+              if (action === 'cut' && domainId) {
+                // 如果是剪切操作，则从原主题域中移除关系图
+                const updatedDiagrams = currentProject.diagrams?.filter(d => !(d.domainId === domainId && diagrams.some(cd => cd.id === d.id))) || [];
+                
+                // 添加新的关系图
+                const newProjectDiagrams = [...updatedDiagrams, ...newDiagrams];
+                
+                // 更新项目
+                const updatedProject = {
+                  ...currentProject,
+                  diagrams: newProjectDiagrams,
+                  lastModified: now
+                };
+                
+                // 更新Redux状态
+                dispatch(setCurrentProject(updatedProject));
+                
+                // 清空剪贴板
+                localStorage.removeItem('diagram_clipboard');
+              } else {
+                // 如果是复制操作，直接添加新的关系图
+                const updatedProject = {
+                  ...currentProject,
+                  diagrams: [...(currentProject.diagrams || []), ...newDiagrams],
+                  lastModified: now
+                };
+                
+                // 更新Redux状态
+                dispatch(setCurrentProject(updatedProject));
+              }
+              
+              // 显示成功通知
+              success(`已粘贴 ${newDiagrams.length} 个关系图到 ${getDomainNameById(targetDomainId)}`);
+              
+              // 确保相关菜单展开
+              if (!expandedGroups.includes(`diagrams_${targetDomainId}`)) {
+                setExpandedGroups(prev => [...prev, `diagrams_${targetDomainId}`]);
+              }
+            } catch (err) {
+              console.error('粘贴关系图失败:', err);
+              error('粘贴关系图失败，请查看控制台错误信息');
+            }
+          } else {
+            error('剪贴板中没有关系图数据');
+          }
+        }
+        break;
+      
+      case 'deleteDiagrams':
+        if (contextMenu.targetId && currentProject) {
+          // 从targetId中提取domainId
+          const domainId = contextMenu.targetId.split('_').slice(1).join('_');
+          const domainName = getDomainNameById(domainId);
+          
+          // 查找当前主题域下的所有关系图
+          const diagrams = currentProject.diagrams?.filter(d => d.domainId === domainId) || [];
+          
+          if (diagrams.length > 0) {
+            // 显示确认弹窗
+            setPopConfirm({
+              visible: true,
+              title: `确定要删除 ${domainName} 下的所有关系图吗？此操作不可恢复。`,
+              action: 'deleteDomainDiagrams',
+              position: { x: contextMenu.x, y: contextMenu.y },
+              targetId: domainId
+            });
+          } else {
+            error('当前主题域下没有关系图可删除');
+          }
+        }
+        break;
+      
+      case 'exportDiagramsAsPNG':
+        if (contextMenu.targetId) {
+          // 从targetId中提取domainId
+          const domainId = contextMenu.targetId.split('_').slice(1).join('_');
+          const domainName = getDomainNameById(domainId);
+          
+          // 实际导出逻辑需要实现
+          // 这里只是一个简单的通知
+          success(`导出 ${domainName} 下的关系图为PNG功能即将实现`);
+        }
+        break;
+      
+      case 'exportDiagramsAsSVG':
+        if (contextMenu.targetId) {
+          // 从targetId中提取domainId
+          const domainId = contextMenu.targetId.split('_').slice(1).join('_');
+          const domainName = getDomainNameById(domainId);
+          
+          // 实际导出逻辑需要实现
+          // 这里只是一个简单的通知
+          success(`导出 ${domainName} 下的关系图为SVG功能即将实现`);
+        }
+        break;
+      
       case 'delete':
         // 表删除操作
         if (contextMenu.targetId && contextMenu.type === 'table' && currentProject) {
@@ -788,7 +1059,14 @@ const MainLayout: React.FC = () => {
         }
         break;
       
-      // 其他上下文菜单操作...
+      case 'closeProject':
+        // 执行关闭项目操作
+        dispatch(setCurrentProject(null));
+        // 返回欢迎页面
+        navigate('/');
+        break;
+      
+      // 可以添加其他需要确认的操作
       
       default:
         // 未实现的操作
@@ -804,6 +1082,38 @@ const MainLayout: React.FC = () => {
       return;
     }
     
+    // 首先检查是否是关系图项
+    const isDiagram = currentProject?.diagrams?.some(diagram => diagram.id === tableKey);
+    
+    if (isDiagram) {
+      // 如果是关系图项，导航到关系图编辑页
+      navigate(`/app/diagram/edit/${tableKey}`);
+      
+      // 设置当前激活的标签页
+      setActiveTab(tableKey);
+      
+      // 查找关系图数据
+      const diagram = currentProject?.diagrams?.find(d => d.id === tableKey);
+      
+      // 检查标签页是否已存在
+      const existingTab = tabs.find(tab => tab.type === tableKey);
+      if (!existingTab && diagram) {
+        // 添加新标签页
+        setTabs(prev => [
+          ...prev,
+          {
+            id: tableKey,
+            title: diagram.defName,
+            type: tableKey,
+            icon: <BranchesOutlined />
+          }
+        ]);
+      }
+      
+      return;
+    }
+    
+    // 如果是表项，执行原有逻辑
     // 批量更新状态，减少重渲染次数
     const batchedUpdates = () => {
       // 更新选中的表
@@ -1051,6 +1361,7 @@ const MainLayout: React.FC = () => {
           onTableItemClick={handleTableItemClick}
           onContextMenu={showContextMenu}
           domainTables={domainTables}
+          domainDiagrams={domainDiagrams}
         />
 
         <div className="content-area">
@@ -1403,86 +1714,48 @@ const MainLayout: React.FC = () => {
                 }
               }
               break;
-              
             case 'deleteDomain':
-              // 执行删除主题域操作
-              if (popConfirm.targetId && currentProject) {
+              // 主题域删除
+              if (popConfirm.targetId && contextMenu.type === 'domain' && currentProject) {
                 const domainId = popConfirm.targetId.split('_').slice(1).join('_');
-                const domainToDelete = currentProject.domains.find(d => d.id === domainId);
+                const domainName = getDomainNameById(domainId);
                 
-                if (domainToDelete) {
-                  try {
-                    // 筛选出不属于该主题域的表
-                    const filteredTables = currentProject.tables.filter(table => table.domainId !== domainId);
-                    
-                    // 筛选出不是该要删除的主题域
-                    const filteredDomains = currentProject.domains.filter(domain => domain.id !== domainId);
-                    
-                    // 更新项目数据
-                    const updatedProject = {
-                      ...currentProject,
-                      domains: filteredDomains,
-                      tables: filteredTables,
-                      lastModified: Date.now()
-                    };
-                    
-                    // 更新Redux状态
-                    dispatch(setCurrentProject(updatedProject));
-                    
-                    // 保存到localStorage
-                    saveProject(updatedProject);
-                    
-                    // 关闭所有与该域相关的标签页
-                    const domainTables = currentProject.tables.filter(t => t.domainId === domainId);
-                    const tableIds = domainTables.map(t => t.id);
-                    
-                    // 筛选出不在要删除的表中的标签页
-                    const filteredTabs = tabs.filter(tab => !tableIds.includes(tab.id));
-                    setTabs(filteredTabs);
-                    
-                    // 如果正在显示的标签页属于被删除的，就切换到首页
-                    if (activeTab && tableIds.includes(activeTab)) {
-                      setActiveTab('dashboard');
-                      navigate('/app/dashboard');
-                    }
-                    
-                    // 展示成功消息
-                    success(`主题域 "${domainToDelete.name}" 及其所有数据表已成功删除`);
-                  } catch (err) {
-                    console.error('删除主题域失败:', err);
-                    error('删除主题域失败，请检查控制台错误日志');
-                  }
-                }
+                // 显示确认弹窗
+                setPopConfirm({
+                  visible: true,
+                  title: `确定要删除主题域 "${domainName}" 吗？删除主题域将同时删除其下所有数据表。`,
+                  action: 'deleteDomain',
+                  position: { x: contextMenu.x, y: contextMenu.y },
+                  targetId: popConfirm.targetId
+                });
               }
               break;
-              
+            case 'deleteDomainDiagrams':
+              if (popConfirm.targetId && currentProject) {
+                const domainId = popConfirm.targetId.split('_').slice(1).join('_');
+                const domainName = getDomainNameById(domainId);
+                
+                // 显示确认弹窗
+                setPopConfirm({
+                  visible: true,
+                  title: `确定要删除 ${domainName} 下的所有关系图吗？此操作不可恢复。`,
+                  action: 'deleteDomainDiagrams',
+                  position: { x: contextMenu.x, y: contextMenu.y },
+                  targetId: popConfirm.targetId
+                });
+              }
+              break;
             case 'closeProject':
               // 执行关闭项目操作
               dispatch(setCurrentProject(null));
               // 返回欢迎页面
               navigate('/');
               break;
-              
-            // 可以添加其他需要确认的操作
-              
             default:
-              console.log('未处理的确认操作:', popConfirm.action);
+              // 未实现的操作
+              console.log('未实现的菜单操作:', popConfirm.action);
           }
-          
-          // 关闭确认框
-          setPopConfirm(prev => ({ ...prev, visible: false }));
         }}
-        onCancel={() => {
-          // 关闭确认框
-          setPopConfirm(prev => ({ ...prev, visible: false }));
-        }}
-      />
-
-      {/* 导入SQL模态框 */}
-      <ImportSQLModal
-        isOpen={isImportSQLModalOpen}
-        onClose={() => setIsImportSQLModalOpen(false)}
-        onImport={handleImportSQLResult}
       />
     </div>
   );

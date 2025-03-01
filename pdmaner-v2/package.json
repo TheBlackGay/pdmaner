@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@antv/x6": "^2.18.1",
+    "@antv/x6-react-shape": "^2.2.3"
+  }
+}

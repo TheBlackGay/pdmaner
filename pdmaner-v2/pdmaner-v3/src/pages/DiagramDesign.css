@@ -2,6 +2,265 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  background-color: #0c0c14;
+  position: relative;
+}
+
+.diagram-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 加载指示器 */
+.loading-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(12, 12, 20, 0.8);
+  z-index: 10;
+  backdrop-filter: blur(5px);
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(5, 217, 232, 0.3);
+  border-radius: 50%;
+  border-top-color: #05d9e8;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.5);
+}
+
+.loading-text {
+  color: #05d9e8;
+  font-size: 16px;
+  text-shadow: 0 0 10px rgba(5, 217, 232, 0.7);
+  letter-spacing: 1px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 全屏模式 */
+.diagram-design-page:fullscreen {
+  background-color: #0c0c14;
+}
+
+.diagram-design-page:fullscreen .diagram-container {
+  height: calc(100vh - 48px);
+}
+
+/* 表选择对话框 */
+.table-selector-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(12, 12, 20, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.table-selector-container {
+  background-color: #14152b;
+  border: 1px solid rgba(5, 217, 232, 0.3);
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
+  max-height: 80vh;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(5, 217, 232, 0.3);
+  overflow: hidden;
+  animation: modal-slide-in 0.3s ease-out;
+}
+
+@keyframes modal-slide-in {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.table-selector-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(5, 217, 232, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(10, 12, 26, 0.5);
+}
+
+.table-selector-header h3 {
+  margin: 0;
+  color: #05d9e8;
+  font-size: 18px;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
+}
+
+.table-selector-close {
+  background: none;
+  border: none;
+  color: #c8c8ff;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.table-selector-close:hover {
+  color: #ff2a6d;
+  transform: rotate(90deg);
+}
+
+.table-selector-body {
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.table-selector-search {
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.table-selector-search input {
+  width: 100%;
+  padding: 10px 15px 10px 35px;
+  background-color: rgba(16, 18, 38, 0.6);
+  border: 1px solid rgba(5, 217, 232, 0.2);
+  border-radius: 6px;
+  color: #e0e0ff;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.table-selector-search input:focus {
+  outline: none;
+  border-color: rgba(5, 217, 232, 0.5);
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.2);
+}
+
+.table-selector-search svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #05d9e8;
+  font-size: 16px;
+}
+
+.table-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.table-item {
+  background-color: rgba(16, 18, 38, 0.4);
+  border: 1px solid rgba(5, 217, 232, 0.15);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.table-item:hover {
+  background-color: rgba(5, 217, 232, 0.1);
+  border-color: rgba(5, 217, 232, 0.3);
+  transform: translateY(-2px);
+}
+
+.table-item.selected {
+  background-color: rgba(5, 217, 232, 0.15);
+  border-color: rgba(5, 217, 232, 0.5);
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.3);
+}
+
+.table-item-name {
+  font-weight: 500;
+  color: #e0e0ff;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.table-item-code {
+  color: #8d8dba;
+  font-size: 12px;
+}
+
+.table-selector-footer {
+  padding: 15px 20px;
+  border-top: 1px solid rgba(5, 217, 232, 0.2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background-color: rgba(10, 12, 26, 0.5);
+}
+
+.table-selector-cancel {
+  background-color: transparent;
+  border: 1px solid rgba(200, 200, 255, 0.3);
+  color: #c8c8ff;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.table-selector-cancel:hover {
+  background-color: rgba(200, 200, 255, 0.1);
+  border-color: rgba(200, 200, 255, 0.5);
+}
+
+.table-selector-confirm {
+  background-color: rgba(5, 217, 232, 0.2);
+  border: 1px solid rgba(5, 217, 232, 0.4);
+  color: #05d9e8;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-shadow: 0 0 8px rgba(5, 217, 232, 0.4);
+}
+
+.table-selector-confirm:hover {
+  background-color: rgba(5, 217, 232, 0.3);
+  border-color: rgba(5, 217, 232, 0.6);
+  box-shadow: 0 0 10px rgba(5, 217, 232, 0.3);
+}
+
+.table-selector-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 滚动条样式 */
+.table-selector-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-selector-body::-webkit-scrollbar-track {
+  background: rgba(12, 12, 20, 0.5);
+}
+
+.table-selector-body::-webkit-scrollbar-thumb {
+  background: rgba(5, 217, 232, 0.3);
+  border-radius: 4px;
+}
+
+.table-selector-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(5, 217, 232, 0.5);
 }
 
 .diagram-header {

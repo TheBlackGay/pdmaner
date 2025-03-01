@@ -8,6 +8,7 @@ import HomePage from './pages/Home';
 import ProjectsPage from './pages/Projects';
 import EntityDesign from './pages/EntityDesign';
 import DiagramDesign from './pages/DiagramDesign';
+import DiagramList from './pages/DiagramList';
 import DictionaryPage from './pages/Dictionary';
 import CodeGeneration from './pages/CodeGeneration';
 import Welcome from './pages/Welcome';
@@ -17,12 +18,12 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import '@assets/styles/index.css';
 
 const App: React.FC = () => {
-  const isLoading = useSelector((state: RootState) => state.app.isLoading);
+  const loading = useSelector((state: RootState) => state.app.loading);
   const darkMode = useSelector((state: RootState) => state.app.darkMode);
 
   return (
     <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
-      {isLoading && (
+      {loading && (
         <div className="loading-overlay">
           <div className="loading-spinner"></div>
         </div>
@@ -38,7 +39,8 @@ const App: React.FC = () => {
               <Route path="entity/:domainId?/tables" element={<EntityDesign type="tables" />} />
               <Route path="entity/:domainId?/entities" element={<EntityDesign type="entities" />} />
               <Route path="entity/:domainId?/views" element={<EntityDesign type="views" />} />
-              <Route path="diagram/:domainId?" element={<DiagramDesign />} />
+              <Route path="diagram/edit/:diagramId" element={<DiagramDesign />} />
+              <Route path="diagram/:domainId?" element={<DiagramList />} />
               <Route path="dict/:domainId?" element={<DictionaryPage />} />
               <Route path="table/:tableId" element={<TableDetails />} />
               <Route path="code" element={<CodeGeneration />} />

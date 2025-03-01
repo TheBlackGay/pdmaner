@@ -97,6 +97,33 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
           </>
         );
       
+      case 'diagrams':
+        return (
+          <>
+            <div className="context-menu-item" onClick={() => onMenuItemClick('addDiagram')}>
+              <PlusOutlined /> 新增关系图
+            </div>
+            <div className="context-menu-item" onClick={() => onMenuItemClick('copyDiagrams')}>
+              <CopyOutlined /> 复制这些关系图
+            </div>
+            <div className="context-menu-item" onClick={() => onMenuItemClick('cutDiagrams')}>
+              <EditOutlined /> 剪切这些关系图
+            </div>
+            <div className="context-menu-item" onClick={() => onMenuItemClick('pasteDiagrams')}>
+              <EditOutlined /> 粘贴这些关系图
+            </div>
+            <div className="context-menu-item danger" onClick={() => onMenuItemClick('deleteDiagrams')}>
+              <DeleteOutlined /> 删除这些关系图
+            </div>
+            <div className="context-menu-item" onClick={() => onMenuItemClick('exportDiagramsAsPNG')}>
+              <ExportOutlined /> 导出为PNG这些关系图
+            </div>
+            <div className="context-menu-item" onClick={() => onMenuItemClick('exportDiagramsAsSVG')}>
+              <ExportOutlined /> 导出为SVG这些关系图
+            </div>
+          </>
+        );
+      
       case 'table':
         return (
           <>
