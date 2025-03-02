@@ -21,8 +21,6 @@
   "license": "ISC",
   "dependencies": {
     "@ant-design/icons": "^5.6.1",
-    "@antv/x6": "^2.18.1",
-    "@antv/x6-react-shape": "^2.2.3",
     "@reduxjs/toolkit": "^2.0.1",
     "antd": "^5.12.5",
     "html2canvas": "^1.4.1",
