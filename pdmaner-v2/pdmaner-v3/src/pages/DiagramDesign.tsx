@@ -19,11 +19,11 @@ const DiagramDesign: React.FC<DiagramDesignProps> = () => {
   const { diagramId } = useParams<{ diagramId: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
+
   // 从Redux获取当前项目
   const currentProject = useSelector((state: RootState) => state.app.currentProject);
   const { success, error } = useNotificationContext();
-  
+
   // 状态
   const [isLoading, setIsLoading] = useState(true);
   const [currentDiagram, setCurrentDiagram] = useState<Diagram | null>(null);
@@ -35,12 +35,12 @@ const DiagramDesign: React.FC<DiagramDesignProps> = () => {
   const [canPaste, setCanPaste] = useState(false);
   const [canDelete, setCanDelete] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
-  
+
   // 引用
   const editorRef = useRef<DiagramEditorRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<Graph | null>(null);
-  
+
   // 在组件加载时获取关系图数据
   useEffect(() => {
     if (!currentProject || !diagramId) {
@@ -48,19 +48,19 @@ const DiagramDesign: React.FC<DiagramDesignProps> = () => {
       navigate('/app');
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // 查找当前图表
       const diagram = currentProject.diagrams?.find(d => d.id === diagramId);
-      
+
       if (!diagram) {
         error('找不到指定的关系图');
         navigate('/app/diagram');
         return;
       }
-      
+
       // 设置当前关系图
       setCurrentDiagram(diagram);
       setIsLoading(false);
@@ -70,62 +70,62 @@ const DiagramDesign: React.FC<DiagramDesignProps> = () => {
       setIsLoading(false);
     }
   }, [currentProject, diagramId, navigate, error]);
-  
+
   // 保存关系图
   const handleSave = (updatedDiagram: Diagram) => {
     if (!currentProject) return;
-    
+
     try {
       // 更新项目中的关系图
-      const updatedDiagrams = currentProject.diagrams?.map(d => 
+      const updatedDiagrams = currentProject.diagrams?.map(d =>
         d.id === updatedDiagram.id ? updatedDiagram : d
       ) || [];
-      
+
       // 更新Redux中的项目数据
       dispatch(setCurrentProject({
         ...currentProject,
         diagrams: updatedDiagrams
       }));
-      
-      success('关系图已保存');
+
+      // success('关系图已保存');
     } catch (err) {
       console.error('保存关系图时出错:', err);
       error('保存关系图失败');
     }
   };
-  
+
   // 处理添加表
   const handleAddTable = (entity: Entity, position: { x: number, y: number }) => {
     if (!editorRef.current) return;
-    
+
     // 使用DiagramEditor的addTable方法添加表
     const node = editorRef.current.addTable(entity, position);
-    
+
     if (node && currentDiagram) {
       // 如果添加成功，更新关系图的entityIds列表
       const updatedEntityIds = [...(currentDiagram.entityIds || [])];
       if (!updatedEntityIds.includes(entity.id)) {
         updatedEntityIds.push(entity.id);
       }
-      
+
       const updatedDiagram = {
         ...currentDiagram,
         entityIds: updatedEntityIds,
       };
-      
+
       setCurrentDiagram(updatedDiagram);
       editorRef.current.saveCanvasData();
     }
   };
-  
+
   // 切换侧边栏显示状态
   const toggleSidebar = () => {
     setShowSidebar(!showSidebar);
   };
-  
+
   return (
     <div className="diagram-design-page" ref={containerRef}>
-      <DiagramToolbar 
+      <DiagramToolbar
         canUndo={canUndo}
         canRedo={canRedo}
         canCopy={canCopy}
@@ -198,13 +198,13 @@ const DiagramDesign: React.FC<DiagramDesignProps> = () => {
           }
         }}
         onSave={() => editorRef.current?.saveCanvasData()}
-        onAutoLayout={() => editorRef.current?.autoLayout()}
+        onAutoLayout={(layoutType) => editorRef.current?.autoLayout(layoutType)}
         onExportPNG={() => editorRef.current?.exportAsPNG()}
         onExportSVG={() => editorRef.current?.exportAsSVG()}
         onToggleSidebar={toggleSidebar}
         showSidebar={showSidebar}
       />
-      
+
       <div className="diagram-content">
         {showSidebar && diagramId && (
           <TableSidebar
@@ -212,7 +212,7 @@ const DiagramDesign: React.FC<DiagramDesignProps> = () => {
             diagramId={diagramId}
           />
         )}
-        
+
         <div className="diagram-container">
           {diagramId && (
             <DiagramEditor
@@ -236,7 +236,7 @@ const DiagramDesign: React.FC<DiagramDesignProps> = () => {
           )}
         </div>
       </div>
-      
+
       {isLoading && (
         <div className="loading-container">
           <div className="loading-spinner"></div>
@@ -247,4 +247,4 @@ const DiagramDesign: React.FC<DiagramDesignProps> = () => {
   );
 };
 
-export default DiagramDesign; 
+export default DiagramDesign;

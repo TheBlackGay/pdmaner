@@ -17,7 +17,11 @@ import {
   FullscreenExitOutlined,
   ReloadOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  AppstoreOutlined,
+  RadarChartOutlined,
+  ApartmentOutlined,
+  DotChartOutlined
 } from '@ant-design/icons';
 import './DiagramToolbar.css';
 
@@ -28,7 +32,7 @@ interface DiagramToolbarProps {
   onSave: () => void;
   onExportPNG: () => void;
   onExportSVG: () => void;
-  onAutoLayout: () => void;
+  onAutoLayout: (layoutType?: string) => void;
   onDelete: () => void;
   onCopy: () => void;
   onCut: () => void;
@@ -147,13 +151,41 @@ const DiagramToolbar: React.FC<DiagramToolbarProps> = ({
         
         <div className="toolbar-divider"></div>
         
-        <button
-          className="toolbar-button"
-          onClick={onAutoLayout}
-          title="自动布局"
-        >
-          <LayoutOutlined />
-        </button>
+        <div className="toolbar-dropdown">
+          <button
+            className="toolbar-button"
+            title="自动布局"
+            onClick={() => onAutoLayout('grid')}
+          >
+            <LayoutOutlined />
+          </button>
+          <div className="toolbar-dropdown-content">
+            <button
+              className="dropdown-item"
+              onClick={() => onAutoLayout('grid')}
+            >
+              <AppstoreOutlined /> 网格布局
+            </button>
+            <button
+              className="dropdown-item"
+              onClick={() => onAutoLayout('circle')}
+            >
+              <RadarChartOutlined /> 环形布局
+            </button>
+            <button
+              className="dropdown-item"
+              onClick={() => onAutoLayout('tree')}
+            >
+              <ApartmentOutlined /> 树形布局
+            </button>
+            <button
+              className="dropdown-item"
+              onClick={() => onAutoLayout('force')}
+            >
+              <DotChartOutlined /> 力导向布局
+            </button>
+          </div>
+        </div>
         
         <div className="toolbar-divider"></div>
         
