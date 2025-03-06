@@ -4,11 +4,12 @@ import fs from 'fs';
 import path from 'path';
 import moment from 'moment';
 import * as _ from 'lodash/object';
+import { FormatMessage } from 'components';
 import { projectSuffix } from '../../profile';
 import {defaultJVM, transform} from './datasource_util';
-import { FormatMessage } from 'components';
 import {postWorkerFuc} from './event_tool';
 import {compareVersion} from './update';
+
 const { execFile } = require('child_process');
 
 const { ipcRenderer, shell } = require('electron');
@@ -80,7 +81,7 @@ export const saveNormalFile = (file, dataBuffer) => {
     });
     writer.on('close', () => {
       res(dataBuffer);
-    })
+    });
     writer.write(dataBuffer);
     writer.end();
   });
@@ -96,7 +97,7 @@ export const readNormalFile = (filePath) => {
         res(data);
       }
     });
-  })
+  });
 };
 
 const parseJson = (data, closeSpace = false) => {
@@ -108,10 +109,10 @@ const parseJson = (data, closeSpace = false) => {
         resolve(d);
       }).catch((err) => {
         reject(err);
-      })
+      });
     }
   });
-}
+};
 
 export const saveJsonPromise = (filePath, data, closeSpace = false) => {
   return new Promise((res, rej) => {
@@ -126,7 +127,7 @@ export const saveJsonPromise = (filePath, data, closeSpace = false) => {
           rej(err);
         });
       }
-    })
+    });
   });
 };
 
@@ -138,7 +139,7 @@ export const readJsonPromise = (filePath) => {
         res(d);
       }).catch((err) => {
         rej(err);
-      })
+      });
     }).catch((err) => {
       rej(err);
     });
@@ -190,12 +191,12 @@ export const getUserConfig = () => {
             r(defaultData);
           }).catch((err) => {
             rej(err);
-          })
+          });
         });
-      })
+      });
     };
     Promise.all([getData(userConfigPath, defaultUserConfigData),
-      getData(projectConfigPath, defaultProjectConfigData)]).then(result => {
+      getData(projectConfigPath, defaultProjectConfigData)]).then((result) => {
         setTimeout(() => {
           res(result);
         }, 1000);
@@ -238,20 +239,20 @@ export const saveFile = (data, filters, fileValidate, options, refactor) => {
           });
         }).catch((err) => {
           rej(err);
-        })
+        });
       } else {
         rej(new Error());
       }
     }).catch((err) => {
       rej(err);
-    })
+    });
   });
 };
 
 export const openFile = (filters) => {
   return new Promise((res, rej) => {
     dialog.showOpenDialog({
-      filters: filters || []
+      filters: filters || [],
     }).then(({filePaths}) => {
       if (filePaths.length > 0) {
         readNormalFile(filePaths[0]).then((data) => {
@@ -262,7 +263,7 @@ export const openFile = (filters) => {
       }
     }).catch((err) => {
       rej(err);
-    })
+    });
   });
 };
 
@@ -278,11 +279,11 @@ export const openFileOrDirPath = (filters, properties, rest) => {
       properties: properties || ['openFile'], // 默认是打开文件
     }).then(({filePaths}) => {
       if (filePaths.length > 0) {
-        res(filePaths[0])
+        res(filePaths[0]);
       }
     }).catch((err) => {
       rej(err);
-    })
+    });
   });
 };
 
@@ -299,7 +300,7 @@ export const openProjectFilePath = (errorFileMessage, suffix) => {
       }
     }).catch((err) => {
       rej(err);
-    })
+    });
   });
 };
 
@@ -328,13 +329,13 @@ export const getAllVersionFile = (p, data) => {
             return -1;
           }
           return 1;
-        }))
+        }));
       } else {
         res([]);
       }
-    })
+    });
   });
-}
+};
 
 export const getAllVersionProject = (p, data, names) => {
   // 获取当前项目的所有版本数据
@@ -342,21 +343,21 @@ export const getAllVersionProject = (p, data, names) => {
   if (!fs.existsSync(versionDir)) {
     return Promise.resolve([]);
   }
-  return Promise.all(names.map(f => {
+  return Promise.all(names.map((f) => {
     return new Promise((resolve, reject) => {
       readJsonPromise(path.join(versionDir, `${f}.json`)).then((version) => {
         resolve(_.omit(version, ['data']));
       }).catch((err) => {
         reject(err);
-      })
-    })
+      });
+    });
   }));
 };
 
 export const getOneVersion = (p, data, version) => {
   const versionDir = path.join(path.dirname(p), `.version_${data.name}`);
   return readJsonPromise(path.join(versionDir, `${version.name}.json`));
-}
+};
 
 export const removeAllVersionProject = (project) => {
   // 获取当前项目的所有版本数据
@@ -388,7 +389,7 @@ export const connectDB = (dataSource, config, params = {}, cmd, cb) => {
   if ('sinerFile' in tempParams) {
     // 需要创建临时项目文件 转换字段
     const updateFields = (data) => {
-      return (data || []).map(e => {
+      return (data || []).map((e) => {
         const fields = (e.fields || []);
         return {
           ...e,
@@ -398,18 +399,18 @@ export const connectDB = (dataSource, config, params = {}, cmd, cb) => {
               return {
                 ...f,
                 fieldDefKey:
-                    fields.find(field => field.id === f.fieldDefKey)?.defKey || f.fieldDefKey
+                    fields.find(field => field.id === f.fieldDefKey)?.defKey || f.fieldDefKey,
               };
             }),
           })),
-          fields: fields.map(f => {
+          fields: fields.map((f) => {
             return {
               ...f,
               ...transform(f, dataSource, undefined, undefined, undefined, ['refDict']),
             };
-          })
-        }
-      })
+          }),
+        };
+      });
     };
     fs.writeFileSync(sinerFile, JSON.stringify({
       ...dataSource,
@@ -468,15 +469,15 @@ export const connectDB = (dataSource, config, params = {}, cmd, cb) => {
           tempError = FormatMessage.string({id: 'config.JavaHomeConfigResult.outOfMemoryError'});
         }
         cb && cb({
-          status : "FAILED",
+          status : 'FAILED',
           body: tempError,
         });
       } else {
         readJsonPromise(outFile).then((d) => {
           cb && cb(d);
-        }).catch(err => {
+        }).catch((err) => {
           cb && cb({
-            status : "FAILED",
+            status : 'FAILED',
             body : err.message,
           });
         }).finally(() => {
@@ -493,7 +494,7 @@ export const copyFile = (defaultPath, filters) => {
   return new Promise((res, rej) => {
     dialog.showSaveDialog({
       defaultPath: (filters || [])[0]?.name,
-      filters: filters || []
+      filters: filters || [],
     }).then(({filePath}) => {
       if (filePath) {
         fs.copyFile(defaultPath, filePath, (err) => {
@@ -512,20 +513,20 @@ export const copyFile = (defaultPath, filters) => {
 
 export const saveTempImages = (images, imageType) => {
   // 创建临时目录
-  const userConfigPath = basePath + path.sep + 'temp_img';
+  const userConfigPath = `${basePath + path.sep  }temp_img`;
   // 删除临时文件夹
   deleteDirectoryFile(userConfigPath);
   // 重新创建临时文件夹
   ensureDirectoryExistence(userConfigPath);
   return new Promise((res, rej) => {
-    Promise.all(images.map(i => {
-      const filePath = userConfigPath + path.sep + (i.group ? `${i.group}-${i.fileName}` : i.fileName) + `.${imageType}`;
+    Promise.all(images.map((i) => {
+      const filePath = `${userConfigPath + path.sep + (i.group ? `${i.group}-${i.fileName}` : i.fileName)  }.${imageType}`;
       return saveNormalFile(filePath, i.data);
     })).then(() => {
       res(userConfigPath);
     }).catch((err) => {
       rej(err);
-    })
+    });
   });
 };
 
@@ -533,27 +534,27 @@ export const saveImages = (images, imageType) => {
   return new Promise((res, rej) => {
     openFileOrDirPath([], ['openDirectory']).then((p) => {
       if (p) {
-        Promise.all(images.map(i => {
-          const filePath = p + path.sep + i.fileName + '.' + imageType;
-          const dataBuffer = Buffer.from(i.data.replace(/^data:image\/\w+\+*\w+;base64,/, ""), 'base64');
+        Promise.all(images.map((i) => {
+          const filePath = `${p + path.sep + i.fileName  }.${  imageType}`;
+          const dataBuffer = Buffer.from(i.data.replace(/^data:image\/\w+\+*\w+;base64,/, ''), 'base64');
           return saveNormalFile(filePath, dataBuffer);
         })).then(() => {
           res();
         }).catch((err) => {
           rej(err);
-        })
+        });
       } else {
         rej(new Error());
       }
     }).catch((err) => {
       rej(err);
-    })
+    });
   });
 };
 
 const getDefaultTemplate = (ext, name) => {
   return ipcRenderer.sendSync('template', {ext, name});
-}
+};
 
 export const saveAsTemplate = (name, ext) => {
   return copyFile(getDefaultTemplate(ext, name), [{name: name, extensions: [ext]}]);
@@ -564,8 +565,8 @@ export const selectDir = (name, type) => {
     openFileOrDirPath([], ['openDirectory']).then((dir) => {
       res(`${dir}${path.sep}${name}-${moment().format('YYYYMDHHmmss')}.${type}`);
     });
-  })
-}
+  });
+};
 
 export const selectWordFile = (dataSource, template) => {
   const name = _.get(dataSource, 'name');
@@ -574,32 +575,32 @@ export const selectWordFile = (dataSource, template) => {
     openFileOrDirPath([], ['openDirectory']).then((dir) => {
       res([`${dir}${path.sep}${name}-${moment().format('YYYYMDHHmmss')}.docx`, defaultPath]);
     });
-  })
+  });
 };
 
 export const writeLog = (err) => {
   const logPath = `${basePath}${path.sep}${moment().format('YYYY-M-D-HH-mm-ss')}-error-log.txt`;
   return new Promise((res) => {
     saveNormalFile(logPath,err.stack)
-        .then(() => res(logPath))
+        .then(() => res(logPath));
   });
 };
 
 export const getLogPath = () => {
   return path.join(app.getPath('home'), '/logs/chiner');
-}
+};
 
 export const showItemInFolder = () => {
   shell.openPath(getLogPath());
-}
+};
 
 export const showErrorLogFolder = (file) => {
   shell.openPath(file);
-}
+};
 
 export const basename = (fileName, extension) => {
   return path.basename(fileName, extension);
-}
+};
 
 export const getBackupAllFile = ({info, data}, callback) => {
   if (info) {
@@ -608,7 +609,7 @@ export const getBackupAllFile = ({info, data}, callback) => {
       // 文件名-backup-${年月日时分秒}.chnr.json
       //const name = basename(info, '.json');
       ensureDirectoryExistence(dir);
-      const reg = new RegExp(`T\(\\d)+.pdma.json`);
+      const reg = new RegExp('T\(\\d)+.pdma.json');
       fs.readdir(dir, (error, files) => {
         if (!error) {
           try {
@@ -645,18 +646,18 @@ export const getBackupAllFileData = ({info, data}, callback) => {
   if (info) {
     try {
       const dir = path.join(path.dirname(info), `.back_${data.name}`);
-      const reg = new RegExp(`T\(\\d)+.pdma.json`);
+      const reg = new RegExp('T\(\\d)+.pdma.json');
       fs.readdir(dir, (error, files) => {
         if (!error) {
           try {
             const allFiles = files.filter(f => reg.test(f))
                 .sort((a, b) => {
               return b.match(/(\d)+/)[0] - a.match(/(\d)+/)[0];
-            }).map(f => {
+            }).map((f) => {
                   return {
                     file: f.match(/T(\d)+/)[0],
-                    path: path.join(dir, f)
-                  }
+                    path: path.join(dir, f),
+                  };
                 });
             callback && callback(allFiles);
           } catch (e) {
@@ -670,9 +671,9 @@ export const getBackupAllFileData = ({info, data}, callback) => {
       callback && callback([]);
     }
   } else {
-    callback([])
+    callback([]);
   }
-}
+};
 
 export const deleteVersion = (versionData, dataSource, info) => {
   const versionDir = path.join(path.dirname(info), `.version_${dataSource.name}`);
@@ -713,17 +714,17 @@ export const renameBackupAllFile = (oldFilePath, newFilePath, oldData, newData) 
     }
     fs.renameSync(oldBackupDir, newBackupDir);
   }
-}
+};
 
 export const saveAllTemplate = (data, filePath) => {
   try {
-    return Promise.all(data.filter(d => d.suffix).map(d => {
+    return Promise.all(data.filter(d => d.suffix).map((d) => {
       const file = path.join(filePath, d.suffix);
       ensureDirectoryExistence(dirname(file));
       return new Promise((res, rej) => {
         saveNormalFile(file, d.code).then(() => {
           res(file);
-        }).catch(err => rej(err))
+        }).catch(err => rej(err));
       });
     }));
   } catch (e) {
@@ -738,4 +739,4 @@ export const extractFile = (filePath) => {
 
 export const getFilePath = (path) => {
   return ipcRenderer.sendSync('loadFile',{path});
-}
+};

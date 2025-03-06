@@ -17,14 +17,14 @@ export default React.memo(({prefix, dataChange, dataSource}) => {
         <FormatMessage id='config.relationFieldSize'/>
         <FormatMessage id='config.relationFieldSizeDiscard'/>
         <Tooltip placement='left' title={<FormatMessage id='config.relationFieldSizeDiscardTitle'/>} force>
-              <span className={`${currentPrefix}-form-item-label-help`}>
-                <Icon type='icon-xinxi'/>
-              </span>
+          <span className={`${currentPrefix}-form-item-label-help`}>
+            <Icon type='icon-xinxi'/>
+          </span>
         </Tooltip>
       </span>
       <span className={`${currentPrefix}-form-item-component`}>
         <NumberInput disable onChange={onChange} defaultValue={relationFieldSize}/>
       </span>
     </div>
-  </div>
+  </div>;
 });

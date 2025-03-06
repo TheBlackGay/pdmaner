@@ -3,9 +3,9 @@ import ResizeObserver from 'resize-observer-polyfill';
 let listeners = [];
 
 window.onresize = (e) => {
-  listeners.forEach(listener => {
+  listeners.forEach((listener) => {
     listener?.fuc(e);
-  })
+  });
 };
 
 export const addOnResize = (id, fuc) => {
@@ -28,7 +28,7 @@ export const addDomResize = (dom, id, callback) => {
     ro = new ResizeObserver((entries) => {
       entries.forEach(({target, contentRect}) => {
         const currentId = Object.keys(callbackCache)
-            .filter((c) => callbackCache[c]?.dom === target)[0];
+            .filter(c => callbackCache[c]?.dom === target)[0];
         callbackCache[currentId]?.callback(contentRect);
       });
     });
@@ -55,9 +55,9 @@ export const addBodyEvent = (eventName, eventId, event) => {
   if (!eventMap[eventName]) {
     eventMap[eventName] = [];
     document.body[eventName] = (e) => {
-      eventMap[eventName].forEach(eve => {
+      eventMap[eventName].forEach((eve) => {
         eve?.event(e);
-      })
+      });
     };
   }
   eventMap[eventName].push({eventId, event});
@@ -72,10 +72,10 @@ export const removeBodyEvent = (eventName, eventId) => {
 
 export const addBodyClick = (id, event) => {
   addBodyEvent('onclick', id, event);
-}
+};
 
 export const removeBodyClick = (id) => {
   removeBodyEvent('onclick', id);
-}
+};
 
 

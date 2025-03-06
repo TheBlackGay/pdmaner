@@ -1,6 +1,12 @@
 // 打包时判断是否是网页版还是桌面版
 
-//import * as json from './json';
+/* 
+ * 注意: MiddleLoader会在文件前面注入以下代码:
+ * import * as json from './${platform}';
+ * export const platform = '${platform}';
+ * 
+ * 因此不要在这里重复声明或导出platform变量
+ */
 
 const saveJsonPromise = json.saveJsonPromise;
 const readJsonPromise = json.readJsonPromise;
@@ -44,6 +50,7 @@ const getBackupAllFileData = json.getBackupAllFileData;
 const getFilePath = json.getFilePath;
 
 export {
+  // platform变量由MiddleLoader在文件顶部导出，不要在这里重复导出
   saveJsonPromise,
   readJsonPromise,
   saveJsonPromiseAs,

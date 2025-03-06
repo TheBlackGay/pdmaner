@@ -1,604 +1,608 @@
 // 不依赖其他文件[react相关/样式相关] 方便后续使用worker线程 此处方法皆为影子方法 所有方法都使用_开头
 // 此文件中禁止引入dom/css/localStorage相关
-import demoProject from './template/教学管理系统.pdma.json';
-import allLangData from '../lang';
 import _ from 'lodash';
 import doT from 'dot';
+// 使用别名导入避免扩展名问题
+import demoProject from './template/教学管理系统.pdma';
+import allLangData from '../lang';
 import {separator} from '../../profile';
 import {firstUp} from './string';
 import './Math';
 
-export const demoGroup = [{defKey: "DEFAULT_GROUP", defName: "默认分组"}];
+export const demoGroup = [{defKey: 'DEFAULT_GROUP', defName: '默认分组'}];
 export const demoTable = {
     entity: {
-        "defKey": "SIMS_STUDENT",
-        "defName": "学生",
-        "comment": "",
-        "env": {
-            "base": {"nameSpace":"cn.chiner.domain","codeRoot":"SimsStudent"},
-            "template":{
-                "JAVA": {
-                    "content":{
-                        "suffix":"demo/entity/{{=it.codeRoot}}Entity.java"
-                    }
-                }
-            },
-            "custom":{"xpath":"xxx"}},
-        "properties": {
-            "partitioned by": "(pt_d string)",
-            "row format delimited": "",
-            "fields terminated by": "','",
-            "collection items terminated by": "'-'"
-        },
-        "nameTemplate": "{defKey}[{defName}]",
-        "fields": [
-            {
-                "defKey": "COLLEGE_ID",
-                "defName": "所在学院ID",
-                "comment": "",
-                "len": 32,
-                "scale": "",
-                "primaryKey": false,
-                "notNull": true,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "IdOrKey",
-                "type": "String",
-                "dbType": "VARCHAR"
-            },
-            {
-                "defKey": "CLASS_ID",
-                "defName": "所在班级ID",
-                "comment": "",
-                "len": 32,
-                "scale": "",
-                "primaryKey": false,
-                "notNull": true,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "IdOrKey",
-                "type": "String",
-                "dbType": "VARCHAR"
-            },
-            {
-                "defKey": "STUDENT_ID",
-                "defName": "学生ID",
-                "comment": "",
-                "len": 32,
-                "scale": "",
-                "primaryKey": true,
-                "notNull": true,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "IdOrKey",
-                "type": "String",
-                "dbType": "VARCHAR"
-            },
-            {
-                "defKey": "STUDENT_NAME",
-                "defName": "学生姓名",
-                "comment": "",
-                "len": 90,
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "Name",
-                "type": "String",
-                "dbType": "VARCHAR"
-            },
-            {
-                "defKey": "ENG_NAME",
-                "defName": "英文名",
-                "comment": "",
-                "len": 90,
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "Name",
-                "type": "String",
-                "dbType": "VARCHAR"
-            },
-            {
-                "defKey": "ID_CARD_NO",
-                "defName": "身份证号",
-                "comment": "",
-                "len": "60",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "DefaultString",
-                "type": "String",
-                "dbType": "VARCHAR"
-            },
-            {
-                "defKey": "MOBILE_PHONE",
-                "defName": "手机号",
-                "comment": "",
-                "len": "60",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "DefaultString",
-                "type": "String",
-                "dbType": "VARCHAR"
-            },
-            {
-                "defKey": "GENDER",
-                "defName": "性别",
-                "comment": "",
-                "len": "32",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "'M'",
-                "hideInGraph": false,
-                "domain": "Dict",
-                "refDict": "Gender",
-                "refDictData": {
-                    "defKey": "Gender",
-                    "defName": "性别",
-                    "intro": "",
-                    "items": [
-                        {
-                            "defKey": "M",
-                            "defName": "男",
-                            "intro": "",
-                            "parentKey": "",
-                            "enabled": true,
-                            "attr1": "",
-                            "attr2": "",
-                            "attr3": "",
-                            "sort": "1"
-                        },
-                        {
-                            "defKey": "F",
-                            "defName": "女",
-                            "intro": "",
-                            "parentKey": "",
-                            "enabled": true,
-                            "attr1": "",
-                            "attr2": "",
-                            "attr3": "",
-                            "sort": "2"
-                        },
-                        {
-                            "defKey": "U",
-                            "defName": "未知",
-                            "intro": "",
-                            "parentKey": "",
-                            "enabled": true,
-                            "attr1": "",
-                            "attr2": "",
-                            "attr3": "",
-                            "sort": "3"
-                        }
-                    ]
+        defKey: 'SIMS_STUDENT',
+        defName: '学生',
+        comment: '',
+        env: {
+            base: {nameSpace:'cn.chiner.domain',codeRoot:'SimsStudent'},
+            template:{
+                JAVA: {
+                    content:{
+                        suffix:'demo/entity/{{=it.codeRoot}}Entity.java',
+                    },
                 },
-                "type": "String",
-                "dbType": "VARCHAR"
+            },
+            custom:{xpath:'xxx'}},
+        properties: {
+            'partitioned by': '(pt_d string)',
+            'row format delimited': '',
+            'fields terminated by': "','",
+            'collection items terminated by': "'-'",
+        },
+        nameTemplate: '{defKey}[{defName}]',
+        fields: [
+            {
+                defKey: 'COLLEGE_ID',
+                defName: '所在学院ID',
+                comment: '',
+                len: 32,
+                scale: '',
+                primaryKey: false,
+                notNull: true,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'IdOrKey',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "MONTHLY_SALARY",
-                "defName": "月薪",
-                "comment": "",
-                "len": 24,
-                "scale": 6,
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "Money",
-                "type": "Double",
-                "dbType": "DECIMAL"
+                defKey: 'CLASS_ID',
+                defName: '所在班级ID',
+                comment: '',
+                len: 32,
+                scale: '',
+                primaryKey: false,
+                notNull: true,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'IdOrKey',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "BIRTH",
-                "defName": "出生日期",
-                "comment": "",
-                "len": "",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "DateTime",
-                "type": "Date",
-                "dbType": "DATETIME"
+                defKey: 'STUDENT_ID',
+                defName: '学生ID',
+                comment: '',
+                len: 32,
+                scale: '',
+                primaryKey: true,
+                notNull: true,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'IdOrKey',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "AVATAR",
-                "defName": "头像",
-                "comment": "",
-                "len": "",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "Int",
-                "type": "Integer",
-                "dbType": "INT"
+                defKey: 'STUDENT_NAME',
+                defName: '学生姓名',
+                comment: '',
+                len: 90,
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'Name',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "HEIGHT",
-                "defName": "身高",
-                "comment": "",
-                "len": "",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "Int",
-                "type": "Integer",
-                "dbType": "INT"
+                defKey: 'ENG_NAME',
+                defName: '英文名',
+                comment: '',
+                len: 90,
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'Name',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "WEIGHT",
-                "defName": "体重",
-                "comment": "",
-                "len": "",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "Int",
-                "type": "Integer",
-                "dbType": "INT"
+                defKey: 'ID_CARD_NO',
+                defName: '身份证号',
+                comment: '',
+                len: '60',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'DefaultString',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "NATION",
-                "defName": "名族",
-                "comment": "",
-                "len": "32",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "'01'",
-                "hideInGraph": false,
-                "domain": "Dict",
-                "refDict": "GBNation",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'MOBILE_PHONE',
+                defName: '手机号',
+                comment: '',
+                len: '60',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'DefaultString',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "POLITICAL",
-                "defName": "政治面貌",
-                "comment": "",
-                "len": "32",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": false,
-                "domain": "Dict",
-                "refDict": "Political",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'GENDER',
+                defName: '性别',
+                comment: '',
+                len: '32',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: "'M'",
+                hideInGraph: false,
+                domain: 'Dict',
+                refDict: 'Gender',
+                refDictData: {
+                    defKey: 'Gender',
+                    defName: '性别',
+                    intro: '',
+                    items: [
+                        {
+                            defKey: 'M',
+                            defName: '男',
+                            intro: '',
+                            parentKey: '',
+                            enabled: true,
+                            attr1: '',
+                            attr2: '',
+                            attr3: '',
+                            sort: '1',
+                        },
+                        {
+                            defKey: 'F',
+                            defName: '女',
+                            intro: '',
+                            parentKey: '',
+                            enabled: true,
+                            attr1: '',
+                            attr2: '',
+                            attr3: '',
+                            sort: '2',
+                        },
+                        {
+                            defKey: 'U',
+                            defName: '未知',
+                            intro: '',
+                            parentKey: '',
+                            enabled: true,
+                            attr1: '',
+                            attr2: '',
+                            attr3: '',
+                            sort: '3',
+                        },
+                    ],
+                },
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "MARITAL",
-                "defName": "婚姻状况",
-                "comment": "",
-                "len": "32",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "'UNMARRIED'",
-                "hideInGraph": true,
-                "domain": "Dict",
-                "refDict": "Marital",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'MONTHLY_SALARY',
+                defName: '月薪',
+                comment: '',
+                len: 24,
+                scale: 6,
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'Money',
+                type: 'Double',
+                dbType: 'DECIMAL',
             },
             {
-                "defKey": "DOMICILE_PLACE_PROVINCE",
-                "defName": "籍贯（省）",
-                "comment": "",
-                "len": "60",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "DefaultString",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'BIRTH',
+                defName: '出生日期',
+                comment: '',
+                len: '',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'DateTime',
+                type: 'Date',
+                dbType: 'DATETIME',
             },
             {
-                "defKey": "DOMICILE_PLACE_CITY",
-                "defName": "籍贯（市）",
-                "comment": "",
-                "len": "60",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "DefaultString",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'AVATAR',
+                defName: '头像',
+                comment: '',
+                len: '',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'Int',
+                type: 'Integer',
+                dbType: 'INT',
             },
             {
-                "defKey": "DOMICILE_PLACE_ADDRESS",
-                "defName": "户籍地址",
-                "comment": "",
-                "len": "60",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "DefaultString",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'HEIGHT',
+                defName: '身高',
+                comment: '',
+                len: '',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'Int',
+                type: 'Integer',
+                dbType: 'INT',
             },
             {
-                "defKey": "HOBBY",
-                "defName": "爱好",
-                "comment": "",
-                "len": "60",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "DefaultString",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'WEIGHT',
+                defName: '体重',
+                comment: '',
+                len: '',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'Int',
+                type: 'Integer',
+                dbType: 'INT',
             },
             {
-                "defKey": "INTRO",
-                "defName": "简要介绍",
-                "comment": "",
-                "len": "900",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "DescText",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'NATION',
+                defName: '名族',
+                comment: '',
+                len: '32',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: "'01'",
+                hideInGraph: false,
+                domain: 'Dict',
+                refDict: 'GBNation',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "PRESENT_ADDRESS",
-                "defName": "居住地址",
-                "comment": "",
-                "len": "60",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "DefaultString",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'POLITICAL',
+                defName: '政治面貌',
+                comment: '',
+                len: '32',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: false,
+                domain: 'Dict',
+                refDict: 'Political',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "EMAIL",
-                "defName": "电子邮件",
-                "comment": "",
-                "len": "60",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "DefaultString",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'MARITAL',
+                defName: '婚姻状况',
+                comment: '',
+                len: '32',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: "'UNMARRIED'",
+                hideInGraph: true,
+                domain: 'Dict',
+                refDict: 'Marital',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "ENTRY_DATE",
-                "defName": "入学日期",
-                "comment": "",
-                "len": "",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "DateTime",
-                "type": "Date",
-                "dbType": "DATETIME"
+                defKey: 'DOMICILE_PLACE_PROVINCE',
+                defName: '籍贯（省）',
+                comment: '',
+                len: '60',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'DefaultString',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "STATUS",
-                "defName": "状态",
-                "comment": "",
-                "len": "32",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "'Normal'",
-                "hideInGraph": true,
-                "domain": "Dict",
-                "refDict": "StudentStatus",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'DOMICILE_PLACE_CITY',
+                defName: '籍贯（市）',
+                comment: '',
+                len: '60',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'DefaultString',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "TENANT_ID",
-                "defName": "租户号",
-                "comment": "",
-                "len": 32,
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "domain": "IdOrKey",
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'DOMICILE_PLACE_ADDRESS',
+                defName: '户籍地址',
+                comment: '',
+                len: '60',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'DefaultString',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "REVISION",
-                "defName": "乐观锁",
-                "comment": "",
-                "domain": "Int",
-                "len": "",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'HOBBY',
+                defName: '爱好',
+                comment: '',
+                len: '60',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'DefaultString',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "CREATED_BY",
-                "defName": "创建人",
-                "comment": "",
-                "domain": "IdOrKey",
-                "len": 32,
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'INTRO',
+                defName: '简要介绍',
+                comment: '',
+                len: '900',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'DescText',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "CREATED_TIME",
-                "defName": "创建时间",
-                "comment": "",
-                "domain": "DateTime",
-                "len": "",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "type": "Integer",
-                "dbType": "INT"
+                defKey: 'PRESENT_ADDRESS',
+                defName: '居住地址',
+                comment: '',
+                len: '60',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'DefaultString',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "UPDATED_BY",
-                "defName": "更新人",
-                "comment": "",
-                "domain": "IdOrKey",
-                "len": 32,
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "type": "String",
-                "dbType": "VARCHAR"
+                defKey: 'EMAIL',
+                defName: '电子邮件',
+                comment: '',
+                len: '60',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'DefaultString',
+                type: 'String',
+                dbType: 'VARCHAR',
             },
             {
-                "defKey": "UPDATED_TIME",
-                "defName": "更新时间",
-                "comment": "",
-                "domain": "DateTime",
-                "len": "",
-                "scale": "",
-                "primaryKey": false,
-                "notNull": false,
-                "autoIncrement": false,
-                "defaultValue": "",
-                "hideInGraph": true,
-                "type": "Date",
-                "dbType": "DATETIME"
-            }
+                defKey: 'ENTRY_DATE',
+                defName: '入学日期',
+                comment: '',
+                len: '',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'DateTime',
+                type: 'Date',
+                dbType: 'DATETIME',
+            },
+            {
+                defKey: 'STATUS',
+                defName: '状态',
+                comment: '',
+                len: '32',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: "'Normal'",
+                hideInGraph: true,
+                domain: 'Dict',
+                refDict: 'StudentStatus',
+                type: 'String',
+                dbType: 'VARCHAR',
+            },
+            {
+                defKey: 'TENANT_ID',
+                defName: '租户号',
+                comment: '',
+                len: 32,
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                domain: 'IdOrKey',
+                type: 'String',
+                dbType: 'VARCHAR',
+            },
+            {
+                defKey: 'REVISION',
+                defName: '乐观锁',
+                comment: '',
+                domain: 'Int',
+                len: '',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                type: 'String',
+                dbType: 'VARCHAR',
+            },
+            {
+                defKey: 'CREATED_BY',
+                defName: '创建人',
+                comment: '',
+                domain: 'IdOrKey',
+                len: 32,
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                type: 'String',
+                dbType: 'VARCHAR',
+            },
+            {
+                defKey: 'CREATED_TIME',
+                defName: '创建时间',
+                comment: '',
+                domain: 'DateTime',
+                len: '',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                type: 'Integer',
+                dbType: 'INT',
+            },
+            {
+                defKey: 'UPDATED_BY',
+                defName: '更新人',
+                comment: '',
+                domain: 'IdOrKey',
+                len: 32,
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                type: 'String',
+                dbType: 'VARCHAR',
+            },
+            {
+                defKey: 'UPDATED_TIME',
+                defName: '更新时间',
+                comment: '',
+                domain: 'DateTime',
+                len: '',
+                scale: '',
+                primaryKey: false,
+                notNull: false,
+                autoIncrement: false,
+                defaultValue: '',
+                hideInGraph: true,
+                type: 'Date',
+                dbType: 'DATETIME',
+            },
         ],
-        "correlations": [
+        correlations: [
             {
-                "myField": "CLASS_ID",
-                "refEntity": "SIMS_CLASS",
-                "refField": "CLASS_ID",
-                "myRows": "n",
-                "refRows": "1",
-                "innerType": ""
-            }
+                myField: 'CLASS_ID',
+                refEntity: 'SIMS_CLASS',
+                refField: 'CLASS_ID',
+                myRows: 'n',
+                refRows: '1',
+                innerType: '',
+            },
         ],
-        "indexes": [
+        indexes: [
             {
-                "defKey": "idx_smis_student_01",
-                "defName": null,
-                "unique": false,
-                "comment": "",
-                "fields": [
+                defKey: 'idx_smis_student_01',
+                defName: null,
+                unique: false,
+                comment: '',
+                fields: [
                     {
-                        "fieldDefKey": "STUDENT_NAME",
-                        "ascOrDesc": "A"
+                        fieldDefKey: 'STUDENT_NAME',
+                        ascOrDesc: 'A',
                     },
                     {
-                        "fieldDefKey": "ENG_NAME",
-                        "ascOrDesc": "A"
-                    }
-                ]
+                        fieldDefKey: 'ENG_NAME',
+                        ascOrDesc: 'A',
+                    },
+                ],
             },
             {
-                "defKey": "idx_smis_student_cert",
-                "defName": null,
-                "unique": false,
-                "comment": "",
-                "fields": [
+                defKey: 'idx_smis_student_cert',
+                defName: null,
+                unique: false,
+                comment: '',
+                fields: [
                     {
-                        "fieldDefKey": "ID_CARD_NO",
-                        "ascOrDesc": "A"
-                    }
-                ]
-            }
+                        fieldDefKey: 'ID_CARD_NO',
+                        ascOrDesc: 'A',
+                    },
+                ],
+            },
         ],
-        "refEntities": ["SIMS_STUDENT"],
+        refEntities: ['SIMS_STUDENT'],
     },
     group: demoGroup,
 };
 export const _getDefaultTemplate = (db, template, dataSource, lang = 'zh') => {
     const dataType = dataSource.profile?.dataTypeSupports?.filter(d => d.id === db)[0];
     if (dataType) {
-        const emptyDataType = demoProject.profile.dataTypeSupports.filter(d => d.defKey?.toLocaleLowerCase()
-            === dataType.defKey?.toLocaleLowerCase())[0];
-        const emptyTemplate = demoProject.profile.codeTemplates.filter(c => c.applyFor === emptyDataType?.id)[0];
+        const emptyDataType = demoProject.profile.dataTypeSupports.filter(
+            d => d.defKey?.toLocaleLowerCase() === dataType.defKey?.toLocaleLowerCase(),
+        )[0];
+        const emptyTemplate = demoProject.profile.codeTemplates.filter(
+            c => c.applyFor === emptyDataType?.id,
+        )[0];
         return emptyTemplate?.[template] || `# ${allLangData[lang].emptyDefaultTemplate}`;
     }
     return `# ${allLangData[lang].emptyDefaultTemplate}`;
 };
 
-export const _transform = (f, dataSource, code, type = 'id', codeType = 'dbDDL', omitName = []) => {
+export const _transform = (f, dataSource, code, type = 'id', omitName = []) => {
     // 获取该数据表需要显示的字段
     const domains = dataSource?.domains || [];
     const entities = dataSource?.entities || [];
@@ -659,11 +663,11 @@ export const _transform = (f, dataSource, code, type = 'id', codeType = 'dbDDL',
 
 export const _camel = (str, firstUpper) => {
     let ret = str.toLowerCase();
-    ret = ret.replace( /_([\w+])/g, function( all, letter ) {
+    ret = ret.replace(/_([\w+])/g, (all, letter) => {
         return letter.toUpperCase();
     });
     if(firstUpper){
-        ret = ret.replace(/\b(\w)(\w*)/g, function($0, $1, $2) {
+        ret = ret.replace(/\b(\w)(\w*)/g, ($0, $1, $2) => {
             return $1.toUpperCase() + $2;
         });
     }
@@ -677,9 +681,9 @@ export const _getDefaultEnv = (e) => {
             ...(e.env?.base || {}),
             nameSpace: e.env?.base?.nameSpace || '',
             codeRoot: e.env?.base?.codeRoot || _camel(e.defKey, true),
-        }
-    }
-}
+        },
+    };
+};
 
 export const _getMessage = ({lang = 'zh', id, defaultMessage, format, data}) => {
     const reg = /\{(\w+)\}/g; // 国际化变量替换 格式为 {变量名} data中的变量名与之匹配
@@ -703,13 +707,13 @@ export const _getEmptyMessage = (name, dataSource, code) => {
         id: 'versionData.templateEmpty',
         data: {
             name: support?.defKey || code,
-            type: _getMessage({id: `tableTemplate.${name}`})
-        }
+            type: _getMessage({id: `tableTemplate.${name}`}),
+        },
     })}`;
 };
 export const _getTemplateString = (template, templateData, isDemo, dataSource , code) => {
     const underline = (str, upper) => {
-        const ret = str?.replace(/([A-Z])/g,"_$1") || '';
+        const ret = str?.replace(/([A-Z])/g,'_$1') || '';
         if(upper){
             return ret.toUpperCase();
         }else{
@@ -723,38 +727,45 @@ export const _getTemplateString = (template, templateData, isDemo, dataSource , 
         return str?.toLocaleLowerCase() || '';
     };
     const join = (...args) => {
-        if(args.length<=2)return args[0];
+        if (args.length <= 2) return args[0];
         const datas = [];
-        const delimter = args[args.length-1];
-        for(let i=0;i<args.length-1;i++){
-            if(/^\s*$/.test(args[i]))continue;
-            datas.push(args[i]);
+        const delimter = args[args.length - 1];
+        for (let i = 0; i < args.length - 1; i += 1) {
+            if (!/^\s*$/.test(args[i])) {
+                datas.push(args[i]);
+            }
         }
         return datas.join(delimter);
     };
+    const clone = (array) => {
+        const cloneList = [];
+        for (let i = 0; i < array.length; i += 1) {
+            cloneList.push(array[i]);
+        }
+        return cloneList;
+    };
     const objectkit = {
-        isJSON: function(obj) {
-            var isjson = typeof(obj) == "object" && Object.prototype.toString.call(obj).toLowerCase() == "[object object]" && !obj.length;
-            return isjson;
+        isJSON(obj) {
+            const isJson = typeof (obj) === 'object' && Object.prototype.toString.call(obj).toLowerCase() === '[object object]' && !obj.length;
+            return isJson;
         },
-        deepClone: function(obj) {
+        deepClone(obj) {
             return JSON.parse(JSON.stringify(obj));
         },
-        equals: function(v1, v2) {
-            if (typeof(v1) === "object" && objectkit.isJSON(v1) && typeof(v2) === "object" && objectkit.isJSON(v2)) {
-                return JSON.stringify(v1) == JSON.stringify(v2);
+        equals(v1, v2) {
+            if (typeof (v1) === 'object' && objectkit.isJSON(v1) && typeof (v2) === 'object' && objectkit.isJSON(v2)) {
+                return JSON.stringify(v1) === JSON.stringify(v2);
             } else {
-                return v1 == v2;
+                return v1 === v2;
             }
-
-        }
+        },
     };
     const getIndex = (array, arg, n) => {
-        var i = isNaN(n) || n < 0 ? 0 : n;
-        for (; i < array.length; i++) {
-            if (array[i] == arg) {
+        let i = Number.isNaN(n) || n < 0 ? 0 : n;
+        for (; i < array.length; i += 1) {
+            if (array[i] === arg) {
                 return i;
-            } else if (typeof(array[i]) === "object" && objectkit.equals(array[i], arg)) {
+            } else if (typeof (array[i]) === 'object' && objectkit.equals(array[i], arg)) {
                 return i;
             }
         }
@@ -764,52 +775,44 @@ export const _getTemplateString = (template, templateData, isDemo, dataSource , 
         return getIndex(array, obj) >= 0;
     };
     const uniquelize = (array) => {
-        var copy = clone(array);
+        const copy = clone(array);
         const temp = [];
-        for (var i = 0; i < copy.length; i++) {
+        for (let i = 0; i < copy.length; i += 1) {
             if (!contains(temp, copy[i])) {
                 temp.push(copy[i]);
             }
         }
         return temp;
     };
-    const clone = (array) => {
-        var cloneList = Array();
-        for (var i = 0, a = 0; i < array.length; i++) {
-            cloneList.push(array[i]);
-        }
-        return cloneList;
-    };
     const each = (array, fn) => {
-        fn = fn || Function.K;
-        var a = [];
-        var args = Array.prototype.slice.call(arguments, 1);
-        for (var i = 0; i < array.length; i++) {
-            var res = fn.apply(array, [array[i], i].concat(args));
+        const callback = fn || Function.K;
+        const a = [];
+        const args = Array.prototype.slice.call(arguments, 1);
+        for (let i = 0; i < array.length; i += 1) {
+            const res = callback.apply(array, [array[i], i].concat(args));
             if (res != null) a.push(res);
         }
         return a;
     };
     const intersect = (array1, array2) => {
-        // 交集
         const copy = clone(array1);
-        const r = each(uniquelize(copy), function(o) { return contains(array2, o) ? o : null });
+        const r = each(uniquelize(copy), (o) => { return contains(array2, o) ? o : null; });
         return [].concat(r);
     };
     const union = (array1, array2) => {
-        var copy = clone(array1);
-        var r = uniquelize(copy.concat(array2));
+        const copy = clone(array1);
+        const r = uniquelize(copy.concat(array2));
         return [].concat(r);
     };
     const minus = (array1, array2) => {
-        var copy = clone(array1);
-        var r = each(uniquelize(copy), function(o) { return contains(array2, o) ? null : o });
+        const copy = clone(array1);
+        const r = each(uniquelize(copy), (o) => { return contains(array2, o) ? null : o; });
         return [].concat(r);
     };
-    const tplText = template.replace(/(^\s*)|(\s*$)/g, "");
+    const tplText = template.replace(/(^\s*)|(\s*$)/g, '');
     const getCode = () => {
         return code || _.get(dataSource, 'profile.default.db', dataSource.profile?.dataTypeSupports[0]?.id);
-    }
+    };
     const getTemplate = () => {
         const allTemplate = _.get(dataSource, 'profile.codeTemplates', []);
         return allTemplate.filter(t => t.applyFor === getCode())[0] || {};
@@ -829,8 +832,8 @@ export const _getTemplateString = (template, templateData, isDemo, dataSource , 
                 env: _getDefaultEnv(data),
             },
             separator: templateData.sqlSeparator,
-        })}`
-    }
+        })}`;
+    };
     const currentEntityDropDDL = (data, type = 'entity') => {
         const codeTemplate = getTemplate();
         return _getTemplateString(codeTemplate.deleteTable || _getEmptyMessage('deleteTable', dataSource, getCode()), {
@@ -842,14 +845,15 @@ export const _getTemplateString = (template, templateData, isDemo, dataSource , 
     const currentEntityCreateDDL = (data, type = 'entity') => {
         const codeTemplate = getTemplate();
         const name = type === 'entity' ? 'createTable' : 'createView';
-        return _getTemplateString(codeTemplate[name] || _getEmptyMessage(name, dataSource, getCode()), {
+        const templateString = codeTemplate[name] || _getEmptyMessage(name, dataSource, getCode());
+        return _getTemplateString(templateString, {
             [type]: isDemo ? demoTable.entity : {
                 ...data,
                 env: _getDefaultEnv(data),
             },
             separator: templateData.sqlSeparator,
         });
-    }
+    };
     const conf = {
         evaluate:    /\{\{([\s\S]+?)\}\}/g,
         interpolate: /\{\{=([\s\S]+?)\}\}/g,
@@ -862,7 +866,7 @@ export const _getTemplateString = (template, templateData, isDemo, dataSource , 
         strip: false,
         append: true,
         doNotSkipEncoded:false,
-        selfcontained: false
+        selfcontained: false,
     };
     let resultText = doT.template(tplText, conf)({
         ...templateData,
@@ -878,10 +882,10 @@ export const _getTemplateString = (template, templateData, isDemo, dataSource , 
             indexRebuildDDL: currentEntityIndexRebuildDDL,
             dropDDL: currentEntityDropDDL,
             createDDL: currentEntityCreateDDL,
-        }
+        },
     });
-    resultText = resultText.replace(/\n(\n)*( )*(\n)*\n/g,"\n");  //删除空行
-    resultText = resultText.replace(/\r\n(\r\n)*( )*(\r\n)*\r\n/g,"\r\n"); //(不同操作系统换行符有区别)删除空行
+    resultText = resultText.replace(/\n(\n)*( )*(\n)*\n/g,'\n');  //删除空行
+    resultText = resultText.replace(/\r\n(\r\n)*( )*(\r\n)*\r\n/g,'\r\n'); //(不同操作系统换行符有区别)删除空行
     resultText = resultText.replace(/\$blankline/g,'');              //单独处理需要空行的情况
     return resultText;
 };
@@ -896,10 +900,6 @@ export const _getDataByChanges = (changes, dataSource, lang = 'zh') => {
             changes,
             separator: sqlSeparator,
         }, false, dataSource, code);
-        // const DDLToggleCase = dataSource?.profile?.DDLToggleCase || '';
-        // if (DDLToggleCase) {
-        //   return DDLToggleCase === 'U' ? sqlString.toLocaleUpperCase() : sqlString.toLocaleLowerCase();
-        // }
         return sqlString;
     } catch (e) {
         console.log(e);
@@ -908,9 +908,10 @@ export const _getDataByChanges = (changes, dataSource, lang = 'zh') => {
 };
 
 export const _mergeData = (pre, next, needOld, merge = true, mergeNames) => {
-    // 如果defKey相同，那么数据唯一标识将沿用，其余将使用后者覆盖
+    let result;
+    let old;
     if(Array.isArray(pre)) {
-        return next.reduce((a, b, i) => {
+        result = pre.reduce((a, b, i) => {
             const temp = [...a];
             const index = pre.findIndex(p => (p.defKey === b.defKey) || (p.id === b.id));
             if (!b.defKey) {
@@ -931,28 +932,39 @@ export const _mergeData = (pre, next, needOld, merge = true, mergeNames) => {
             }
         }
         const tempKeys = [...new Set(Object.keys(next).concat(Object.keys(pre)))];
-        const allKeys = mergeNames? mergeNames(pre, next, tempKeys) : tempKeys;
-        return {
+        const allKeys = mergeNames ? mergeNames(pre, next, tempKeys) : tempKeys;
+        result = {
             ...pre,
             ...allKeys.reduce((a, b) => {
+                let value;
+                if (pre[b] === undefined) {
+                    value = next[b];
+                } else if (next[b] === undefined) {
+                    value = pre[b];
+                } else {
+                    value = _mergeData(pre[b], next[b], false, merge);
+                }
+
                 return {
                     ...a,
-                    [b]: pre[b] === undefined ? next[b] :
-                        (next[b] === undefined ? pre[b] : _mergeData(pre[b], next[b], false, merge)),
+                    [b]: value,
                 };
             }, {}),
             ...otherData,
         };
+        if (needOld) {
+            old = pre.id;
+            result = {old, result};
+        }
     }
-    //console.log(merge ? next : pre);
-    return merge ? next : pre;
+    return merge ? result : pre;
 };
 
 export const _getFieldBaseType = (f, domains, mappings, currentDb) => {
     const type2baseTye = (type) => {
         return mappings.find(m => m[currentDb]?.toLocaleLowerCase()
-            === type?.toLocaleLowerCase())?.id || ''
-    }
+            === type?.toLocaleLowerCase())?.id || '';
+    };
     // 计算字段的baseType并存储
     if(!f.baseType) {
         if(f.domain) {
@@ -962,7 +974,7 @@ export const _getFieldBaseType = (f, domains, mappings, currentDb) => {
         return type2baseTye(f.type);
     }
     return f.baseType;
-}
+};
 
 export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ignoreProps) => {
     // 合并项目
@@ -977,7 +989,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
     const tempCodeTemplates = _mergeData(
         codeTemplates.map(c => ({...c, defKey: c.applyFor, id: c.applyFor})),
         newCodeTemplates.map(c => ({...c, defKey: c.applyFor, id: c.applyFor})), false, true)
-        .map(t => {
+        .map((t) => {
             const newApplyFor = tempDataTypeSupports.filter(s => s.old === t.applyFor)[0];
             if (newApplyFor) {
                 return _.omit({
@@ -1019,12 +1031,13 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
         fields: (e.fields || []).map(f => ({
             ...f,
             baseType: _getFieldBaseType(f, tempDomains, tempMappings, newDb),
-            extProps: f.extProps || oldDataSource?.profile?.extProps || {}
+            extProps: f.extProps || oldDataSource?.profile?.extProps || {},
         })),
     }));
-    const ignoreCaseEntities = (entities, newEntities) => {
-        return newEntities.map((d) => {
-            const currentData = (entities || [])
+    // 重命名参数避免变量阴影
+    const ignoreCaseEntities = (existingEntities, entitiesToCheck) => {
+        return entitiesToCheck.map((d) => {
+            const currentData = (existingEntities || [])
                 .filter(e => e.defKey?.toLocaleLowerCase() === d.defKey?.toLocaleLowerCase())[0];
             if (currentData) {
                 return {
@@ -1032,7 +1045,11 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
                     defKey: currentData.defKey,
                     fields: (d.fields || []).map((f) => {
                         const currentField = (currentData.fields || [])
-                            .filter(e => e.defKey?.toLocaleLowerCase() === f.defKey?.toLocaleLowerCase())[0];
+                            .filter((e) => {
+                                const eKey = e.defKey?.toLocaleLowerCase();
+                                const fKey = f.defKey?.toLocaleLowerCase();
+                                return eKey === fKey;
+                            })[0];
                         if (currentField) {
                             return {
                                 ...f,
@@ -1058,7 +1075,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
     // 合并视图(直接追加，不合并)
     const views = oldDataSource.views || [];
     const newViewsKeys = views.map(d => d.defKey);
-    const newViews = (newDataSource.views || []).map(d => {
+    const newViews = (newDataSource.views || []).map((d) => {
         let defKey = d.defKey;
         if (newViewsKeys.includes(defKey)) {
             defKey = `${defKey}_1`;
@@ -1069,17 +1086,17 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
             old: d.id,
             id: Math.uuid(),
             defKey,
-            fields: (d.fields || []).map(f => {
+            fields: (d.fields || []).map((f) => {
                 if (f.refEntity) {
                     const currentEntityId = tempEntities.find(e => e.old === f.refEntity)?.id;
                     return {
                         ...f,
-                        refEntity: currentEntityId || f.refEntity
-                    }
+                        refEntity: currentEntityId || f.refEntity,
+                    };
                 }
                 return f;
-            })
-        }
+            }),
+        };
     });
     const tempViews = views.concat(newViews);
     const isUpdateEntity = tempEntities.filter(e => e.old);
@@ -1088,7 +1105,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
         let tempData = {
             id: eId,
             refField: fId,
-        }
+        };
         const newData = type === 'entity' ? newEntities : [];
         // 数据来源至新表 需要更新新表的ID和字段的ID
         const refEntityData =  newData.find(e => e.id === eId); // 新表
@@ -1106,7 +1123,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
                     tempData = {
                         id: refEntity.id,
                         refField,
-                    }
+                    };
                 }
             }
         }
@@ -1116,7 +1133,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
     // 合并关系图(直接追加，不合并)
     const diagrams = oldDataSource.diagrams || [];
     const diagramsKeys = diagrams.map(d => d.defKey);
-    const newDiagrams = (newDataSource.diagrams || []).map(d => {
+    const newDiagrams = (newDataSource.diagrams || []).map((d) => {
         let defKey = d.defKey;
         if (diagramsKeys.includes(defKey)) {
             defKey = `${defKey}_1`;
@@ -1128,46 +1145,55 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
             id: Math.uuid(),
             defKey,
             canvasData: {
-                ...d.canvasData,
-                cells: (d.canvasData?.cells || []).map(c => {
+                cells: (d.canvasData?.cells || []).map((c) => {
                     if (c.shape === 'table') {
                         return {
                             ...c,
-                            originKey: tempEntities.find(r => r.old === c.originKey)?.id || c.originKey,
+                            originKey: tempEntities.find(r => r.old === c.originKey)?.id
+                                || c.originKey,
                         };
                     } else if(c.shape === 'erdRelation') {
-                        const getPort = ({cell, port}) => {
-                            const sourceOriginKey = (d.canvasData?.cells || []).filter(c => c.id === cell)[0];
-                            return getCurrentEntity(sourceOriginKey.originKey, port.split(separator)[0], 'entity');
-                        }
+                        // 重命名变量避免阴影问题
+                        const getPort = ({cell: cellId, port}) => {
+                            const sourceOriginKey = (d.canvasData?.cells || [])
+                                .filter(cellItem => cellItem.id === cellId)[0];
+                            return getCurrentEntity(
+                                sourceOriginKey.originKey,
+                                port.split(separator)[0],
+                                'entity',
+                            );
+                        };
                         const sourcePort = getPort(c.source)?.refField;
                         const targetPort = getPort(c.target)?.refField;
                         return {
                             ...c,
                             source: {
                                 ...c.source,
-                                port: sourcePort ? `${sourcePort}${separator}out` : c.source.port
+                                port: sourcePort ? `${sourcePort}${separator}out` : c.source.port,
                             },
                             target: {
                                 ...c.target,
-                                port: targetPort ? `${targetPort}${separator}in` : c.target.port
+                                port: targetPort ? `${targetPort}${separator}in` : c.target.port,
                             },
-                        }
+                        };
                     }
                     return c;
-                })
-            }
-        }
+                }),
+            },
+        };
     });
     const tempDiagrams = diagrams.concat(newDiagrams);
     // 合并分组
     const removeGroupEntities = tempEntities.filter(e => e.old).map(e => e.old);
     const viewGroups = (oldDataSource.viewGroups || []);
     const newViewGroups = (newDataSource.viewGroups || []);
-    const tempViewGroups = _mergeData(viewGroups, newViewGroups, true, false).map(g => {
-        const currentGroupEntities = newEntities.filter(e => e.group && (e.group === g.id || e.group === g.old))
+    const tempViewGroups = _mergeData(viewGroups, newViewGroups, true, false).map((g) => {
+        const currentGroupEntities = newEntities
+            .filter(e => e.group && (
+                e.group === g.id || e.group === g.old
+            ))
             .map((newE) => {
-                const data = tempEntities.find(e => e.old === newE.id)
+                const data = tempEntities.find(e => e.old === newE.id);
                 if (data) {
                     return data.id;
                 }
@@ -1178,7 +1204,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
         if (currentGroupEntities.length > 0) {
             return {
                 ...g,
-                refEntities: [...new Set(refEntities.concat(currentGroupEntities))]
+                refEntities: [...new Set(refEntities.concat(currentGroupEntities))],
             };
         }
         return {
@@ -1189,7 +1215,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
     const mergeGroupData = (v, name, data) => {
         const newV = newViewGroups.filter(g => g.defKey === v.defKey)[0]?.[name];
         if(newV) {
-            return [...new Set((v[name] || []).concat(newV.map(n => {
+            return [...new Set((v[name] || []).concat(newV.map((n) => {
                 const oldIndex = data.findIndex(d => d.old === n);
                 if (oldIndex > -1) {
                     return data[oldIndex].id;
@@ -1198,7 +1224,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
             })))].filter(id => data.findIndex(d => d.id === id) > -1);
         }
         return v[name] || [];
-    }
+    };
     const refactor = (d, type) => {
         let tempD = d;
         if(d.isNew) {
@@ -1211,10 +1237,10 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
                     tempField = {
                         ...tempField,
                         [n]: nameData?.id || f[n] || '',
-                    }
+                    };
                 });
                 return tempField;
-            }
+            };
             const newData = type === 'entity' ? newEntities : newViews;
             const currentOldData = newData.find(e => e.id === d.old);
             const getCurrentFieldId = (fId) => {
@@ -1229,12 +1255,12 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
                     return fId;
                 }
                 return fId;
-            }
+            };
             const correlations = d.correlations || [];
             const indexes = d.indexes || [];
             tempD = {
                 ...d,
-                correlations: correlations.map(c => {
+                correlations: correlations.map((c) => {
                     const myField = getCurrentFieldId(c.myField);
                     const refEntity = getCurrentEntity(c.refEntity, c.refField, type);
                     if (myField && refEntity) {
@@ -1243,37 +1269,37 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
                             myField,
                             refEntity: refEntity.id,
                             refField: refEntity.refField,
-                        }
+                        };
                     }
                     return null;
                 }).filter(f => !!f),
-                indexes: indexes.map(i => {
+                indexes: indexes.map((i) => {
                     return {
                         ...i,
-                        fields: (i.fields || []).map(f => {
+                        fields: (i.fields || []).map((f) => {
                             const fieldDefKey = getCurrentFieldId(f.fieldDefKey);
                             if (fieldDefKey) {
                                 return {
                                     ...f,
-                                    fieldDefKey
-                                }
+                                    fieldDefKey,
+                                };
                             }
                             return null;
                         }).filter(f => !!f),
-                    }
+                    };
                 }),
                 fields: (d.fields || []).map((f) => {
                     return {
                         ...calcField(f, ['uiHint', 'refDict', 'domain', 'baseType'], [tempUiHint, tempUiHint, tempDomains, tempMappings]),
-                    }
-                })
-            }
+                    };
+                }),
+            };
         }
         return _.omit(tempD, ['old', 'group', 'isNew']);
-    }
+    };
     return {
         ...oldDataSource,
-        domains: tempDomains.map(d => {
+        domains: tempDomains.map((d) => {
             const mIndex = tempMappings.findIndex(t => t.old === d.applyFor);
             if (mIndex > -1) {
                 return {
@@ -1285,7 +1311,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
         }),
         dataTypeMapping: {
             ...oldDataSource.dataTypeMapping,
-            mappings: tempMappings.map(m => {
+            mappings: tempMappings.map((m) => {
                 return _.omit(Object.keys(m).reduce((p, n) => {
                     const mIndex = tempDataTypeSupports.findIndex(t => t.old === n);
                     if (mIndex > -1) {
@@ -1299,7 +1325,7 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
                         [n]: m[n],
                     };
                 }, _.pick(m, ['defKey', 'id', 'defName'])), 'old');
-            })
+            }),
         },
         dicts: tempDicts.map(t => _.omit(t, 'old')),
         profile: {
@@ -1311,15 +1337,15 @@ export const _mergeDataSource = (oldDataSource, newDataSource, selectEntity, ign
         entities: tempEntities.map(e => refactor(e, 'entity')),
         views: tempViews.map(e => refactor(e, 'view')),
         diagrams: tempDiagrams.map(t => _.omit(t, ['old'])),
-        viewGroups: tempViewGroups.map(v => {
+        viewGroups: tempViewGroups.map((v) => {
             return _.omit({
                 ...v,
                 refViews: mergeGroupData(v, 'refViews', tempViews),
                 refDiagrams: mergeGroupData(v, 'refDiagrams', tempDiagrams),
                 refDicts: mergeGroupData(v, 'refDicts', tempDicts),
                 refEntities: mergeGroupData(v, 'refEntities', tempEntities),
-            }, 'old')
-        }).map(v => {
+            }, 'old');
+        }).map((v) => {
             if ((oldDataSource.viewGroups || []).findIndex(g => g.defKey === v.defKey) < 0) {
                 const names = ['refViews', 'refDiagrams', 'refDicts', 'refEntities'];
                 // 清除新增的空分组
@@ -1446,10 +1472,10 @@ export const getAllData = (params) => {
     ];
 };
 
-export const _getAllDataSQLByFilter = (data, code, filterTemplate, filterDefKey) => {
+export const _getAllDataSQLByFilter = (sourceData, code, filterTemplate, filterDefKey) => {
     // 获取项目的一些配置信息
-    const getDataSourceProfile = (data) => {
-        const dataSource = {...data};
+    const getDataSourceProfile = (dsData) => {
+        const dataSource = {...dsData};
         const datatype = _.get(dataSource, 'dataTypeMapping.mappings', []);
         const allTemplate = _.get(dataSource, 'profile.codeTemplates', []);
         const sqlSeparator = _.get(dataSource, 'profile.sql.delimiter', ';') || ';';
@@ -1457,17 +1483,17 @@ export const _getAllDataSQLByFilter = (data, code, filterTemplate, filterDefKey)
             dataSource,
             datatype,
             allTemplate,
-            sqlSeparator
+            sqlSeparator,
         };
     };
     // 获取全量脚本（删表，建表，建索引，表注释）
-    const { dataSource, allTemplate, sqlSeparator } = getDataSourceProfile(data);
+    const { dataSource, allTemplate, sqlSeparator } = getDataSourceProfile(sourceData);
     const entities = dataSource.entities || [];
     const getTemplate = (templateShow) => {
         return allTemplate.filter(t => t.applyFor === code)[0]?.[templateShow] || '';
     };
     const getFilterData = (name) => {
-        return (dataSource[name] || []).filter(e => {
+        return (dataSource[name] || []).filter((e) => {
             if (filterDefKey) {
                 return (filterDefKey[name] || []).includes(e.id);
             }
@@ -1475,96 +1501,101 @@ export const _getAllDataSQLByFilter = (data, code, filterTemplate, filterDefKey)
         }).map(e => ({
             ...e,
             datatype: name,
-            groupType: `ref${firstUp(name)}`
+            groupType: `ref${firstUp(name)}`,
         }));
     };
     let sqlString = '';
     try {
-        const tempData = code === 'dictSQLTemplate' ? getFilterData('dicts') : getFilterData('entities')
+        // 重命名以避免变量重复声明
+        const filteredData = code === 'dictSQLTemplate' ? getFilterData('dicts') : getFilterData('entities')
             .concat(getFilterData('views'));
-        sqlString += tempData.map(e => {
+        sqlString += filteredData.map((e) => {
             const tempTemplate = [...filterTemplate];
-            let tempData = '';
-            let data;
+            // 重命名以避免变量重复声明
+            let templateResult = '';
+            let itemData;
             if (code === 'dictSQLTemplate') {
-                data = {
+                itemData = {
                     dict: _.omit(e, ['groupType', 'datatype']),
-                }
+                };
             } else {
                 const name = e.datatype === 'entities' ? 'entity' : 'view';
                 const childData = {
                     ..._.omit(e, ['groupType', 'datatype']),
                     env: _getDefaultEnv(e),
-                    fields: (e.fields || []).map(field => {
+                    fields: (e.fields || []).map((field) => {
                         return {
                             ...field,
-                            ..._transform(field, dataSource, code)
-                        }
+                            ..._transform(field, dataSource, code),
+                        };
                     }),
-                    indexes: (e.indexes || []).map(i => {
+                    indexes: (e.indexes || []).map((i) => {
                         return {
                             ...i,
-                            fields: (i.fields || []).map(f => {
-                                const field = (e.fields || []).find(ie => f.fieldDefKey === ie.id);
+                            fields: (i.fields || []).map((f) => {
+                                const field = (e.fields || [])
+                                    .find(ie => f.fieldDefKey === ie.id);
                                 return {
                                     ...f,
                                     fieldDefKey: field?.defKey || '',
                                 };
-                            })
-                        }
+                            }),
+                        };
                     }),
-                    correlations: (e.correlations || []).map(c => {
-                        const refEntityData = entities.find(r => r.id === c.refEntity);
+                    correlations: (e.correlations || []).map((correlation) => {
+                        const refEntityData = entities.find(r => r.id === correlation.refEntity);
                         if(refEntityData) {
+                            // 分解长行
+                            const myFieldKey = (e.fields || [])
+                                .find(field => field.id === correlation.myField)?.defKey;
+                            const refFieldKey = (refEntityData.fields || [])
+                                .find(field => field.id === correlation.refField)?.defKey;
+
                             return {
-                                ...c,
-                                myField: (e.fields || []).find(field => field.id === c.myField)?.defKey,
+                                ...correlation,
+                                myField: myFieldKey,
                                 refEntity: refEntityData?.defKey,
-                                refField: (refEntityData.fields || []).find(field => field.id === c.refField)?.defKey,
-                            }
+                                refField: refFieldKey,
+                            };
                         }
-                        return null
-                    }).filter(e => !!e)
+                        return null;
+                    }).filter(item => !!item),
                 };
                 if (name === 'view') {
                     childData.refEntities = dataSource?.entities
-                        ?.filter(e => childData?.refEntities.includes(e.id))
-                        ?.map(e => e.defKey);
+                        ?.filter(entity => childData?.refEntities.includes(entity.id))
+                        ?.map(entity => entity.defKey);
                 }
-                data = {
+                itemData = {
                     entity: childData,
                     view: childData,
-                }
+                };
             }
             const templateData = {
-                ...data,
+                ...itemData,
                 group: (dataSource.viewGroups || [])
                     .filter(g => (g[e.groupType] || []).includes(e.id))
                     .map(g => _.pick(g, ['defKey', 'defName'])),
-                separator: sqlSeparator
+                separator: sqlSeparator,
             };
             if (tempTemplate.includes('createTable')) {
                 tempTemplate.push('createView');
             }
-            tempTemplate.filter(t => {
+            tempTemplate.filter((t) => {
                 if (e.datatype === 'entities') {
                     return t !== 'createView';
                 }
                 return t !== 'createTable';
-            }).forEach(f => {
-                const code = `${_getTemplateString(getTemplate(f), templateData)}`;
-                tempData += code ? `${code}\n` : '';
+            }).forEach((f) => {
+                const templateCode = `${_getTemplateString(getTemplate(f), templateData)}`;
+                templateResult += templateCode ? `${templateCode}\n` : '';
             });
-            return tempData;
+            return templateResult;
         }).join('');
     } catch (e) {
         console.log(e);
         sqlString = JSON.stringify(e.message);
     }
-    // const DDLToggleCase = dataSource?.profile?.DDLToggleCase || '';
-    // if (DDLToggleCase) {
-    //   return DDLToggleCase === 'U' ? sqlString.toLocaleUpperCase() : sqlString.toLocaleLowerCase();
-    // }
     return sqlString;
 };
 
@@ -1578,27 +1609,27 @@ export const _def2Id = (fields, dataSource) => {
     const db = _.get(dataSource, 'profile.default.db', _.get(dataSource, 'profile.dataTypeSupports[0].id'));
     // domain refDict uiHint type
     const refactorName = (f, data, name, defaultName = name) => {
-        const d = data.find(d => d.id === f[name]);
-        return d ? `${defaultName === 'type' ? d[db] : d.defKey}[${d.defName}]` : f[defaultName]
+        const domainItem = data.find(item => item.id === f[name]);
+        return domainItem ? `${defaultName === 'type' ? domainItem[db] : domainItem.defKey}[${domainItem.defName}]` : f[defaultName];
     };
-    return fields.map(f => {
+    return fields.map((f) => {
         const temp = {...f};
         if(f.baseType) {
-            temp.type = refactorName(f, mappings, 'baseType', 'type')
-            temp.baseType = refactorName(f, mappings, 'baseType')
+            temp.type = refactorName(f, mappings, 'baseType', 'type');
+            temp.baseType = refactorName(f, mappings, 'baseType');
         }
         if(f.domain) {
-            temp.domain = refactorName(f, domains, 'domain')
+            temp.domain = refactorName(f, domains, 'domain');
         }
         if(f.refDict) {
-            temp.refDict = refactorName(f, dicts, 'refDict')
+            temp.refDict = refactorName(f, dicts, 'refDict');
         }
         if(f.uiHint) {
-            temp.uiHint = refactorName(f, uiHints, 'uiHint')
+            temp.uiHint = refactorName(f, uiHints, 'uiHint');
         }
-        return temp
-    })
-}
+        return temp;
+    });
+};
 
 export const _id2Def = (fields, dataSource) => {
     const domains = dataSource?.domains || [];
@@ -1611,11 +1642,11 @@ export const _id2Def = (fields, dataSource) => {
         if(f[name].includes(id2DefSplit)) {
             const defKey = f[name].split(id2DefSplit)[0];
             const d = data.find(m => m.defKey === defKey);
-            return d ? d.id : f[defaultName]
+            return d ? d.id : f[defaultName];
         }
-        return f[defaultName]
+        return f[defaultName];
     };
-    return fields.map(f => {
+    return fields.map((f) => {
         const temp = {...f};
         if(f.type && f.type.includes(id2DefSplit)) {
             temp.type = f.type.split(id2DefSplit)[0];
@@ -1634,27 +1665,27 @@ export const _id2Def = (fields, dataSource) => {
         if(f.uiHint) {
             temp.uiHint = refactorName(f, uiHints, 'uiHint');
         }
-        return temp
-    })
-}
+        return temp;
+    });
+};
 
 
 export const _mergeId = (newFields, oldFields) => {
-    return newFields.map(f => {
+    return newFields.map((f) => {
        const old = oldFields.find(o => o.id === f.id);
        if(old) {
            return {
                ...old,
                ...f,
-           }
+           };
        }
        return f;
     });
-}
+};
 
 export const execCheck = (dataSource, checkId) => {
     const namingRules = (dataSource.namingRules || []).filter(r => r.enable);
-    let d = (dataSource.entities || []).concat(dataSource.logicEntities || [])
+    let entity = (dataSource.entities || []).concat(dataSource.logicEntities || [])
         .find(d => d.id === checkId);
     const execFunction = (code, data) => {
         // eslint-disable-next-line no-new-func
@@ -1666,65 +1697,65 @@ export const execCheck = (dataSource, checkId) => {
             res = false;
         }
         return res;
-    }
+    };
     return {
-        dataId: d.id,
+        dataId: entity.id,
         checkResult: namingRules.reduce((p, n) => {
-            const typeName = d.type === 'L' ? 'logicEntity' : 'entity';
-            if(n.applyObjectType === d.type) {
+            const typeName = entity.type === 'L' ? 'logicEntity' : 'entity';
+            if(n.applyObjectType === entity.type) {
                 if(n.applyFieldType === 'entity') {
                     return p.concat({
                         ruleId: n.id,
-                        dataId: d.id,
+                        dataId: entity.id,
                         applyFieldType: n.applyFieldType,
                         ruleControlIntensity: n.controlIntensity,
                         result: execFunction(n.programCode, {
-                            [typeName]: d
-                        })
+                            [typeName]: entity,
+                        }),
                     });
                 } else if(n.applyFieldType === 'field') {
-                    return p.concat((d.fields || []).map(f => {
+                    return p.concat((entity.fields || []).map((fieldItem) => {
                         const tempData = {
-                            ...f,
-                            ..._transform(f, dataSource)
+                            ...fieldItem,
+                            ..._transform(fieldItem, dataSource),
                         };
                         return {
                             ruleId: n.id,
-                            dataId: f.id,
+                            dataId: fieldItem.id,
                             applyFieldType: n.applyFieldType,
                             ruleControlIntensity: n.controlIntensity,
                             result: execFunction(n.programCode, {
-                                [typeName]: d,
-                                field: tempData
-                            })
-                        }
-                    }))
+                                [typeName]: entity,
+                                field: tempData,
+                            }),
+                        };
+                    }));
                 } else if(n.applyFieldType === 'index') {
-                    return p.concat((d.indexes || []).map(i => {
-                        const tempData = {
-                            ...i,
-                            fields: (i.fields || []).map(f => {
-                                const field = (d.fields || []).find(ie => f.fieldDefKey === ie.id);
-                                return {
-                                    ...f,
-                                    fieldDefKey: field?.defKey || '',
-                                };
-                            })
-                        };
+                    return p.concat((entity.indexes || []).map((indexItem) => {
                         return {
                             ruleId: n.id,
-                            dataId: i.id,
+                            dataId: indexItem.id,
                             applyFieldType: n.applyFieldType,
                             ruleControlIntensity: n.controlIntensity,
                             result: execFunction(n.programCode, {
-                                [typeName]: d,
-                                index: tempData
-                            })
-                        }
-                    }))
+                                [typeName]: entity,
+                                index: {
+                                    ...indexItem,
+                                    fields: (entity.fields || []).map((f) => {
+                                        const field = (entity.fields || [])
+                                            .find(ie => f.fieldDefKey === ie.id);
+                                        return {
+                                            ...f,
+                                            fieldDefKey: field?.defKey || '',
+                                        };
+                                    }),
+                                },
+                            }),
+                        };
+                    }));
                 }
             }
             return p;
-        }, [])
-    }
-}
+        }, []),
+    };
+};

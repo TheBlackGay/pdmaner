@@ -5,7 +5,7 @@ import { defaultJVM } from '../../../lib/datasource_util';
 import {getPrefix} from '../../../lib/prefixUtil';
 
 export default React.memo(({ prefix, dataChange, config }) => {
-  const [value, updateValue] = useState( config?.jvm || defaultJVM);
+  const [value, updateValue] = useState(config?.jvm || defaultJVM);
   const onChange = (e) => {
     updateValue(e.target.value);
     dataChange && dataChange(e.target.value, 'jvm');

@@ -19,21 +19,21 @@ export default React.memo(({ prefix, dataSource, dataChange, onOk }) => {
     dataChange && dataChange(e.target.value, 'profile.generatorDoc.docTemplate');
   };
   const _openModal = () => {
-    let modal
+    let modal;
     const close = () => {
       modal && modal.close();
     };
     modal = openModal(<div className={`${currentPrefix}-setting-doc-template-preview`}>
       <CodeEditor
-          mode='json'
-          value={JSON.stringify(model, null, 2)}
-          width='800px'
-          height='400px'
+        mode='json'
+        value={JSON.stringify(model, null, 2)}
+        width='800px'
+        height='400px'
       />
     </div>, {
       bodyStyle: {width: '810px'},
       title: FormatMessage.string({id: 'config.PreviewModal'}),
-      buttons: [<Button key='close' onClick={close}><FormatMessage id='button.close'/></Button>]
+      buttons: [<Button key='close' onClick={close}><FormatMessage id='button.close'/></Button>],
     });
   };
   const currentPrefix = getPrefix(prefix);

@@ -39,7 +39,7 @@ export const Save = (cb) => {
 
 export const removeSave = () => {
   window.onkeydown = null;
-}
+};
 
 
 export const antiShake = (fuc, time = 300) => {
@@ -51,9 +51,9 @@ export const antiShake = (fuc, time = 300) => {
     }
     timer = setTimeout(() => {
       fuc(...args);
-    }, time)
-  }
-}
+    }, time);
+  };
+};
 
 const workerFuc = (params) => {
   return new Promise((resolve, reject) => {
@@ -64,17 +64,17 @@ const workerFuc = (params) => {
       worker.terminate();
     };
     worker.onerror = (err) => {
-      reject(err)
+      reject(err);
       worker.terminate();
     };
   });
-}
+};
 
 export const postWorkerFuc = (fuc, isExe = false, params = {}) => {
   return workerFuc({
     fuc: isExe ? fuc : `(${fuc.toString()})`,
     params,
-    isExe
-  })
-}
+    isExe,
+  });
+};
 

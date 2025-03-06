@@ -69,7 +69,7 @@ export const saveUserConfigData = (data, title, cb) => {
       .then(() => {
         setMemoryCache(CONFIG, {
           ...data,
-          lang: data[0]?.lang
+          lang: data[0]?.lang,
         });
         dispatch(saveUserConfigSuccess(data));
         dispatch(closeLoading(STATUS[1], null));
@@ -92,11 +92,11 @@ export const removeHistory = (h) => {
         return {
           ...d,
           projectHistories: (d.projectHistories || []).filter(p => (p.path !== h.path)),
-        }
+        };
       }
       return d;
     }), allLangData[config.lang].updateConfig)(dispatch);
-  }
+  };
 };
 
 export const addHistory = (data, cb) => {
@@ -115,7 +115,7 @@ export const addHistory = (data, cb) => {
       }
       return d;
     }), allLangData[config.lang].updateConfig, cb)(dispatch);
-  }
+  };
 };
 
 export const updateHistory = (oldData, newData) => {
@@ -141,5 +141,5 @@ export const updateHistory = (oldData, newData) => {
       }
       return d;
     }), allLangData[config.lang].updateConfig)(dispatch);
-  }
+  };
 };

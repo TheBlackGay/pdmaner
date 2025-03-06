@@ -14,7 +14,7 @@ export default React.memo(({ prefix, dataSource, dataChange,
     if (name === 'fields') {
         dataChange && dataChange(value, 'profile.default.entityInitFields');
     } else if(name === 'headers'){
-        currentHeaders.current = currentHeaders.current.map(h => {
+        currentHeaders.current = currentHeaders.current.map((h) => {
            const change = value.filter(v => v.refKey === h.refKey)[0];
            if (change) {
                return {
@@ -27,12 +27,12 @@ export default React.memo(({ prefix, dataSource, dataChange,
         dataChange && dataChange(currentHeaders.current, 'profile.headers');
         dataChange && dataChange(true, 'freeze');
     }
-  }
+  };
   const extAttrPropsUpdate = (value) => {
       dataChange && dataChange(value, 'profile.extAttrProps');
-  }
+  };
   const columnsChange = (value) => {
-      currentHeaders.current = value.map(h => {
+      currentHeaders.current = value.map((h) => {
           const current = currentHeaders.current.filter(v => v.refKey === h.refKey)[0];
           if (current) {
               return {
@@ -43,45 +43,45 @@ export default React.memo(({ prefix, dataSource, dataChange,
           return h;
       });
       dataChange && dataChange(currentHeaders.current, 'profile.headers');
-  }
+  };
     const search = useCallback((f, value) => {
         const reg = new RegExp((value || '')
             .replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
         return reg.test(f.defName) || reg.test(f.defKey);
     }, []);
   return <div className={`${currentPrefix}-setting-entity-init-fields`}><SimpleTab
-      className={`${currentPrefix}-database-container-tab`}
-      defaultActive={active.split('.')[1] || '1'}
-      options={[
+    className={`${currentPrefix}-database-container-tab`}
+    defaultActive={active.split('.')[1] || '1'}
+    options={[
         {
           key: '1',
           title: FormatMessage.string({id: 'config.EntityInitFields'}),
           content: <Table
-              search={search}
-              needHideInGraph={false}
-              disableHeaderIcon
-              getDataSource={getDataSource}
-              updateDataSource={updateDataSource}
-              disableHeaderSort
-              disableHeaderReset
-              freeze
-              data={{
+            search={search}
+            needHideInGraph={false}
+            disableHeaderIcon
+            getDataSource={getDataSource}
+            updateDataSource={updateDataSource}
+            disableHeaderSort
+            disableHeaderReset
+            freeze
+            data={{
                   fields: data,
-                  headers: (dataSource.profile?.headers?.filter(h => h.enabled !== false && !attNames.includes(h.refKey)))
+                  headers: (dataSource.profile?.headers?.filter(h => h.enabled !== false && !attNames.includes(h.refKey))),
               }}
-              dataSource={dataSource}
-              tableDataChange={fieldsChange}
-          />
+            dataSource={dataSource}
+            tableDataChange={fieldsChange}
+          />,
         },
         {
           key: '2',
           title: FormatMessage.string({id: 'config.EntityBasePropertiesList'}),
-          content: <EntityBasePropertiesList dataSource={dataSource} dataChange={dataChange}/>
+          content: <EntityBasePropertiesList dataSource={dataSource} dataChange={dataChange}/>,
         },
           {
               key: '3',
               title: FormatMessage.string({id: 'config.EntityInitColumn'}),
-              content: <DefaultColumn extAttrPropsUpdate={extAttrPropsUpdate} className={`${currentPrefix}-setting-entity-init-columns`} dataSource={dataSource} columnsChange={columnsChange}/>
+              content: <DefaultColumn extAttrPropsUpdate={extAttrPropsUpdate} className={`${currentPrefix}-setting-entity-init-columns`} dataSource={dataSource} columnsChange={columnsChange}/>,
           },
       ]}
   /></div>;

@@ -64,5 +64,5 @@ export default React.memo(({prefix, dataChange, config}) => {
         </Select>
       </span>
     </div>
-  </div>
+  </div>;
 });

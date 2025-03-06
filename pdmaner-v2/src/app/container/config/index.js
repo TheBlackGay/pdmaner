@@ -18,10 +18,10 @@ const Components = {
 };
 export default React.memo(({prefix, dataSource, dataChange, updateDataSource,
                              config, getDataSource, active = ''}) => {
-  const configTab = ['EntityInit', 'FieldConfig', 'SystemParameter', 'DictSQLTemplate']
+  const configTab = ['EntityInit', 'FieldConfig', 'SystemParameter', 'DictSQLTemplate'];
   const currentPrefix = getPrefix(prefix);
   return <SimpleTab
-      defaultActive={active.split('.')[0] || 'EntityInit'}
+    defaultActive={active.split('.')[0] || 'EntityInit'}
     options={configTab
       .map((d) => {
         const Com = Components[d] || '';

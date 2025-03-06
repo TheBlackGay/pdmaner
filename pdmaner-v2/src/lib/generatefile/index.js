@@ -1,9 +1,9 @@
 import React from 'react';
+import {Download, FormatMessage} from 'components';
+import moment from 'moment';
 import { html } from './html';
 import { markdown } from './markdown';
 import { projectSuffix } from '../../../profile';
-import {Download, FormatMessage} from 'components';
-import moment from 'moment';
 
 export const generateFile = (fileType, dataSource, imgCallBack) => {
   // 生成各类文件 总入口
@@ -11,7 +11,7 @@ export const generateFile = (fileType, dataSource, imgCallBack) => {
   const tempViewGroups = (dataSource?.viewGroups || []);
   const getNoGroupData = (name, groupName) => {
     const currentGroup = tempViewGroups
-        .reduce((a, b) => a.concat(b[groupName]), [])
+        .reduce((a, b) => a.concat(b[groupName]), []);
     return dataSource[name].filter(d => !currentGroup.includes(d.id)).map(d => d.id);
   };
   const tempGroup = {

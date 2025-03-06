@@ -18,7 +18,7 @@ export default React.memo(({ prefix, dataSource, dataChange, config }) => {
     }).catch((err) => {
       Modal.error({
         title: FormatMessage.string({id: 'openDirError'}),
-        message: err.message || err
+        message: err.message || err,
       });
     });
   };
@@ -30,7 +30,7 @@ export default React.memo(({ prefix, dataSource, dataChange, config }) => {
       btn && btn.updateStatus('normal');
       if (error) {
         Modal.error({
-          title: FormatMessage.string({id: 'config.JavaHomeConfigResult.error'}), message: error.message
+          title: FormatMessage.string({id: 'config.JavaHomeConfigResult.error'}), message: error.message,
         });
       } else {
         Modal.success({
@@ -45,7 +45,7 @@ export default React.memo(({ prefix, dataSource, dataChange, config }) => {
     <div className={`${currentPrefix}-form-item`}>
       <span
         className={`${currentPrefix}-form-item-label`}
-        title={'JAVA_HOME'}
+        title="JAVA_HOME"
       >
         JAVA_HOME
       </span>
@@ -60,7 +60,7 @@ export default React.memo(({ prefix, dataSource, dataChange, config }) => {
               <FormatMessage id='button.test'/>
             </Button>
             <span onClick={() => require('electron').shell.openExternal('https://jingyan.baidu.com/article/6dad5075d1dc40a123e36ea3.html')}>
-               <Icon type='icon-xinxi'/>
+              <Icon type='icon-xinxi'/>
             </span>
           </span>}
         />

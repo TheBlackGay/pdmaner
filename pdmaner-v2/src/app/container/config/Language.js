@@ -23,13 +23,13 @@ export default React.memo(({prefix, dataChange}) => {
         <Select allowClear={false} notAllowEmpty defaultValue={lang} onChange={onChange} >
           {(langType || [])
               .map(l => (<Option
-                  key={l}
-                  value={l}
+                key={l}
+                value={l}
               >
                 {FormatMessage.string({id: `config.language.${l}`})}
               </Option>))}
         </Select>
       </span>
     </div>
-  </div>
+  </div>;
 });

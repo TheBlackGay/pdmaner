@@ -3,6 +3,8 @@ import _ from 'lodash/object';
 
 import { Button, openModal, Modal, Message, FormatMessage } from 'components';
 
+import * as Component from 'components';
+import moment from 'moment';
 import { Copy, Paste } from './event_tool';
 import NewEntity from '../app/container/entity/NewEntity';
 import NewLogicEntity from '../app/container/logicentity/NewLogicEntity';
@@ -42,10 +44,8 @@ import {
 // 专门处理左侧菜单 右键菜单数据
 import { separator } from '../../profile';
 import demoProject from './template/教学管理系统.pdma.json';
-import * as Component from 'components';
 import Note from '../app/container/tools/note';
 import {saveImages} from './middle';
-import moment from 'moment';
 import {insertArray} from './array_util';
 
 const opt = [{
@@ -53,48 +53,48 @@ const opt = [{
   icon: 'fa-plus',
 }, {
   key: 'delete',
-  icon: 'fa-minus'
+  icon: 'fa-minus',
 }, {
   key: 'move',
-  icon: 'fa-arrows'
+  icon: 'fa-arrows',
 }, {
   key: 'copy',
-  icon: 'fa-clone'
+  icon: 'fa-clone',
 }, {
   key: 'cut',
-  icon: 'fa-scissors'
+  icon: 'fa-scissors',
 }, {
   key: 'paste',
-  icon: 'fa-clipboard'
+  icon: 'fa-clipboard',
 }, {
   key: 'clear',
-  icon: 'fa-eraser'
+  icon: 'fa-eraser',
 }, {
   key: 'edit',
-  icon: 'fa-pencil-square-o'
+  icon: 'fa-pencil-square-o',
 }, {
   key: 'all',
-  icon: ''
+  icon: '',
 },
   {
     key: 'reset',
-    icon: 'fa-mail-reply'
+    icon: 'fa-mail-reply',
   },
   {
     key: 'notes',
-    icon: 'fa-tags'
+    icon: 'fa-tags',
   },
   {
     key: 'png',
-    icon: 'fa-image'
+    icon: 'fa-image',
   },
   {
     key: 'svg',
-    icon: 'fa-file-image-o'
+    icon: 'fa-file-image-o',
   },
   {
     key: 'extract',
-    icon: 'fa-retweet'
+    icon: 'fa-retweet',
   }]; // 所有菜单操作的的KEY;
 
 const normalOpt = ['add', 'copy', 'cut', 'paste', 'delete'];
@@ -128,7 +128,7 @@ export const getMenu = (m, key, type, selectedMenu, groupType, parentKey, tempTy
         || type === 'domain' || type === 'groups' || type === 'entity' || type === 'view'
         || type === 'logicEntity') {
       if (m === 'edit' && (type === 'appCode' || type === 'dataType')) {
-        return FormatMessage.string({id: 'menus.opt.rename'})
+        return FormatMessage.string({id: 'menus.opt.rename'});
       } else if(m === 'extract') {
         if(type === 'entity') {
           return base + FormatMessage.string({id: 'menus.logicEntity'});
@@ -146,7 +146,7 @@ export const getMenu = (m, key, type, selectedMenu, groupType, parentKey, tempTy
       return base;
     }
     return base + FormatMessage.string({id: `menus.${tempType}`});
-  }
+  };
   const getIcon = () => {
     if (type === 'entities' || type === 'entity') {
       return 'fa-table';
@@ -154,7 +154,7 @@ export const getMenu = (m, key, type, selectedMenu, groupType, parentKey, tempTy
       return 'icon-shitu';
     }
     return 'icon-shujuzidian';
-  }
+  };
   return {
     style: m === 'all' ? {borderTop: '1px dashed #DFE3EB'} : {},
     key: m,
@@ -165,16 +165,16 @@ export const getMenu = (m, key, type, selectedMenu, groupType, parentKey, tempTy
     parentKey,
     icon: opt.filter(o => o.key === m)[0]?.icon || getIcon(),
     name: getName(),
-  }
+  };
 };
 
 export const getMenus = (key, type, selectedMenu, parentKey, groupType) => {
-  return menusType[type].filter(m => {
+  return menusType[type].filter((m) => {
     if (type === 'groups' && (!key || key === '__ungroup')) {
       return m === 'add';
     }
     return m;
-  }).map(m => {
+  }).map((m) => {
     let tempType = type;
     if (type.endsWith('s') && (m === 'add') && (type !== 'groups')) {
       if (type === 'entities'){
@@ -207,13 +207,13 @@ export const dealMenuClick = (dataSource, menu, updateDataSource, tabClose, call
     case 'notes': notesOpt(dataSource, menu, updateDataSource); break;
     case 'png':
     case 'svg': imgOpt(dataSource, menu, genImg, key); break;
-    case 'extract':extractOpt(dataSource, menu, updateDataSource, jumpDetail); break;
-    default:break;
+    case 'extract': extractOpt(dataSource, menu, updateDataSource, jumpDetail); break;
+    default: break;
   }
 };
 
 const extractOpt = (dataSource, currentMenu, updateDataSource, jumpDetail) => {
-  const otherMenus = currentMenu.otherMenus.filter(m => m.type === currentMenu.dataType)
+  const otherMenus = currentMenu.otherMenus.filter(m => m.type === currentMenu.dataType);
   const name = currentMenu.dataType === 'entity' ? 'entities' : 'logicEntities';
   const allName = currentMenu.dataType === 'entity' ? 'logicEntities' : 'entities';
   const allData = dataSource[allName] || [];
@@ -222,14 +222,14 @@ const extractOpt = (dataSource, currentMenu, updateDataSource, jumpDetail) => {
     parentKey = currentMenu.parentKey;
   }
   const currentAllData = currentMenu.dataType === 'logicEntity' ?
-      allData.map(d => ({defKey: `${d.defKey || ''}${d.defName || ''}`})) : [...allData]
+      allData.map(d => ({defKey: `${d.defKey || ''}${d.defName || ''}`})) : [...allData];
 
   const genExtractData = (menu) => {
     // 判断是否存在
     const validateRepeat = (extractData) => {
       const calcData = (data, key) => {
         return data.some(d => d.defKey === key);
-      }
+      };
       let isRepeat;
       let newDefKey = extractData.defKey;
       if(extractData.type === 'L') {
@@ -241,12 +241,12 @@ const extractOpt = (dataSource, currentMenu, updateDataSource, jumpDetail) => {
       if(isRepeat) {
         newDefKey = validateRepeat({
           ...extractData,
-          defKey: `${extractData.defKey}_1`
-        })
+          defKey: `${extractData.defKey}_1`,
+        });
       }
-      currentAllData.push({defKey: newDefKey})
+      currentAllData.push({defKey: newDefKey});
       return newDefKey;
-    }
+    };
     const currentData = (dataSource[name] || []).find(e => e.id === menu.key) || {};
     // 重命名逻辑模型
     const renameDefKey = (defKey = '') => {
@@ -257,7 +257,7 @@ const extractOpt = (dataSource, currentMenu, updateDataSource, jumpDetail) => {
         return `LE_${newDefKey}`;
       }
       return newDefKey;
-    }
+    };
     // 组装新数据
     return {
       ..._.pick(currentData, ['defName', 'comment', 'env', 'notes', 'properties']),
@@ -273,9 +273,9 @@ const extractOpt = (dataSource, currentMenu, updateDataSource, jumpDetail) => {
       correlations: [],
       sysProps: menu.type === 'entity' ? getDefaultLogicSys() : {
         nameTemplate: '{defKey}[{defName}]',
-      }
-    }
-  }
+      },
+    };
+  };
 
   const updateData = (extractAllData) => {
     const extractData = extractAllData[0];
@@ -283,66 +283,66 @@ const extractOpt = (dataSource, currentMenu, updateDataSource, jumpDetail) => {
     const refName = extractData.type === 'P' ? 'refEntities' : 'refLogicEntities';
     updateDataSource({
       ...dataSource,
-      viewGroups: parentKey ? dataSource.viewGroups?.map(v => {
+      viewGroups: parentKey ? dataSource.viewGroups?.map((v) => {
         if(parentKey === v.id) {
           currentGroup = v;
           return {
             ...v,
-            [refName]: (v[refName] || []).concat(extractAllData.map(e => e.id))
-          }
+            [refName]: (v[refName] || []).concat(extractAllData.map(e => e.id)),
+          };
         }
         return v;
       }) : dataSource.viewGroups,
-      [allName]: allData.concat(extractAllData)
-    })
+      [allName]: allData.concat(extractAllData),
+    });
     Message.success({title: FormatMessage.string({id: 'optSuccess'})});
     jumpDetail({
       ...extractData,
       type: refName,
       groups: [currentGroup],
     }, allName);
-  }
+  };
 
-  updateData(otherMenus.map(m => genExtractData(m)))
-}
+  updateData(otherMenus.map(m => genExtractData(m)));
+};
 
 const imgOpt = (dataSource, menu, genImg, imageType) => {
   const type = menu.dataType;
   const parentKey = menu.parentKey;
   const otherMenus = menu.otherMenus || [];
   const refactorFileName = (images) => {
-    return images.map(i => {
+    return images.map((i) => {
       const diagram = dataSource.diagrams.filter(d => d.id === i.fileName)[0] || {};
       return {
         ...i,
-        fileName: `${dataSource.name}-${diagram.defKey}[${diagram.defName || diagram.defKey}]-${moment().format('YYYYMDHHmmss')}`
-      }
-    })
-  }
+        fileName: `${dataSource.name}-${diagram.defKey}[${diagram.defName || diagram.defKey}]-${moment().format('YYYYMDHHmmss')}`,
+      };
+    });
+  };
   if (type === 'diagrams') {
     if (parentKey) {
       const keys = dataSource.viewGroups.filter(v => v.id === parentKey)[0]?.refDiagrams || [];
       genImg(true, keys, imageType).then((images) => {
-        saveImages(refactorFileName(images), imageType)
+        saveImages(refactorFileName(images), imageType);
       });
     } else {
       genImg(true, [], imageType).then((images) => {
-        saveImages(refactorFileName(images), imageType)
+        saveImages(refactorFileName(images), imageType);
       });
     }
   } else {
     genImg(true, otherMenus.filter(m => m.type === type).map(m => m.key), imageType).then((images) => {
-      saveImages(refactorFileName(images), imageType)
+      saveImages(refactorFileName(images), imageType);
     });
   }
-}
+};
 
 const notesOpt = (dataSource, menu, updateDataSource) => {
   const otherMenus = menu.otherMenus || [];
   let drawer;
   let changeData;
   let notes = otherMenus.filter(m => m.type === 'entity' || m.type === 'logicEntity' || m.type === 'view')
-      .map(o => {
+      .map((o) => {
         const names = o.type === 'entity' ? 'entities' : (o.type === 'view' ? 'views' : 'logicEntities');
         return {
           ...dataSource[names].find(d => d.id === o.key),
@@ -354,7 +354,7 @@ const notesOpt = (dataSource, menu, updateDataSource) => {
     changeData = d;
   };
   const updateNotes = (data, type) => {
-    return data.map(e => {
+    return data.map((e) => {
       const n = notes.filter(n => n.id === e.id && n.type === type)[0];
       if (n) {
         return {
@@ -363,8 +363,8 @@ const notesOpt = (dataSource, menu, updateDataSource) => {
         };
       }
       return e;
-    })
-  }
+    });
+  };
   const onOk = () => {
     if (changeData) {
       updateDataSource({
@@ -372,7 +372,7 @@ const notesOpt = (dataSource, menu, updateDataSource) => {
         entities: updateNotes(dataSource.entities || [], 'entity'),
         views: updateNotes(dataSource.views || [], 'view'),
         logicEntities: updateNotes(dataSource.logicEntities || [], 'logicEntity'),
-      })
+      });
     }
     drawer && drawer.close();
   };
@@ -380,10 +380,10 @@ const notesOpt = (dataSource, menu, updateDataSource) => {
     drawer && drawer.close();
   };
   drawer = Component.openDrawer(<Note
-      updateDataSource={updateDataSource}
-      dataSource={dataSource}
-      data={notes}
-      dataChange={dataChange}
+    updateDataSource={updateDataSource}
+    dataSource={dataSource}
+    data={notes}
+    dataChange={dataChange}
   />, {
     placement: 'right',
     width: '55%',
@@ -395,7 +395,7 @@ const notesOpt = (dataSource, menu, updateDataSource) => {
         <Component.FormatMessage id='button.cancel'/>
       </Component.Button>],
   });
-}
+};
 const resetOpt = (dataSource, menu, updateDataSource) => {
   Modal.confirm({
     title: FormatMessage.string({id: 'resetConfirmTitle'}),
@@ -405,7 +405,7 @@ const resetOpt = (dataSource, menu, updateDataSource) => {
         ...dataSource,
         profile: {
           ...dataSource.profile,
-          codeTemplates: (dataSource?.profile?.codeTemplates || []).map(c => {
+          codeTemplates: (dataSource?.profile?.codeTemplates || []).map((c) => {
             if (c.applyFor === menu.dataKey) {
               // 匹配查找
               const dataType = dataSource.profile?.dataTypeSupports?.filter(d => d.id === c.applyFor)[0];
@@ -417,7 +417,7 @@ const resetOpt = (dataSource, menu, updateDataSource) => {
                   Message.success({title: FormatMessage.string({id: 'optSuccess'})});
                   return {
                     applyFor: c.applyFor,
-                    ..._.omit(emptyTemplate, 'applyFor')
+                    ..._.omit(emptyTemplate, 'applyFor'),
                   };
                 }
                 Message.warring({title: FormatMessage.string({id: 'emptyDefaultTemplate'})});
@@ -425,13 +425,13 @@ const resetOpt = (dataSource, menu, updateDataSource) => {
               }
               return c;
             }
-            return c
-          })
-        }
-      })
+            return c;
+          }),
+        },
+      });
     },
   });
-}
+};
 
 const editAllOpt = (dataSource, m, updateDataSource) => {
   const name = allType.filter(t => t.type === m.dataType)[0]?.name || m.dataType;
@@ -449,7 +449,7 @@ const editAllOpt = (dataSource, m, updateDataSource) => {
   let tempDataSource;
   const dataChange = (data) => {
     tempDataSource = data;
-  }
+  };
   const onOK = () => {
     if (tempDataSource) {
       let newDataSource;
@@ -458,24 +458,24 @@ const editAllOpt = (dataSource, m, updateDataSource) => {
           const changeData = tempDataSource[name].filter(d => d.isChange).map(d => _.omit(d, 'isChange'));
           newDataSource = {
             ...dataSource,
-            [name]: dataSource[name]?.map(d => {
+            [name]: dataSource[name]?.map((d) => {
               const current = changeData.find(c => c.id === d.id);
               if (current) {
                 return current;
               }
               return d;
             }),
-            viewGroups: (tempDataSource.viewGroups || []).map(v => {
+            viewGroups: (tempDataSource.viewGroups || []).map((v) => {
               if (v.id === m.parentKey) {
                 // 更新分组排序
                 return {
                   ...v,
                   [refName]: tempDataSource[name]?.filter(i => v[refName].includes(i.id))?.map(d => d.id) || [],
-                }
+                };
               }
               return v;
             }),
-          }
+          };
         } else {
           const changeDataId = tempDataSource[name].map(c => c.id);
           newDataSource = {
@@ -483,7 +483,7 @@ const editAllOpt = (dataSource, m, updateDataSource) => {
             [name]: dataSource[name]
                 .filter(d => !changeDataId.includes(d.id))
                 .concat(tempDataSource[name]),
-          }
+          };
         }
       } else {
         newDataSource = tempDataSource;
@@ -503,10 +503,10 @@ const editAllOpt = (dataSource, m, updateDataSource) => {
     } else {
       modal && modal.close();
     }
-  }
+  };
   const onCancel = () => {
     modal && modal.close();
-  }
+  };
   let defaultDataSource = {...dataSource};
   if (m.parentKey) {
     let viewGroup;
@@ -518,24 +518,24 @@ const editAllOpt = (dataSource, m, updateDataSource) => {
     if (viewGroup) {
       defaultDataSource = {
         ...defaultDataSource,
-        [name]: viewGroup[refName].map(s => defaultDataSource[name].find(d => d.id === s))
-      }
+        [name]: viewGroup[refName].map(s => defaultDataSource[name].find(d => d.id === s)),
+      };
     }
   }
   modal = openModal(<Quickedit parentKey={m.parentKey} dataSource={defaultDataSource} name={name} dataChange={dataChange}/>, {
     bodyStyle: {width: '80%'},
     title: m.name || '',
     buttons: [<Button key='onOK' onClick={onOK} type='primary'>
-        <FormatMessage id='button.ok'/>
-      </Button>,
+      <FormatMessage id='button.ok'/>
+    </Button>,
       <Button key='onCancel' onClick={onCancel}>
         <FormatMessage id='button.cancel'/>
       </Button>],
     onEnter: () => {
       onOK();
-    }
+    },
   });
-}
+};
 
 const validate = (require, data) => {
   return !require.some(r => !data[r]);
@@ -547,13 +547,13 @@ const calcDefaultDb = (newData, oldData, db) => {
       return newData.applyFor;
     } else if (oldData.defaultDb && !newData.defaultDb) {
       Message.success({
-        title: FormatMessage.string({id: 'dataType.defaultDbInfo'})
+        title: FormatMessage.string({id: 'dataType.defaultDbInfo'}),
       });
       return newData.applyFor;
     }
   }
   return db;
-}
+};
 
 const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, customerDealData, callback) => {
   // 新增操作合集
@@ -577,7 +577,7 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
         ...getEmptyEntity([], {}),
         sysProps: getDefaultLogicSys(),
         headers: getLogicHeaders(),
-        type: 'L'
+        type: 'L',
       },
       dataPick:'all',
       component: NewLogicEntity,
@@ -593,7 +593,7 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
         ...getEmptyEntity([],
             _.get(dataSource, 'profile.default.entityInitProperties', {})),
         headers: resetHeader(dataSource, {}),
-        type: 'P'
+        type: 'P',
       },
       dataPick: commonPick.concat('fields'),
       component: NewEntity,
@@ -684,7 +684,7 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
       uniqueKeyNamePath: 'database.name',
       empty: {
         defKey: '',
-        id: Math.uuid()
+        id: Math.uuid(),
       },
       dataPick: 'all',
       component: Preview,
@@ -697,7 +697,7 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
       uniqueKeyNamePath: 'database.name',
       empty: {
         defKey: '',
-        id: Math.uuid()
+        id: Math.uuid(),
       },
       dataPick: 'all',
       component: AppCode,
@@ -735,10 +735,9 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
     if (!result) {
       Modal.error({
         title: FormatMessage.string({id: 'optFail'}),
-        message: realType === 'logicEntities' ? FormatMessage.string({id: 'logicEntity.validate'}) : FormatMessage.string({id: 'formValidateMessage'})
+        message: realType === 'logicEntities' ? FormatMessage.string({id: 'logicEntity.validate'}) : FormatMessage.string({id: 'formValidateMessage'}),
       });
-    } else {
-      if (customerDealData) {
+    } else if (customerDealData) {
         // 自定义处理数据
         customerDealData(data, modal);
       } else {
@@ -746,9 +745,9 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
         const allKeys = ignoreCase ? modalData.allKeys.map(k => k.toLocaleLowerCase()) : modalData.allKeys;
         let check = false;
         if(realType === 'logicEntities') {
-          check = allKeys.includes(`${data.defKey || ''}${data.defName || ''}`?.toLocaleLowerCase())
+          check = allKeys.includes(`${data.defKey || ''}${data.defName || ''}`?.toLocaleLowerCase());
         } else {
-          check = allKeys.includes(ignoreCase ? data[modalData.uniqueKey]?.toLocaleLowerCase() : data[modalData.uniqueKey])
+          check = allKeys.includes(ignoreCase ? data[modalData.uniqueKey]?.toLocaleLowerCase() : data[modalData.uniqueKey]);
         }
         if (check) {
           Modal.error({
@@ -758,8 +757,8 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
             }) : FormatMessage.string({
               id: 'entityAndViewUniquenessCheck',
               data: {
-                key: FormatMessage.string({id: `${modalData.uniqueKeyNamePath}`})
-              }
+                key: FormatMessage.string({id: `${modalData.uniqueKeyNamePath}`}),
+              },
             })});
         } else {
           const refName = modalData.refName;
@@ -773,11 +772,11 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
                   return {
                     ...v,
                     [refName]: insertArray(v?.[refName], dataKey, modalData.empty.id),
-                  }
+                  };
                 }
                 return v;
               }) : (dataSource?.viewGroups || []),
-            }
+            };
           }
           const getData = () => {
             return {
@@ -790,8 +789,8 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
               ...tempDataSource,
               [realType]: {
                 ...(dataSource?.[realType] || {}),
-                mappings: insertArray(dataSource?.[realType]?.mappings, dataKey, getData())
-              }
+                mappings: insertArray(dataSource?.[realType]?.mappings, dataKey, getData()),
+              },
             };
           } else if (realType === 'dataTypeSupports' || realType === 'appCode') {
             const newData = getData();
@@ -806,16 +805,16 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
                   db: newData.defaultDb ? newData.id :
                     _.get(tempDataSource, 'profile.default.db', newData.id),
                 },
-                codeTemplates: insertArray(_.get(tempDataSource, 'profile.codeTemplates', [])
-                    , dataKey, {
+                codeTemplates: insertArray(_.get(tempDataSource, 'profile.codeTemplates', []),
+                     dataKey, {
                       applyFor: newData.id,
                       type: realType === 'appCode' ? 'appCode' : (newData.type || 'dbDDL'),
                       ...defaultTemplate[`${realType === 'appCode' ? 'appCode' : (newData.type || 'dbDDL')}Template`].reduce((a, b) => {
                         const temp = {...a};
                         temp[b] = newData[b] || '';
                         return temp;
-                      }, {})
-                    }, 'applyFor')
+                      }, {}),
+                    }, 'applyFor'),
               },
             }, _.get(tempDataSource, 'profile.default.db'));
           } else {
@@ -831,7 +830,6 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
           callback && callback(realType);
         }
       }
-    }
   };
   const onCancel = () => {
     modal && modal.close();
@@ -854,9 +852,9 @@ const addOpt = (dataSource, menu, updateDataSource, oldData = {}, title, custome
       focusFirst: realType !== 'views',
       onEnter: () => {
         modalData.refName !== 'refViews' && onOK();
-      }
-    }
-  )
+      },
+    },
+  );
 };
 
 const editOpt = (dataSource, menu, updateDataSource) => {
@@ -899,12 +897,12 @@ const editOpt = (dataSource, menu, updateDataSource) => {
       return {
         ...temp,
         defaultDb: dataSource?.profile?.default?.db === dataKey,
-        defKey: dataSource?.profile?.dataTypeSupports?.filter(d => d.id === temp.applyFor)[0]?.defKey
+        defKey: dataSource?.profile?.dataTypeSupports?.filter(d => d.id === temp.applyFor)[0]?.defKey,
       };
     } else if (dataType === 'appCode') {
       title = FormatMessage.string({id: 'menus.edit.editAppCode'});
       name = 'profile.dataTypeSupports';
-      return dataSource?.profile?.dataTypeSupports?.filter(d => d.id === dataKey)[0]
+      return dataSource?.profile?.dataTypeSupports?.filter(d => d.id === dataKey)[0];
     }
     return {};
   };
@@ -924,7 +922,7 @@ const editOpt = (dataSource, menu, updateDataSource) => {
                 ...d,
                 defKey: data.defKey,
                 defName: data.defName,
-              }
+              };
             }
             return d;
           }),
@@ -950,7 +948,7 @@ const editOpt = (dataSource, menu, updateDataSource) => {
                 return _.omit(data, 'group');
               }
               return v;
-            })
+            }),
           },
         };
         updateDataSource && updateDataSource(tempDataSource);
@@ -987,11 +985,11 @@ const editOpt = (dataSource, menu, updateDataSource) => {
                     temp[b] = b in data ? data[b] : (oldData[b] || '');
                     return temp;
                   }, {}),
-                }
+                };
               }
               return t;
             }),
-          }
+          },
         };
         updateDataSource && updateDataSource(transformFieldType(tempDataSource, defaultData.db));
       } else if (dataType === 'appCode') {
@@ -1008,7 +1006,7 @@ const editOpt = (dataSource, menu, updateDataSource) => {
               }
               return d;
             }),
-          }
+          },
         };
         updateDataSource && updateDataSource(tempDataSource);
       } else {
@@ -1065,12 +1063,12 @@ const domainData = [
     name: 'profile.dataTypeSupports',
     key: 'id',
     emptyData: emptyDataTypeSupport,
-  }
+  },
 ];
 
 const getEntityData = (dataSource, data) => {
   const allKeys = [...new Set((data.reduce((p, n) => {
-    return p.concat((n.canvasData?.cells || []).filter(c => c.shape === 'table' && c.originKey) .map(c => c.originKey))
+    return p.concat((n.canvasData?.cells || []).filter(c => c.shape === 'table' && c.originKey).map(c => c.originKey));
   }, [])))];
   return dataSource.entities.filter(e => allKeys.includes(e.id));
 };
@@ -1081,11 +1079,11 @@ export const getCopyRealData = (dataSource, data) => {
     return data;
   }
   const db = _.get(dataSource, 'profile.default.db', _.get(dataSource, 'profile.dataTypeSupports[0].id'));
-  return data.map(d => {
+  return data.map((d) => {
     return {
       ...d,
       indexes: (data.indexes || []).map(i => ({...i, id: Math.uuid()})),
-      fields: (d.fields || []).map(f => {
+      fields: (d.fields || []).map((f) => {
         return {
           ...f,
           id: Math.uuid(),
@@ -1093,11 +1091,11 @@ export const getCopyRealData = (dataSource, data) => {
             ..._.pick(transform(f, dataSource, db), ['domainData', 'refDictData', 'uiHintData', 'type', 'baseTypeData']),
             id: f.id,
           },
-        }
-      })
-    }
-  })
-}
+        };
+      }),
+    };
+  });
+};
 
 export const putCopyRealData = (dataSource, data, needOldId) => {
   if (!dataSource) {
@@ -1124,7 +1122,7 @@ export const putCopyRealData = (dataSource, data, needOldId) => {
       },
     ...(needOldId ? {oldId: data.id} : {}),
     indexes: (data.indexes || []).map(i => ({...i, id: Math.uuid()})),
-    fields: (data.fields || []).map(f => {
+    fields: (data.fields || []).map((f) => {
       const domain = getDataId(dataSource.domains || [], f.otherData?.domainData, f.domain);
       return {
         ..._.omit(f, ['otherData']),
@@ -1136,10 +1134,10 @@ export const putCopyRealData = (dataSource, data, needOldId) => {
         domain: domain || null,
         refDict: getDataId(dataSource.dicts || [], f.otherData?.refDictData, f.refDict),
         uiHint: getDataId(dataSource.profile?.uiHint || [], f.otherData?.uiHintData, f.uiHint),
-        baseType: getDataId(dataSource.dataTypeMapping?.mappings || [], f.otherData?.baseTypeData, getFieldBaseType(f, dataSource.domains || [], mappings, db))
-      }
-    })
-  }
+        baseType: getDataId(dataSource.dataTypeMapping?.mappings || [], f.otherData?.baseTypeData, getFieldBaseType(f, dataSource.domains || [], mappings, db)),
+      };
+    }),
+  };
 };
 
 const copyOpt = (dataSource, menu, type = 'copy', cb) => {
@@ -1150,19 +1148,19 @@ const copyOpt = (dataSource, menu, type = 'copy', cb) => {
     ['logicEntity', 'logicEntities'],
     ['view', 'views'],
     ['diagram', 'diagrams'],
-    ['dict', 'dicts']
+    ['dict', 'dicts'],
   ];
   const getData = (name, data) => {
     return dataSource?.[name].filter((d) => {
       return data.includes(d.id);
-    })
+    });
   };
 
   const getCopyTemplateData = (dataSource, copyData) => {
     const codeTemplates = _.get(dataSource, 'profile.codeTemplates', []);
     const copyDataKeys = copyData.map(d => d.id);
     return codeTemplates.filter(c => copyDataKeys.includes(c.applyFor));
-  }
+  };
   const getResult = (data, group) => {
     const tempOtherMenus = group ? otherMenus.filter(m => m.parentKey === group) : otherMenus;
     return checkData.filter(c => c.includes(dataType)).reduce((pre, next) => {
@@ -1179,14 +1177,13 @@ const copyOpt = (dataSource, menu, type = 'copy', cb) => {
   if (otherMenus.length > 0){
     // 组装各类复制数据
     // 获取各个分类所有的数据
-    const domainIndex = domainData.findIndex((d) => d.type === dataType);
+    const domainIndex = domainData.findIndex(d => d.type === dataType);
     if (domainIndex > -1) {
       // 数据域相关操作
       const { name, key } = domainData[domainIndex];
       const selectKey = otherMenus.filter(m => m.type === dataType).map(m => m.key || m.id);
       tempTypeData = _.get(dataSource, name, []).filter(d => selectKey.includes(d[key]));
-    } else {
-      if (groupType === 'modalGroup') {
+    } else if (groupType === 'modalGroup') {
         // 如果是在分组模式下
         // 先计算每个分组的数据 然后合并所有的数据
         tempTypeData = (dataSource?.viewGroups || []).concat(getUnGroup(dataSource)).reduce((a, b) => {
@@ -1197,7 +1194,6 @@ const copyOpt = (dataSource, menu, type = 'copy', cb) => {
       } else {
         tempTypeData = getResult(dataSource);
       }
-    }
     if (cb) {
        cb({ type, data: tempTypeData });
     } else {
@@ -1218,7 +1214,7 @@ const copyOpt = (dataSource, menu, type = 'copy', cb) => {
 };
 
 const cutOpt = (dataSource, menu) => {
-  copyOpt(dataSource, menu, 'cut')
+  copyOpt(dataSource, menu, 'cut');
 };
 
 const getOptConfig = (dataType, dataSource) => {
@@ -1228,7 +1224,7 @@ const getOptConfig = (dataType, dataSource) => {
     key: 'id',
     emptyData: {
       ...getEmptyEntity(),
-      headers: resetHeader(dataSource, {})
+      headers: resetHeader(dataSource, {}),
     },
     viewRefs: 'refEntities',
   };
@@ -1238,7 +1234,7 @@ const getOptConfig = (dataType, dataSource) => {
     key: 'id',
     emptyData: {
       ...getEmptyEntity(),
-      headers: resetHeader(dataSource, {})
+      headers: resetHeader(dataSource, {}),
     },
     viewRefs: 'refLogicEntities',
   };
@@ -1289,7 +1285,7 @@ const getOptConfig = (dataType, dataSource) => {
     domianConfig,
     mappingConfig,
     dataTypeSupportConfig,
-    logicEntityConfig
+    logicEntityConfig,
   };
   return Object.keys(optConfigMap)
     .filter(config => optConfigMap[config].type.includes(dataType))
@@ -1302,10 +1298,10 @@ const injectEntities = (dataSource, entities, data) => {
   const sameEntity = [];
   // 不存在的表新增
   const newEntity = [];
-  entities.forEach(e => {
+  entities.forEach((e) => {
     const current = currentEntities.find(c => c.defKey === e.defKey);
     if (current) {
-      sameEntity.push({oldId: e.oldId, newId: current.id})
+      sameEntity.push({oldId: e.oldId, newId: current.id});
     } else {
       newEntity.push(e);
     }
@@ -1317,10 +1313,10 @@ const injectEntities = (dataSource, entities, data) => {
       return currentChange.newId || currentChange.id;
     }
     return id;
-  }
+  };
   const findOriginKey = (id, cells) => {
     return cells.find(c => c.id === id)?.originKey;
-  }
+  };
   const findNewFieldId = (entityId, filedId) => {
     if(filedId && entityId) {
       const fieldIdArray = filedId.split(separator);
@@ -1338,14 +1334,14 @@ const injectEntities = (dataSource, entities, data) => {
       return preField ? filedId.replace(preField.oldId, preField.id) : null;
     }
     return null;
-  }
+  };
   return {
-    data: data.map(d => {
+    data: data.map((d) => {
       return {
         ...d,
         canvasData: {
           ...d.canvasData,
-          cells: (d.canvasData.cells || []).map(c => {
+          cells: (d.canvasData.cells || []).map((c) => {
             if (c.shape === 'table' && c.originKey) {
               return {
                 ...c,
@@ -1363,34 +1359,34 @@ const injectEntities = (dataSource, entities, data) => {
                   ...c,
                   source: {
                     ...c.source,
-                    port: newSourcePort
+                    port: newSourcePort,
                   },
                   target: {
                     ...c.target,
-                    port: newTargetPort
+                    port: newTargetPort,
                   },
-                }
+                };
               }
               return null;
             }
             return c;
-          }).filter(c => !!c)
-        }
+          }).filter(c => !!c),
+        },
       };
     }),
-    newEntity: newEntity.map(e => {
+    newEntity: newEntity.map((e) => {
       return {
         ..._.omit(e, ['oldId']),
-        fields: (e.fields || []).map(f => {
+        fields: (e.fields || []).map((f) => {
           return {
             ..._.omit(f, ['oldId']),
-          }
-        })
-      }
+          };
+        }),
+      };
     }),
-    sameEntity
-  }
-}
+    sameEntity,
+  };
+};
 
 const pasteOpt = (dataSource, menu, updateDataSource) => {
   const { dataType, parentKey, dataKey } = menu;
@@ -1407,15 +1403,15 @@ const pasteOpt = (dataSource, menu, updateDataSource) => {
         emptyData = {
           ...emptyData,
           nameTemplate: '',
-          type: ''
+          type: '',
         };
       }
       const newData = (data?.data || [])
-          .filter(e => validate(e, emptyData)).filter(e => {
+          .filter(e => validate(e, emptyData)).filter((e) => {
             if(config.mainKey === 'logicEntities') {
-              return e.type === 'L'
+              return e.type === 'L';
             } else if(config.mainKey === 'entities') {
-              return e.type !== 'L'
+              return e.type !== 'L';
             }
             return true;
           });
@@ -1426,12 +1422,12 @@ const pasteOpt = (dataSource, menu, updateDataSource) => {
         }
         return true;
       });
-      const newGroupData = config.viewRefs && (dataSource?.viewGroups || []).map(v => {
+      const newGroupData = config.viewRefs && (dataSource?.viewGroups || []).map((v) => {
         if (data?.type === 'cut') {
           return {
             ...v,
             [config.viewRefs]: (v[config.viewRefs] || []).filter(k => !newDataKeys.includes(k)),
-          }
+          };
         }
         return v;
       });
@@ -1499,16 +1495,16 @@ const pasteOpt = (dataSource, menu, updateDataSource) => {
                   ...v,
                   [config.viewRefs]: insertArray(v[config.viewRefs] || [], dataKey, realData.map(e => e[config.key])),
                   ...otherGroup,
-                }
+                };
               }
               return v;
-            }) : (dataSource.viewGroups || [])
+            }) : (dataSource.viewGroups || []),
           });
         } else {
           updateDataSource({
             ...dataSource,
             ...tempNewData,
-            viewGroups: newGroupData ? newGroupData : (dataSource.viewGroups || []),
+            viewGroups: newGroupData || (dataSource.viewGroups || []),
           });
         }
         Message.success({title: FormatMessage.string({id: 'pasteSuccess'})});
@@ -1539,8 +1535,8 @@ const deleteOpt = (dataSource, menu, updateDataSource, tabClose) => {
           dataTypeMapping: {
             ...dataSource.dataTypeMapping,
             mappings: (dataSource.dataTypeMapping?.mappings || [])
-                .filter(d => !deleteData.includes(d.id))
-          }
+                .filter(d => !deleteData.includes(d.id)),
+          },
         });
         Message.success({title: FormatMessage.string({id: 'deleteSuccess'})});
       } else if(domain && (domain.type === 'dataType' || domain.type === 'appCode')) {
@@ -1558,8 +1554,8 @@ const deleteOpt = (dataSource, menu, updateDataSource, tabClose) => {
             },
             dataTypeSupports,
             codeTemplates: (dataSource.profile?.codeTemplates || [])
-                .filter(d => !deleteData.includes(d.applyFor))
-          }
+                .filter(d => !deleteData.includes(d.applyFor)),
+          },
         }, db));
         Message.success({title: FormatMessage.string({id: 'deleteSuccess'})});
       } else {
@@ -1581,18 +1577,18 @@ const deleteOpt = (dataSource, menu, updateDataSource, tabClose) => {
             };
             updateDataSource && updateDataSource({
               ...tempDataSource,
-              views: optConfig.mainKey === 'entities' ? (tempDataSource.views || []).map(v => {
+              views: optConfig.mainKey === 'entities' ? (tempDataSource.views || []).map((v) => {
                 // 需要移除视图内与该数据表有关的内容
                 if (v.refEntities?.some(ref => deleteDataKeys.includes(ref))) {
                   return {
                     ...v,
                     refEntities: v.refEntities?.filter(ref => !deleteDataKeys.includes(ref)),
-                    fields: v.fields?.map(f => {
+                    fields: v.fields?.map((f) => {
                       if (deleteDataKeys.includes(f.refEntity)) {
                         return _.omit(f, ['refEntity', 'refEntityField']);
                       }
                       return f;
-                    })
+                    }),
                   };
                 }
                 return v;
@@ -1630,7 +1626,7 @@ const clearOpt = (dataSource, menu, updateDataSource) => {
             domains: [],
           });
         } else if (dataType === 'dataTypeSupport') {
-          const newCodeTemplate = (dataSource?.profile?.codeTemplates || []).filter(c => {
+          const newCodeTemplate = (dataSource?.profile?.codeTemplates || []).filter((c) => {
             return c.applyFor === 'dictSQLTemplate' || c.type === 'appCode';
           });
           updateDataSource && updateDataSource({
@@ -1653,15 +1649,15 @@ const clearOpt = (dataSource, menu, updateDataSource) => {
                 refEntities:[],
                 refViews:[],
                 refDiagrams:[],
-                refDicts:[]
-              }
+                refDicts:[],
+              };
             }
             return v;
           }),
         });
       }
       Message.success({title: FormatMessage.string({id: 'clearSuccess'})});
-    }
+    },
   });
 };
 
@@ -1709,7 +1705,7 @@ const moveOpt = (dataSource, menu, updateDataSource) => {
               tempA[b] = [...new Set((v[b] || []).concat(allGroupData[b]))];
               return tempA;
             },{}),
-          }
+          };
         } else {
           return {
             ...v,
@@ -1718,7 +1714,7 @@ const moveOpt = (dataSource, menu, updateDataSource) => {
               tempA[b] = (v[b] || []).filter(k => !allGroupData[b].includes(k));
               return tempA;
             },{}),
-          }
+          };
         }
       }),
     });
@@ -1736,6 +1732,6 @@ const moveOpt = (dataSource, menu, updateDataSource) => {
         <Button key='onCancel' onClick={onCancel}>
           <FormatMessage id='button.cancel'/>
         </Button>],
-    }
-  )
+    },
+  );
 };

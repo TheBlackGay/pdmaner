@@ -1,6 +1,6 @@
 process.env.CHINER_NODE_ENV = 'production';
-var webpack = require('webpack');
-var config = require('../config/webpack.pro.config.js');
+const webpack = require('webpack');
+const config = require('../config/webpack.pro.config.js');
 
 webpack(config).run((err, stats) => {
     if (err) {

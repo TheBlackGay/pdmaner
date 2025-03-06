@@ -1,7 +1,7 @@
 import React from 'react';
 import _ from 'lodash/object';
-import {getPrefix} from '../../../lib/prefixUtil';
 import {FormatMessage, Radio} from 'components';
+import {getPrefix} from '../../../lib/prefixUtil';
 
 const RadioGroup = Radio.RadioGroup;
 
@@ -14,28 +14,28 @@ export default React.memo(({prefix, dataChange, dataSource}) => {
   return <div className={`${currentPrefix}-setting-model`}>
     <div className={`${currentPrefix}-form-item`}>
       <span
-          className={`${currentPrefix}-form-item-label`}
-          title={FormatMessage.string({id: 'config.ModelLabel'})}
+        className={`${currentPrefix}-form-item-label`}
+        title={FormatMessage.string({id: 'config.ModelLabel'})}
       >
         <FormatMessage id='config.ModelLabel'/>
       </span>
       <span className={`${currentPrefix}-form-item-component`}>
         <span>
           <RadioGroup name='modelType' onChange={onChange} defaultValue={modelType}>
-          <Radio value='modalGroup'>
-            <FormatMessage id='showGroup'/>
-          </Radio>
-          <Radio value='modalAll'>
-            <FormatMessage id='hiddenGroup'/>
-          </Radio>
-        </RadioGroup>
-        <span
+            <Radio value='modalGroup'>
+              <FormatMessage id='showGroup'/>
+            </Radio>
+            <Radio value='modalAll'>
+              <FormatMessage id='hiddenGroup'/>
+            </Radio>
+          </RadioGroup>
+          <span
             className={`${currentPrefix}-setting-model-message`}
         >
-          <FormatMessage id='config.ModelLabelMessage'/>
-        </span>
+            <FormatMessage id='config.ModelLabelMessage'/>
+          </span>
         </span>
       </span>
     </div>
-  </div>
+  </div>;
 });

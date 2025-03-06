@@ -19,7 +19,7 @@ export const replaceDataByTabId = (id, data) => {
 
 export const removeDataByTabId = (id) => {
   // 删除tab的数据
-  delete tabs[id]
+  delete tabs[id];
 };
 
 export const getAllTabData = () => {
@@ -29,7 +29,7 @@ export const getAllTabData = () => {
 export const clearAllTabData = () => {
   Object.keys(tabs).forEach((t) => {
     delete tabs[t];
-  })
+  });
 };
 
 const cache = localStorage || {};

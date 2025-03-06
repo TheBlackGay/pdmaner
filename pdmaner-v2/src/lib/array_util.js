@@ -78,8 +78,8 @@ export const moveArrayPositionByArray = (array, moveArray, step, keyName, status
 // 去重
 export const unRepeated = (data = [], repeatKey) => {
   const tempArray = [];
-  data.forEach(d => {
-    if(tempArray.findIndex(t => {
+  data.forEach((d) => {
+    if(tempArray.findIndex((t) => {
       if (repeatKey) {
         return t[repeatKey] === d[repeatKey];
       }
@@ -87,16 +87,16 @@ export const unRepeated = (data = [], repeatKey) => {
     }) < 0) {
       tempArray.push(d);
     }
-  })
+  });
   return tempArray;
-}
+};
 
 // 指定数据插入
-export const insertArray = (array, pKey, newData, keyName = 'id' ) => {
+export const insertArray = (array, pKey, newData, keyName = 'id') => {
   const tempNewData = [].concat(newData);
   const tempArray = [...(array || [])];
   const index = tempArray.findIndex(d => (typeof d === 'string' ? d : d[keyName]) === pKey);
   index > -1 ? tempArray.splice(index + 1, 0, ...tempNewData)
-      : tempArray.push(...tempNewData)
+      : tempArray.push(...tempNewData);
   return tempArray;
-}
+};

@@ -8,7 +8,7 @@ export default React.memo(({ prefix, dataSource, dataChange }) => {
     dataChange && dataChange(e.target.value, 'profile.sql.delimiter');
   };
   const currentPrefix = getPrefix(prefix);
-  return <div  className={`${currentPrefix}-setting-sql-delimiter`}>
+  return <div className={`${currentPrefix}-setting-sql-delimiter`}>
     <div className={`${currentPrefix}-form-item`}>
       <span
         className={`${currentPrefix}-form-item-label`}

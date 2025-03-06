@@ -5,7 +5,7 @@ import {_getDefaultTemplate, _transform, _getTemplateString, _getDataByChanges} 
 
 const refactorEntityFields = (fields, currentDataSource, db) => {
   return fields.map(f => ({...f, ..._transform(f, currentDataSource, db)}));
-}
+};
 
 
 /**
@@ -31,12 +31,12 @@ const deepCompareObj = (x, y) => {
     if (xKeys.length !== yKeys.length) {
         return false;
     }
-    return xKeys.every(key => {
+    return xKeys.every((key) => {
             if (typeof x[key] === 'object' && typeof y[key] === 'object') {
                 return deepCompareObj(x[key], y[key]);
             }
             return x[key] === y[key];
-        }
+        },
     );
 };
 
@@ -59,7 +59,7 @@ const compareObj = (current, pre, names, omitNames = [], refactor) => {
     }
     return p;
   }, []);
-}
+};
 
 const compareArray = (current = [], pre = [], type, names, omitNames, id = 'id', refactor) => {
   const changes = pre.reduce((p, n) => {
@@ -81,7 +81,7 @@ const compareArray = (current = [], pre = [], type, names, omitNames, id = 'id',
           changeNames: baseChanges.map(c => c.data),
           before: names ? _.pick(pData, names) : pData,
           after:  names ? _.pick(cData, names) : cData,
-        }
+        };
       }
       if (baseChanged) {
         return p.concat({
@@ -96,69 +96,24 @@ const compareArray = (current = [], pre = [], type, names, omitNames, id = 'id',
       return p;
     }
   }, [...changes]);
-}
+};
 
 // 根据变更信息生成SQL
 export const getChanges = (changes, currentDataSource, lang) => {
   return _getDataByChanges(changes, currentDataSource, lang);
-}
+};
 
 // 根据变更信息生成提示信息
 export const getMessageByChanges = (changes, dataSource, lang) => {
-  // const getLangString = (type, name) => {
-  //   if (type === 'entity' || type === 'view') {
-  //     return `tableBase.${name}`;
-  //   } else if (type === 'index') {
-  //     if (name === 'defKey') {
-  //       return 'tableHeaders.indexesName';
-  //     } else if (name === 'unique') {
-  //       return 'tableHeaders.indexIsUnique';
-  //     } else if (name === 'comment') {
-  //       return 'tableHeaders.indexComment';
-  //     }
-  //     return `tableHeaders.${name}`;
-  //   }
-  //   return `tableHeaders.${name}`;
-  // }
-  // return changes.reduce((c, n) => {
-  //   const parent = n.parent?.[0] || initParent;
-  //   if (n.opt === 'update') {
-  //     // return c.concat((n.data?.changes || []).reduce((a, b) => {
-  //     //   if (b.changes) {
-  //     //     return a.concat(getMessageByChanges(b.changes, {
-  //     //       defName: `${parent?.defName || parent?.defKey}.${n.data?.oldData?.defName || n.data?.oldData?.defKey}`
-  //     //     }, 'fieldDefKey'));
-  //     //   }
-  //     //   // 1. 修改表[表代码/表名称]，代码：[OLD -> NEW]
-  //     //   return c.concat(`${FormatMessage.string({id: `versionData.${n.opt}Data`})}${FormatMessage.string({id: `versionData.${n.type === 'index.field' ? 'indexField' : n.type}`})}[${parent ? `${parent?.defName || parent?.defKey}.` : ''}${n.data?.oldData?.[id || 'defName'] || n.data?.oldData?.defKey}], ${FormatMessage.string({id: `${getLangString(n.type, b.type)}`})}: [${b.pre} -> ${b.new}]`);
-  //     //   //return a.concat(`${FormatMessage.string({id: `versionData.${n.opt}Data`})}${parent ? `${FormatMessage.string({id: `versionData.${parent.type}`})}[${parent?.defName || parent?.defKey}]` : ''}${FormatMessage.string({id: `versionData.${n.type === 'index.field' ? 'indexField' : n.type}`})}[${n.data?.oldData?.[id || 'defName'] || n.data?.oldData?.defKey}][${FormatMessage.string({id: `${getLangString(n.type, b.type)}`})}][${b.pre}===>${b.new}]`);
-  //     // }, []));
-  //     return c.concat((n.data?.changes || []).reduce((a, b) => {
-  //       return a.concat(b.changes ? [] : `${FormatMessage.string({id: `versionData.${n.opt}Data`})}${FormatMessage.string({id: `versionData.${n.type === 'index.field' ? 'indexField' : n.type}`})}[${parent ? `${parent?.defName || parent?.defKey}.` : ''}${n.data?.oldData?.[id || 'defName'] || n.data?.oldData?.defKey}], ${FormatMessage.string({id: `${getLangString(n.type, b.type)}`})}: [${b.pre} -> ${b.new}]`)
-  //           .concat(getMessageByChanges(b.changes || [], {
-  //             defName: parent ? `${parent?.defName || parent?.defKey}.${n.data?.oldData?.defName || n.data?.oldData?.defKey}` : `${n.data?.oldData?.defName || n.data?.oldData?.defKey}`
-  //           }, 'fieldDefKey'));
-  //     }, []));
-  //    // return c.concat(`${FormatMessage.string({id: `versionData.${n.opt}Data`})}${FormatMessage.string({id: `versionData.${n.type === 'index.field' ? 'indexField' : n.type}`})}[${parent ? `${parent?.defName || parent?.defKey}.` : ''}${n.data?.oldData?.[id || 'defName'] || n.data?.oldData?.defKey}], ${FormatMessage.string({id: `${getLangString(n.type, b.type)}`})}: [${b.pre} -> ${b.new}]`);
-  //   } else if (n.opt === 'delete') {
-  //     return c.concat(`${FormatMessage.string({id: `versionData.${n.opt}Data`})}${FormatMessage.string({id: `versionData.${n.type === 'index.field' ? 'indexField' : n.type}`})}:${parent ? `${parent?.defName || parent?.defKey}.` : ''}${n.data?.[id || 'defName'] || n.data?.defKey}`);
-  //   } else {
-  //     // 新增字段:表名称.字段名 数据类型
-  //     return c.concat(`${FormatMessage.string({id: `versionData.${n.opt}Data`})}${FormatMessage.string({id: `versionData.${n.type === 'index.field' ? 'indexField' : n.type}`})}:${parent ? `${parent?.defName || parent?.defKey}.` : ''}${n.data?.current?.[id || 'defName'] || n.data?.current?.defKey}${(n.data?.current?.type && parent) ? ` ${n.data?.current?.type}` : ''}`);
-  //   }
-  // },  []);
   try {
     const code = _.get(dataSource, 'profile.default.db', dataSource.profile?.dataTypeSupports[0]?.id);
-    const allTemplate = _.get(dataSource, 'profile.codeTemplates', []);
-    const codeTemplate = allTemplate.filter(t => t.applyFor === code)[0] || {};
+    const codeTemplate = _.get(dataSource, 'profile.codeTemplates', [])
+        .filter(t => t.applyFor === code)[0] || {};
     const sqlSeparator = _.get(dataSource, 'profile.sql.delimiter', ';');
-    // const DDLToggleCase = dataSource?.profile?.DDLToggleCase || '';
-    // if (DDLToggleCase) {
-    //   return DDLToggleCase === 'U' ? sqlString.toLocaleUpperCase() : sqlString.toLocaleLowerCase();
-    // }
-    return _getTemplateString(codeTemplate.message || _getDefaultTemplate(code, 'message', dataSource, lang), {
-      changes,
-      separator: sqlSeparator,
+    return _getTemplateString(codeTemplate.message ||
+        _getDefaultTemplate(code, 'message', dataSource, lang), {
+        changes,
+        separator: sqlSeparator,
     }, false, dataSource, code);
   } catch (e) {
     return JSON.stringify(e.message, null, 2);
@@ -167,59 +122,35 @@ export const getMessageByChanges = (changes, dataSource, lang) => {
 
 export const simplePackageChanges = (currentDataSource, preDataSource, db, needRefactor) => {
   const setNull = (data) => {
-    if (data.length > 0) {
-      return data;
-    }
-    return null;
+    return data === '' || data === null || data === undefined ? null : data;
   };
-  const ignoreCase = (data) => {
-    // 忽略名字和类型的大小写
-    const parseNumber = (d) => {
-      const n = parseInt(d, 10);
-      if (isNaN(n)) {
-        return d;
-      }
-      return n;
-    }
-    return data.map(d => {
-      const fields = (d.fields || []).map(f => {
-        return {
-          ...f,
-          defKey: f.defKey?.toLocaleLowerCase(),
-          originDefKey: f.defKey,
-          originType: f.type,
-          type: f.type?.toLocaleLowerCase(),
-          len: f.len === null ? '' : parseNumber(f.len),
-          scale: f.scale === null ? '' : parseNumber(f.scale),
-        }
-      });
-      return {
-        ...d,
-        defKey: d.defKey?.toLocaleLowerCase(),
-        originDefKey: d.defKey,
-        fields,
-        indexes: id2FieldDefKey(d.indexes, fields),
-      }
-    })
-  };
-  const currentDb = db || _.get(currentDataSource, 'profile.default.db', currentDataSource.profile?.dataTypeSupports[0]?.id);
-  const currentData = ignoreCase(currentDataSource.entities.map(e => {
+
+  // 需要重构数据 refactor
+  const needDB = db || _.get(currentDataSource, 'profile.default.db', currentDataSource.profile?.dataTypeSupports[0]?.id);
+
+  const currentData = currentDataSource.entities.map((e) => {
     return {
       ...e,
       fields: (e.fields || [])
-          .map(f => ({...f, ..._transform(f, currentDataSource, currentDb)}))
-    }
-  }));
-  const currentDbData = currentDataSource.profile?.dataTypeSupports?.filter(d => d.id === currentDb)[0];
-  const preDb = preDataSource.profile?.dataTypeSupports?.filter(d => d?.defKey?.toLocaleLowerCase() === currentDbData?.defKey?.toLocaleLowerCase())[0]?.id
-      || _.get(preDataSource, 'profile.default.db', preDataSource.profile?.dataTypeSupports[0]?.id);
-  const preData = ignoreCase(needRefactor ? (preDataSource.entities || []).map(e => {
+          .map(f => ({...f, ..._transform(f, currentDataSource, needDB)})),
+    };
+  });
+  const currentDbData = currentDataSource.profile?.dataTypeSupports?.filter(d =>
+    d.id === needDB,
+  )[0];
+
+  // 查找前一个数据源中对应的数据库类型
+  const preDb = preDataSource.profile?.dataTypeSupports?.filter(d =>
+    d?.defKey?.toLocaleLowerCase() === currentDbData?.defKey?.toLocaleLowerCase(),
+  )[0]?.id || _.get(preDataSource, 'profile.default.db',
+    preDataSource.profile?.dataTypeSupports[0]?.id);
+  const preData = needRefactor ? (preDataSource.entities || []).map((e) => {
     return {
       ...e,
       fields: (e.fields || [])
-          .map(f => ({...f, ..._transform(f, preDataSource,  preDb)}))
-    }
-  }) : preDataSource.entities);
+          .map(f => ({...f, ..._transform(f, preDataSource,  preDb)})),
+    };
+  }) : preDataSource.entities;
   const type = 'entity';
   const changes = [];
    preData.forEach((p) => {
@@ -247,15 +178,15 @@ export const simplePackageChanges = (currentDataSource, preDataSource, db, needR
           after:  _.pick({
             ...cData,
             defKey: cData.originDefKey,
-          }, baseNames)
-        }
+          }, baseNames),
+        };
       }
       // 2.字段调整
       const fieldsChange = compareArray(cData.fields, pData.fields, 'field',
           ['defName', 'comment', 'type', 'len', 'scale'], [], 'defKey');
       if (fieldsChange.length > 0) {
         fieldChanged = {
-          fieldAdded: setNull(fieldsChange.filter(c => c.opt === 'add').map(c => {
+          fieldAdded: setNull(fieldsChange.filter(c => c.opt === 'add').map((c) => {
             const index = cData.fields.findIndex(f => f.id === c.data.id);
             return {
               ...c.data,
@@ -264,14 +195,14 @@ export const simplePackageChanges = (currentDataSource, preDataSource, db, needR
               type: c.data.originType,
               beforeFieldKey: cData.fields[index + 1]?.originDefKey || null,
               afterFieldKey: cData.fields[index - 1]?.originDefKey || null,
-            }
+            };
           })),
           fieldRemoved: setNull(fieldsChange.filter(c => c.opt === 'delete').map(c => ({
             ...c.data,
             defKey: c.data.originDefKey,
             type: c.data.originType,
           }))),
-          fieldModified: setNull(fieldsChange.filter(c => c.opt === 'update').map(c => {
+          fieldModified: setNull(fieldsChange.filter(c => c.opt === 'update').map((c) => {
             const cFIndex = (cData.fields || []).findIndex(f => f.defKey === c.data.defKey);
             const cF = (cData.fields || [])[cFIndex];
             const pFIndex = (pData.fields || []).findIndex(f => f.defKey === c.data.defKey);
@@ -288,10 +219,10 @@ export const simplePackageChanges = (currentDataSource, preDataSource, db, needR
                 ...pF,
                 ...c.data.before,
                 type: pF.originType,
-              }
-            }
-          }))
-        }
+              },
+            };
+          })),
+        };
       }
       if (baseChanged || fieldChanged) {
         return p.concat({
@@ -301,7 +232,7 @@ export const simplePackageChanges = (currentDataSource, preDataSource, db, needR
             id: cData.id,
             baseInfo: _.pick({
               ...cData,
-              defKey: cData.originDefKey
+              defKey: cData.originDefKey,
             }, baseNames),
             baseChanged: baseChanged || null,
             fieldAdded: null,
@@ -327,44 +258,26 @@ export const simplePackageChanges = (currentDataSource, preDataSource, db, needR
       }
       return p;
     }
-  }, changes).map(d => {
+  }, changes).map((d) => {
     if (d.opt !== 'update') {
       return {
         ...d,
         data: {
           ...d.data,
           defKey: d.data.originDefKey,
-          fields: (d.data.fields || []).map(f => {
+          fields: (d.data.fields || []).map((f) => {
             return {
               ...f,
               defKey: f.originDefKey,
               type: f.originType,
-            }
-          })
-        }
-      }
+            };
+          }),
+        },
+      };
     }
     return d;
   });
 };
-
-const id2FieldDefKey = (indexes = [], fields) => {
-  return indexes.map(i => {
-    return {
-      ...i,
-      fields: (i.fields || []).map(f => {
-        const refFieldIndex = fields.findIndex(field => field.id === f.fieldDefKey);
-        if(refFieldIndex > -1) {
-          return {
-            ...f,
-            fieldDefKey: fields[refFieldIndex].defKey,
-          };
-        }
-        return f;
-      }),
-    }
-  })
-}
 
 export const packageChanges = (currentDataSource, preDataSource, db) => {
   const assembling = (current = [], pre = [], type) => {
@@ -386,8 +299,8 @@ export const packageChanges = (currentDataSource, preDataSource, db) => {
         fields,
         indexes: id2FieldDefKey(d.indexes, fields),
         ...viewData,
-      }
-    }
+      };
+    };
     const currentData = current.map(d => refactorData(d, currentDataSource));
     const preData = pre.map(d => refactorData(d, preDataSource));
     const changes = [];
@@ -412,131 +325,131 @@ export const packageChanges = (currentDataSource, preDataSource, db) => {
         if (baseChanges.length > 0) {
           baseChanged = {
             before: _.pick(pData, baseNames),
-            after:  _.pick(cData, baseNames)
-          }
+            after:  _.pick(cData, baseNames),
+          };
         }
         // 2.字段调整
         const fieldsChange = compareArray(cData.fields, pData.fields, 'field', null, ['refDictData', 'extProps', 'domainData', 'uiHintData', 'notes',
           'attr1', 'attr2', 'attr3', 'attr4', 'attr5', 'attr6', 'attr7', 'attr8', 'attr9', 'baseType', 'baseTypeData']);
         if (fieldsChange.length > 0) {
           fieldChanged = {
-            fieldAdded: setNull(fieldsChange.filter(c => c.opt === 'add').map(c => {
+            fieldAdded: setNull(fieldsChange.filter(c => c.opt === 'add').map((c) => {
               const index = cData.fields.findIndex(f => f.id === c.data.id);
               return {
                 ...c.data,
                 index,
                 beforeFieldKey: cData.fields[index + 1]?.defKey || null,
                 afterFieldKey: cData.fields[index - 1]?.defKey || null,
-              }
+              };
             })),
             fieldRemoved: setNull(fieldsChange.filter(c => c.opt === 'delete').map(c => c.data)),
-            fieldModified: setNull(fieldsChange.filter(c => c.opt === 'update').map(c => c.data))
-          }
+            fieldModified: setNull(fieldsChange.filter(c => c.opt === 'update').map(c => c.data)),
+          };
         }
         // 3.扩展属性调整
         const propsChange = compareObj(cData.properties || {}, pData.properties || {});
         if (propsChange.length > 0) {
           propChanged = {
-            propAdded: setNull(propsChange.filter(c => c.opt === 'add').map(c => {
+            propAdded: setNull(propsChange.filter(c => c.opt === 'add').map((c) => {
               return {
                 key: c.data,
                 value: cData.properties[c.data],
               };
             })),
-            propRemoved: setNull(propsChange.filter(c => c.opt === 'delete').map(c => {
+            propRemoved: setNull(propsChange.filter(c => c.opt === 'delete').map((c) => {
               return {
                 key: c.data,
                 value: pData.properties[c.data],
               };
             })),
-            propModified: setNull(propsChange.filter(c => c.opt === 'update').map(c => {
+            propModified: setNull(propsChange.filter(c => c.opt === 'update').map((c) => {
               return {
                before: {
                  key: c.data,
-                 value: cData.properties[c.data],
+                 value: pData.properties[c.data],
                },
                 after: {
                   key: c.data,
-                  value: pData.properties[c.data],
-                }
+                  value: cData.properties[c.data],
+                },
               };
             })),
-          }
+          };
         }
         // 4.关联实体调整
         const refEntityChange = compareArray(cData.correlations || [], pData.correlations || [], type, [], [], 'refEntity');
         if (refEntityChange.length > 0) {
           refEntityChanged = {
-            refEntityAdd: setNull(refEntityChange.filter(c => c.opt === 'add').map(c => {
+            refEntityAdd: setNull(refEntityChange.filter(c => c.opt === 'add').map((c) => {
               const data = allData[allData.findIndex(d => d.id === c.data.refEntity)];
               return _.pick(data, baseNames);
             })),
-            refEntityRemoved: setNull(refEntityChange.filter(c => c.opt === 'delete').map(c => {
+            refEntityRemoved: setNull(refEntityChange.filter(c => c.opt === 'delete').map((c) => {
               const data = allData[allData.findIndex(d => d.id === c.data.refEntity)];
               return _.pick(data, baseNames);
             })),
-          }
+          };
         }
         // 5. 索引调整indexes: Array(1)
         const indexChange = compareArray(cData.indexes || [],
-            pData.indexes || [], type, baseNames.concat(['unique', 'fields']), [], 'id', (c, p) => {
-          return compareArray(c, p, type);
+            pData.indexes || [], type, baseNames.concat(['unique', 'fields']), [], 'id', (c, preVal) => {
+          return compareArray(c, preVal, type);
         });
         if (indexChange.length > 0) {
           const calcIndexField = (fields) => {
             const allFields = cData.fields?.concat(preData.fields || []) || [];
-            return fields.map(c => {
+            return fields.map((c) => {
               if (c.opt !== 'update') {
                 return {
                   ...c.data,
-                  fields: allFields.map(a => {
+                  fields: allFields.map((a) => {
                     const fI = c.data?.fields?.findIndex(f => a.id === f.fieldDefKey);
                     if(fI > -1) {
                       return {
                         ...c.data.fields[fI],
-                        fieldDefKey: a.defKey
-                      }
+                        fieldDefKey: a.defKey,
+                      };
                     }
                     return null;
-                  }).filter((f) => !!f)
-                }
+                  }).filter(f => !!f),
+                };
               }
               return {
                 ...c.data,
                 after: {
                   ...c.data.after,
-                  fields: allFields.map(a => {
+                  fields: allFields.map((a) => {
                     const fI = c.data?.after?.fields?.findIndex(f => a.id === f.fieldDefKey);
                     if(fI > -1) {
                       return {
                         ...c.data.after.fields[fI],
-                        fieldDefKey: a.defKey
-                      }
+                        fieldDefKey: a.defKey,
+                      };
                     }
                     return null;
-                  }).filter((f) => !!f)
+                  }).filter(f => !!f),
                 },
                 before: {
                   ...c.data.before,
-                  fields: allFields.map(a => {
+                  fields: allFields.map((a) => {
                     const fI = c.data?.before?.fields?.findIndex(f => a.id === f.fieldDefKey);
                     if(fI > -1) {
                       return {
                         ...c.data.before.fields[fI],
-                        fieldDefKey: a.defKey
-                      }
+                        fieldDefKey: a.defKey,
+                      };
                     }
                     return null;
-                  }).filter((f) => !!f)
+                  }).filter(f => !!f),
                 },
-              }
-            })
-          }
+              };
+            });
+          };
           indexChanged = {
             indexAdded: setNull(calcIndexField(indexChange.filter(c => c.opt === 'add'))),
             indexRemoved: setNull(calcIndexField(indexChange.filter(c => c.opt === 'delete'))),
             indexModified: setNull(calcIndexField(indexChange.filter(c => c.opt === 'update'))),
-          }
+          };
         }
         if (baseChanged || fieldChanged || propChanged || refEntityChanged || indexChanged) {
           return p.concat({
@@ -572,8 +485,8 @@ export const packageChanges = (currentDataSource, preDataSource, db) => {
     }, [...changes]);
   };
   return assembling(currentDataSource.entities, preDataSource.entities, 'entity')
-      .concat(assembling(currentDataSource.views, preDataSource.views, 'view'))
-}
+      .concat(assembling(currentDataSource.views, preDataSource.views, 'view'));
+};
 
 export const getMaxVersion = (sortData) => {
   const numArray = sortData[0]?.name?.split('.');
@@ -582,8 +495,8 @@ export const getMaxVersion = (sortData) => {
   }
   return numArray.map((v, i) => {
     if (i === numArray.length - 1) {
-      return `${parseInt(v, 10) + 1}`
+      return `${parseInt(v, 10) + 1}`;
     }
     return v;
   }).join('.');
-}
+};

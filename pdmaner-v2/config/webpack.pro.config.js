@@ -1,57 +1,59 @@
-var path = require('path');
-var HtmlWebpackPlugin = require('html-webpack-plugin');
-var MiniCssExtractPlugin = require('mini-css-extract-plugin');
-var CopyWebpackPlugin = require('copy-webpack-plugin');
-var ScriptExtHtmlPlugin = require('script-ext-html-webpack-plugin');
-var OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const ScriptExtHtmlPlugin = require('script-ext-html-webpack-plugin');
+const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
-var platform = 'json';
+let platform = 'json';
 if ([].concat(process.argv).splice(2, process.argv.length).includes('--web')) {
   platform = 'fetch';
 }
 
-var cpDir = [
+const cpDir = [
   {
     from: path.resolve(__dirname, '../public'),
-    to: path.resolve(__dirname, '../app/build')
-  }
+    to: path.resolve(__dirname, '../app/build'),
+  },
 ];
 
 if (platform === 'json') {
   cpDir.push({
     from: path.resolve(__dirname, '../src/main.js'),
-    to: path.resolve(__dirname, '../app/build')
+    to: path.resolve(__dirname, '../app/build'),
   });
 }
 
 module.exports = {
-  mode: "production",
+  mode: 'production',
   entry: {
-    app: [require.resolve('@babel/polyfill'),
+    app: [
+      require.resolve('@babel/polyfill'),
       path.resolve(__dirname, '../src/lib/Math'),
-      path.resolve(__dirname, '../src/index')]
+      path.resolve(__dirname, '../src/index'),
+    ],
   },
   optimization: {
     splitChunks: {
       cacheGroups: {
         common: {
-          name: "common",
-          chunks: "all",
+          name: 'common',
+          chunks: 'all',
           minSize: 1,
-          priority: 0
+          priority: 0,
         },
         vendor: {
-          name: "vendor",
+          name: 'vendor',
           test: /[\\/]node_modules[\\/]/,
-          chunks: "all",
-          priority: 10
-        }
-      }
-    }
+          chunks: 'all',
+          priority: 10,
+        },
+      },
+    },
   },
   output: {
     path: path.resolve(__dirname, '../app/build'),
-    filename: "[name].[chunkhash:8].min.js"
+    filename: '[name].[chunkhash:8].min.js',
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -69,68 +71,75 @@ module.exports = {
         keepClosingSlash: true,
         minifyJS: true,
         minifyCSS: true,
-        minifyURLs: true
-      }
+        minifyURLs: true,
+      },
     }),
     new ScriptExtHtmlPlugin({
-      defaultAttribute: 'defer'
+      defaultAttribute: 'defer',
     }),
     new OptimizeCssAssetsPlugin({
       // 压缩css
       assetNameRegExp: /\.css$/g,
       cssProcessor: require('cssnano'),
       cssProcessorOptions: { discardComments: { removeAll: true } },
-      canPrint: true
+      canPrint: true,
     }),
     new MiniCssExtractPlugin({
       filename: '[name].style.[hash].css',
     }),
-    new CopyWebpackPlugin(cpDir)
+    new CopyWebpackPlugin(cpDir),
   ],
   resolveLoader:{
-    modules: ['node_modules','config']
+    modules: ['node_modules','config'],
   },
   resolve: {
     mainFields: ['browser', 'main'],
     alias: {
-      'components': path.resolve(__dirname, '../src/components'),
-      'style': path.resolve(__dirname, '../src/style/index.less')
-    }
+      components: path.resolve(__dirname, '../src/components'),
+      style: path.resolve(__dirname, '../src/style/index.less'),
+    },
   },
   module: {
     rules: [
       {
         test: /worker\.js$/,
         exclude: /node_modules/,
-        use: { loader: 'worker-loader' }
+        use: { loader: 'worker-loader' },
       },
       {
         test: /\.(js|tsx|jsx)$/,
         exclude: /node_modules/,
-        loader: 'babel-loader'
+        loader: 'babel-loader',
       },
       {
         test: /\.(css|less)$/,
         loader: [
           {
-            loader: MiniCssExtractPlugin.loader
+            loader: MiniCssExtractPlugin.loader,
           },
-          "css-loader",
-          { loader: "postcss-loader", options: { plugins: () => [ require('autoprefixer')() ]}},
-          { loader: 'less-loader', options: {javascriptEnabled: true }}]
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: { plugins: () => [require('autoprefixer')()] },
+          },
+          {
+            loader: 'less-loader',
+            options: { javascriptEnabled: true },
+          },
+        ],
       },
       {
         test: /\.(png|jpg|svg|gif)$/,
         loader: 'url-loader',
         options: {
-          limit: 8192
-        }
+          limit: 8192,
+        },
       },
       {
         test: require.resolve('../src/lib/middle'),
-        loader: "MiddleLoader?platform=" + platform + ""
+        loader: `MiddleLoader?platform=${platform}`,
       },
-    ]
+    ],
   },
-  target: 'electron-renderer'
-}
+  target: 'electron-renderer',
+};

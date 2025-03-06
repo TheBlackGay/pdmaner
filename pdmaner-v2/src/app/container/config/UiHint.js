@@ -34,7 +34,7 @@ export default React.memo(({ prefix, dataSource, dataChange }) => {
       newData = newData.concat(add);
     }
     return newData;
-  }
+  };
   const menuClick = (m) => {
     const count = m.key;
     const newData = [];
@@ -57,22 +57,22 @@ export default React.memo(({ prefix, dataSource, dataChange }) => {
       case 'up':
       case 'down':
         newData = moveArrayPositionByArray(newData, selected,
-          type === 'up' ? -1 : 1, 'id')
+          type === 'up' ? -1 : 1, 'id');
         break;
     }
     setData(newData);
     dataChange(newData.filter(d => !!d.defKey), 'profile.uiHint');
-  }
+  };
   const onSelect = (key, e) => {
-    setSelected(pre => {
+    setSelected((pre) => {
       if (!e.target.checked) {
         return pre.filter(k => k !== key);
       }
       return pre.concat(key);
-    })
+    });
   };
   const onChange = (key, name, e) => {
-    const newData = data.map(d => {
+    const newData = data.map((d) => {
       if (d.id === key) {
         return {
           ...d,
@@ -83,7 +83,7 @@ export default React.memo(({ prefix, dataSource, dataChange }) => {
     });
     setData(newData);
     dataChange(newData.filter(d => !!d.defKey), 'profile.uiHint');
-  }
+  };
   return <div className={`${currentPrefix}-setting-uiHint`}>
     <div>
       <div className={`${currentPrefix}-setting-uiHint-opt`}>
@@ -100,11 +100,11 @@ export default React.memo(({ prefix, dataSource, dataChange }) => {
             {
               data.map((d, i) => {
                 return <tr key={d.id}>
-                  <td>{i+1}</td>
+                  <td>{i + 1}</td>
                   <td><Checkbox onChange={e => onSelect(d.id, e)}/></td>
                   <td><Input placeholder={FormatMessage.string({id: 'config.uiHint.defKey'})} onChange={e => onChange(d.id, 'defKey', e)} defaultValue={d.defKey}/></td>
                   <td><Input placeholder={FormatMessage.string({id: 'config.uiHint.defName'})} onChange={e => onChange(d.id, 'defName', e)} defaultValue={d.defName}/></td>
-                </tr>
+                </tr>;
               })
             }
           </tbody>

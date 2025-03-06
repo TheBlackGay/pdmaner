@@ -1,24 +1,25 @@
 process.env.CHINER_NODE_ENV = 'development';
-var path = require('path');
-var childProcess = require('child_process');
-var webpack = require('webpack');
-var config = require('../config/webpack.dev.config.js');
-var profile = require('../profile');
-var host = profile.host;
-var port = profile.port;
-var protocol = profile.protocol;
-var WebpackDevServer = require('webpack-dev-server');
+const path = require('path');
+const childProcess = require('child_process');
+const webpack = require('webpack');
+const config = require('../config/webpack.dev.config.js');
+const profile = require('../profile');
+
+const host = profile.host;
+const port = profile.port;
+const protocol = profile.protocol;
+const WebpackDevServer = require('webpack-dev-server');
 
 config.entry.app.unshift(`webpack-dev-server/client?${protocol}://${host}:${port}/`);
 
-var compiler = webpack(config);
+const compiler = webpack(config);
 
-var devServer = new WebpackDevServer(compiler, {
+const devServer = new WebpackDevServer(compiler, {
     stats: { colors: true },
     contentBase: path.resolve(__dirname, '../public'),
 });
 
-devServer.listen(port, host, function () {
+devServer.listen(port, host, () => {
     // 启动electron
     childProcess.spawn('npm', ['run', 'electron'], { shell: true, env: process.env, stdio: 'inherit' })
       .on('close', code => process.exit(code))

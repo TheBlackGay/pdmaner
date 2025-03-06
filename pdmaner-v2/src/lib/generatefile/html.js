@@ -22,25 +22,25 @@ const defaultValue = '默认值';
 const remark = '备注';
 
 const generateHeader = (dataSource) => {
-  let GroupsString = `<ul>\n`;
+  let GroupsString = '<ul>\n';
   const viewGroups = _object.get(dataSource, 'viewGroups', []);
   const generateHeaderIndex = (group, index, groupName, dataName, mainTitle, title, subTitle) => {
     const dataRefs = _object.get(group, name, []);
     const data = (dataSource[dataName] || []).filter(e => dataRefs.includes(e.id));
-    GroupsString += `<ul>`;
+    GroupsString += '<ul>';
     GroupsString += `<li class="second-li"><a class="group-list" href="#">${index} ${mainTitle}</a></li>\n`;
-    GroupsString += `<ul>`;
+    GroupsString += '<ul>';
     GroupsString += `<li class="second-li"><a class="group-list" id="group-${group.id}-${dataName}-from" href="#group-${group.id}-${dataName}-to">1 ${title}</a></li>\n`;
     if (subTitle) {
       GroupsString += `<li class="second-li"><a class="group-list" id="group-${group.id}-${groupName}-from" href="#group-${group.id}-${groupName}-to">2 ${subTitle}</a>\n`;
     }
-    GroupsString += `<ul>`;
+    GroupsString += '<ul>';
     data.forEach((d, dIndex) => {
-      GroupsString += `<li class="third-li"><a id="group-${group.id}-${d.id}-from" href="#group-${group.id}-${d.id}-to">3.${dIndex + 1} ${d.id}[${d.defName || ''}]</a></li>\n`
+      GroupsString += `<li class="third-li"><a id="group-${group.id}-${d.id}-from" href="#group-${group.id}-${d.id}-to">3.${dIndex + 1} ${d.id}[${d.defName || ''}]</a></li>\n`;
     });
-    GroupsString += `</ul></li></ul></li>`;
-    GroupsString += `</ul>`;
-  }
+    GroupsString += '</ul></li></ul></li>';
+    GroupsString += '</ul>';
+  };
   viewGroups.forEach((group, index) => {
     GroupsString += `<li class="first-li"><a class="group" id="group-${group.id}-from" href="#group-${group.id}-to">${index + 1} ${group.defName || group.defKey}</a>\n`;
     generateHeaderIndex(group, 1, 'refDiagrams', 'diagrams', relation, relationList);
@@ -57,7 +57,7 @@ const generateTableListTable = (dataSource, groupKey, type, fieldName) => {
   | ------------ | ------------ |
   | 用户信息  | userManage  |
    */
-  let tableString = `<table border="1" cellspacing="0">\n`;
+  let tableString = '<table border="1" cellspacing="0">\n';
   tableString += `<tr class="first-tr"><td>${name}</td><td>${code}</td><td>${remark}</td></tr>\n`;
   const viewGroups = _object.get(dataSource, 'viewGroups', []);
   const entities = _object.get(dataSource, fieldName, []);
@@ -66,7 +66,7 @@ const generateTableListTable = (dataSource, groupKey, type, fieldName) => {
       const currentEntities = entities.filter(e => (group?.[type] || []).includes(e.id));
       currentEntities.forEach((entity) => {
         tableString += `<tr><td>${entity.defName || entity.defKey}</td><td>${entity.defKey}</td><td>${entity.comment || ''}</td></tr>\n`;
-      })
+      });
     }
   });
   return `${tableString}</table>`;
@@ -80,7 +80,7 @@ const generateTableColumnListTable = (dataSource, groupKey, tableKey, nameType) 
    */
   const dataTypeSupports = _object.get(dataSource, 'profile.dataTypeSupports', []);
   const defaultDb = dataTypeSupports.filter(d => d.id === _object.get(dataSource, 'profile.default.db', ''))[0].defKey || '';
-  let tableString = `<table border="1" cellspacing="0">\n`;
+  let tableString = '<table border="1" cellspacing="0">\n';
   tableString += `<tr class="first-tr"><td>${code}</td><td>${name}</td>${nameType !== 'dicts' ? `<td>${dataType}(${defaultDb})</td><td>${length}</td><td>${main}</td><td>${defaultValue}</td>` : ''}<td>${remark}</td></tr>\n`;
   const viewGroups = _object.get(dataSource, 'viewGroups', []);
   viewGroups.forEach((group) => {
@@ -102,7 +102,7 @@ const generateTableColumnListTable = (dataSource, groupKey, tableKey, nameType) 
             }
            });
         }
-      })
+      });
     }
   });
   return `${tableString}</table>`;
@@ -118,7 +118,7 @@ const generateRelation = (group, images) => {
       .map((i, index) => `<img style="width: 98%;margin-top: 10px" src="${i.data}" title="${group.defName}-关系图-${index + 1}"/>`)
       .join('\n');
   }
-  return `<span>该模块未配置关系图</span>`;
+  return '<span>该模块未配置关系图</span>';
 };
 
 const generateModuleBody = (dataSource, images = []) => {
@@ -148,7 +148,7 @@ const generateModuleBody = (dataSource, images = []) => {
  ---
 
    */
-  let groupsString = `<ul>\n\n`;
+  let groupsString = '<ul>\n\n';
   const viewGroups = _object.get(dataSource, 'viewGroups', []);
   // 循环所有的模块
   // 生成关系图
@@ -158,31 +158,31 @@ const generateModuleBody = (dataSource, images = []) => {
     // 表清单
     renderString += `<li><a class="group-list" id="group-${group.id}-${name}-to" href="#group-${group.id}-${name}-from">${index + 1}.${subIndex}.1  ${title}</a>\n\n`;
 
-    renderString += `\n\n`;
+    renderString += '\n\n';
     renderString += `${generateTableListTable(dataSource, group.id, type, name)}\n`;
-    renderString += `</li><hr>\n\n`;
+    renderString += '</li><hr>\n\n';
     renderString += `<li><a class="group-list" id="group-${group.id}-${name}-column-to" href="#group-${group.id}-${name}-column-from">${index + 1}.${subIndex}.2 ${subTitle}</a>\n\n`;
     const entityRefs = _object.get(group, type, []);
     const entities = (dataSource?.[name] || []).filter(e => entityRefs.includes(e.id));
-    renderString += `<ul style="padding: 0">`;
+    renderString += '<ul style="padding: 0">';
     entities.forEach((entity, entityIndex) => {
       renderString += ` <li><a class="block" id="group-${group.id}-${name}-column-${entity.id}-to" href="#group-${group.id}-${name}-column-${entity.id}-from">${index + 1}.${subIndex}.2.${entityIndex + 1} ${entity.defKey}[${entity.defName || ''}]</a>\n\n`;
       renderString += `${generateTableColumnListTable(dataSource, group.id, entity.id, name)}\n`;
-      renderString += `</li>\n\n`;
+      renderString += '</li>\n\n';
     });
-    renderString += '</li></ul><hr></li>'
+    renderString += '</li></ul><hr></li>';
     return renderString;
-  }
+  };
   viewGroups.forEach((group, index) => {
     groupsString += `<li class="first-li"><a class="group" id="group-${group.id}-to" href="#group-${group.id}-from">${index + 1} ${group.defName || group.defKey || group.id}</a><ul>\n`;
     groupsString += `<li class="second-li"><a class="group-list" class="block" id="group-${group.id}-diagrams-to" href="#group-${group.id}-diagrams-from">${index + 1}.1 ${relationList}</a>\n`;
     groupsString += `${generateRelation(group, images)}\n`;
-    groupsString += `</li><hr>\n`;
+    groupsString += '</li><hr>\n';
     groupsString += renderEntitiesOrViews(group, 'refEntities', 'entities', index, 2, tableList, tableColumnList);
     groupsString += renderEntitiesOrViews(group, 'refViews', 'views', index, 3, viewList, viewColumnList);
     groupsString += renderEntitiesOrViews(group, 'refDicts', 'dicts', index, 4, dictList, dictItemList);
 
-    groupsString += '</ul></li></ul><hr></li>'
+    groupsString += '</ul></li></ul><hr></li>';
   });
   // 生成该模块的表列清单
   return `${groupsString}</ul>`;
@@ -279,7 +279,7 @@ export const html = (dataSource, images, projectName, callBack) => {
   const index = '<center class="index">目录</center>\n';
   const header = generateHeader(dataSource);
   const body = generateModuleBody(dataSource, images);
-  const endTag = "</body>\n" +
-    "</html>";
+  const endTag = '</body>\n' +
+    '</html>';
   callBack && callBack(`${defaultData}<span class="left">${index}<hr>${header}</span><span  class="right">${body}</span>${endTag}`);
 };

@@ -1,6 +1,6 @@
 import {Graph} from '@antv/x6';
 import _ from 'lodash/object';
-import { elementToSVG } from 'dom-to-svg'
+import { elementToSVG } from 'dom-to-svg';
 
 import { calcCellData } from '../datasource_util';
 import { saveTempImages } from '../middle';
@@ -8,13 +8,13 @@ import { saveTempImages } from '../middle';
 
 export const svg2png = (svgData) => {
   return new Promise((resolve, reject) => {
-    const svgDataUrl = `data:image/svg+xml;charset=utf-8;base64,${window.btoa(unescape(encodeURIComponent(svgData)))}`
+    const svgDataUrl = `data:image/svg+xml;charset=utf-8;base64,${window.btoa(unescape(encodeURIComponent(svgData)))}`;
     const img = document.createElement('img');
     img.src = svgDataUrl;
-    img.onload = function() {
+    img.onload = function () {
       const { width, height } = img.getBoundingClientRect();
       const canvas = document.createElement('canvas');
-      const dpr = window.devicePixelRatio || window.webkitDevicePixelRatio || window.mozDevicePixelRatio || 1
+      const dpr = window.devicePixelRatio || window.webkitDevicePixelRatio || window.mozDevicePixelRatio || 1;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       canvas.style.width = `${width}px`;
@@ -25,13 +25,13 @@ export const svg2png = (svgData) => {
       context.drawImage(img, 0, 0, width, height);
       document.body.removeChild(img);
       resolve(canvas);
-    }
+    };
     img.onerror = function (err){
-      reject(err)
-    }
+      reject(err);
+    };
     document.body.appendChild(img);
-  })
-}
+  });
+};
 
 export const img = (data, relationType, dataSource, needCalc = true, groups) => {
   return new Promise((res) => {
@@ -52,11 +52,11 @@ export const img = (data, relationType, dataSource, needCalc = true, groups) => 
       },
     });
     const updateStyle = () => {
-      dom.querySelectorAll('body').forEach(d => {
+      dom.querySelectorAll('body').forEach((d) => {
         d.style.margin  = '0';
       });
-    }
-    const mindCells = (data || []).filter(c => c.shape === 'mind-topic-branch' || c.shape=== 'mind-topic' || c.shape === 'mind-edge');
+    };
+    const mindCells = (data || []).filter(c => c.shape === 'mind-topic-branch' || c.shape === 'mind-topic' || c.shape === 'mind-edge');
     const cells = ((needCalc ? calcCellData(data, dataSource, null, groups, null, relationType, null, null) : data))
         .concat(mindCells).map((d) => {
       const other = {
@@ -78,8 +78,8 @@ export const img = (data, relationType, dataSource, needCalc = true, groups) => 
               ..._.get(d, 'attrs.line.targetMarker'),
               relation: relation[1],
             },
-          }
-        }
+          },
+        };
       }
       if (d.shape === 'edit-node-polygon' || d.shape === 'edit-node-circle-svg') {
         return {
@@ -96,7 +96,7 @@ export const img = (data, relationType, dataSource, needCalc = true, groups) => 
     graph.on('render:done', () => {
       graph.centerContent();
       //setTimeout(() => {
-        updateStyle()
+        updateStyle();
         res(dom);
       //});
     });
@@ -104,7 +104,7 @@ export const img = (data, relationType, dataSource, needCalc = true, groups) => 
     if (cells.length === 0) {
       res(dom);
     }
-  })
+  });
 };
 
 export const imgAll = (dataSource, callBack, useBase, imageType) => {
@@ -120,7 +120,7 @@ export const imgAll = (dataSource, callBack, useBase, imageType) => {
       }
     });
   }
-  return new Promise( async (res, rej) => {
+  return new Promise(async (res, rej) => {
     const result = [];
     for (let i = 0; i < dataSource.diagrams.length; i += 1){
       const d = dataSource.diagrams[i];
@@ -161,15 +161,15 @@ export const imgAll = (dataSource, callBack, useBase, imageType) => {
             svg2png(html2svg(d.canvasData?.cells || [], dom)).then((canvas) => {
               document.body.removeChild(dom.parentElement.parentElement);
               const baseData = canvas.toDataURL('image/png');
-              const dataBuffer = Buffer.from(baseData.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+              const dataBuffer = Buffer.from(baseData.replace(/^data:image\/\w+;base64,/, ''), 'base64');
               result.push({fileName: d.id, data: useBase ? baseData : dataBuffer});
               console.log(d.defName || d.defKey);
               callBack && callBack();
               resolve();
             }).catch(err => reject(err));
           }
-        }).catch(err => reject(err))
-      })
+        }).catch(err => reject(err));
+      });
     }
     if (useBase) {
       res(result);
@@ -180,7 +180,7 @@ export const imgAll = (dataSource, callBack, useBase, imageType) => {
           }).catch(err => rej(err));
     }
   });
-}
+};
 
 let lengthValueCache = {};
 export const html2svg = (data = [], dom) => {
@@ -190,7 +190,7 @@ export const html2svg = (data = [], dom) => {
     if(n.position) {
       return p.concat(n);
     }
-    return p.concat((n.vertices || []).map(v => ({position: v})))
+    return p.concat((n.vertices || []).map(v => ({position: v})));
   }, []);
   const checkLength = (e, text, length, width) => {
     const tempText = text.slice(0, length);
@@ -202,15 +202,15 @@ export const html2svg = (data = [], dom) => {
     } else {
       e.innerText = '...';
     }
-  }
+  };
   //替换foreignObject
-  dom.querySelectorAll('foreignObject').forEach(f => {
+  dom.querySelectorAll('foreignObject').forEach((f) => {
     const parent = f.parentElement;
     const ellipsis = f.querySelectorAll('.chiner-ellipsis');
-    ellipsis.forEach(e => {
+    ellipsis.forEach((e) => {
       // 替换多余的空格
       e.innerText = e.innerText.replace(/\s{3,}'/g, '  ');
-    const width = e.getBoundingClientRect().width
+    const width = e.getBoundingClientRect().width;
       if(Math.abs(e.scrollWidth - width) > 1) {
         const text = e.innerText;
         // 由于生成的svg无法实现文本超宽省略，因此需要手动计算文本超宽增加省略
@@ -221,12 +221,12 @@ export const html2svg = (data = [], dom) => {
           checkLength(e, text, text.length, width);
           if(Object.keys(lengthValueCache).length > 1000000) {
             // 如果缓存数量超过百万 则清除数据 释放内存
-            lengthValueCache = {}
+            lengthValueCache = {};
           }
           lengthValueCache[name] = e.innerText;
         }
       }
-    })
+    });
     const svgDom = elementToSVG(f).children[0];
     const clearId = (d) => {
       d.setAttribute('id', Math.uuid());
@@ -240,14 +240,14 @@ export const html2svg = (data = [], dom) => {
         }
       }
       if(d.children) {
-        Array.from(d.children).forEach(c => {
+        Array.from(d.children).forEach((c) => {
           clearId(c);
-        })
+        });
       }
-    }
+    };
     clearId(svgDom);
     parent.replaceChild(svgDom, f);
-  })
+  });
   const minX = Math.min(...cells.map(c => c.position.x));
   const minY = Math.min(...cells.map(c => c.position.y));
   const svg = dom.querySelector('.x6-graph-svg');
@@ -256,5 +256,5 @@ export const html2svg = (data = [], dom) => {
   const rect = viewport.getBoundingClientRect();
   return `<svg width="${rect.width + 20}px" height="${rect.height + 20}px" viewBox="0 0 ${rect.width + 20} ${rect.height + 20}" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
           ${svg.innerHTML.replaceAll('size="1px">', 'size="1px"/>').replaceAll('&nbsp;', ' ')}</svg>`;
-}
+};
 

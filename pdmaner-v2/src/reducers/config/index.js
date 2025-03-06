@@ -1,8 +1,8 @@
+import _ from 'lodash/object';
 import { langType, fail, success } from '../../lib/variable';
 import { GET_USER_CONFIG_SUCCESS, GET_USER_CONFIG_FAIL,
   SAVE_USER_CONFIG_SUCCESS } from '../../actions/config';
 import {defaultJVM} from '../../lib/datasource_util';
-import _ from 'lodash/object';
 
 const config = (state = { lang: langType[0] }, action) => {
   switch (action.type) {
@@ -27,7 +27,7 @@ const config = (state = { lang: langType[0] }, action) => {
       };
     default: return {
       ...state,
-    }
+    };
   }
 };
 

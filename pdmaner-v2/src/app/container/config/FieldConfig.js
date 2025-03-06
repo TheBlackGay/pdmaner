@@ -9,18 +9,18 @@ export default React.memo(({ prefix, dataSource, dataChange }) => {
     const data = dataSource?.profile?.default?.entityInitFields || [];
     const currentPrefix = getPrefix(prefix);
     return <div className={`${currentPrefix}-setting-entity-init-fields`}><SimpleTab
-        className={`${currentPrefix}-database-container-tab`}
-        options={[
+      className={`${currentPrefix}-database-container-tab`}
+      options={[
             {
                 key: '1',
                 title: FormatMessage.string({id: 'config.UiHint'}),
-                content: <UiHint dataSource={dataSource} dataChange={dataChange}/>
+                content: <UiHint dataSource={dataSource} dataChange={dataChange}/>,
             },
             {
                 key: '2',
                 title: FormatMessage.string({id: 'config.FieldInitProp'}),
-                content: <EntityBasePropertiesList className={`${currentPrefix}-setting-entity-init-columns`} properties={dataSource?.profile?.extProps || {}} propertiesChange={(data) => dataChange(data, 'profile.extProps')}/>
-            }
+                content: <EntityBasePropertiesList className={`${currentPrefix}-setting-entity-init-columns`} properties={dataSource?.profile?.extProps || {}} propertiesChange={data => dataChange(data, 'profile.extProps')}/>,
+            },
         ]}
     /></div>;
 });

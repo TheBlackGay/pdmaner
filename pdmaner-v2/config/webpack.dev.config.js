@@ -17,15 +17,15 @@ module.exports = {
     splitChunks: {
       cacheGroups: {
         common: {
-          name: "common",
-          chunks: "all",
+          name: 'common',
+          chunks: 'all',
           minSize: 1,
           priority: 0,
         },
         vendor: {
-          name: "vendor",
+          name: 'vendor',
           test: /[\\/]node_modules[\\/]/,
-          chunks: "all",
+          chunks: 'all',
           priority: 10,
         },
       },
@@ -33,7 +33,7 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, '../build'),
-    filename: "[name].js",
+    filename: '[name].js',
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -56,8 +56,8 @@ module.exports = {
   resolve: {
     mainFields: ['browser', 'main'],
     alias: {
-      'components': path.resolve(__dirname, '../src/components'),
-      'style': path.resolve(__dirname, '../src/style/index.less'),
+      components: path.resolve(__dirname, '../src/components'),
+      style: path.resolve(__dirname, '../src/style/index.less'),
     },
   },
   module: {
@@ -77,7 +77,7 @@ module.exports = {
       {
         test: /\.(js|tsx|jsx)$/,
         exclude: /node_modules/,
-        loader: "eslint-loader",
+        loader: 'eslint-loader',
       },
       {
         test: /\.(css|less)$/,
@@ -85,13 +85,13 @@ module.exports = {
           {
             loader: MiniCssExtractPlugin.loader,
           },
-          "css-loader",
-          { 
-            loader: "postcss-loader", 
+          'css-loader',
+          {
+            loader: 'postcss-loader',
             options: { plugins: () => [require('autoprefixer')()] },
           },
-          { 
-            loader: 'less-loader', 
+          {
+            loader: 'less-loader',
             options: { javascriptEnabled: true },
           },
         ],
@@ -105,7 +105,7 @@ module.exports = {
       },
       {
         test: require.resolve('../src/lib/middle'),
-        loader: "MiddleLoader?platform=json",
+        loader: 'MiddleLoader?platform=json',
       },
     ],
   },
