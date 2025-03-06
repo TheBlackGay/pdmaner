@@ -1,0 +1,607 @@
+@import "~style";
+
+.@{prefix}-check-rule {
+  width: 100%;
+  height: 100%;
+  &-result {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    & > div {
+      width: 50%;
+    }
+    background: @background-color;
+  }
+  &-list {
+    padding: 10px;
+    height: 100%;
+    width: 100%;
+    &-opt {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      & > span:first-child {
+        font-weight: bold;
+        font-size: 12px;
+        position: relative;
+        padding-left: 5px;
+        &:before {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          content: " ";
+          width: 3px;
+          background: @primary-color;
+        }
+      }
+    }
+    &-data {
+      height: calc(100% - 13px);
+      &-item-header {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        font-weight: bold;
+        & > span {
+          line-height: 32px;
+          background: @primary-border-color-simple;
+        }
+      }
+      &-item {
+        & > span:last-child {
+         & > span {
+           cursor: pointer;
+           color: @primary-color;
+         }
+        }
+        & > span:nth-child(3) {
+          color: @primary-color;
+          cursor: pointer;
+        }
+      }
+      &-item, &-item-header {
+        i[class~='fa-spinner'] {
+          animation: remote-change 1s infinite linear;
+        }
+        &-status {
+          &-question {
+            color: @primary-bg;
+          }
+          &-check {
+            color: @success-color;
+          }
+          &-close {
+            color: @danger-color;
+          }
+          &-exclamation-triangle {
+            color: @warring-color;
+          }
+        }
+        height: 32px;
+        white-space: nowrap;
+        &:nth-child(2n - 1) {
+          background: @primary-border-color-simple;
+          & > span:last-child {
+            background: @primary-border-color-simple;
+          }
+          & > span:nth-child(5) {
+            background: @primary-border-color-simple;
+          }
+        }
+        & > span {
+          padding: 0 2px;
+          display: inline-block;
+          line-height: 32px;
+          text-overflow: ellipsis;
+          overflow: hidden;
+        }
+        & > span:first-child {
+          width: 60px;
+          text-align: center;
+        }
+        & > span:nth-child(2) {
+          width: 100px;
+        }
+        & > span:nth-child(3), & > span:nth-child(4) {
+          width: 200px;
+        }
+        & > span:nth-child(5) {
+          position: sticky;
+          right: 100px;
+          width: 100px;
+          background: @background-color;
+          border-left: solid 1px @primary-border-color;
+          text-align: center;
+        }
+        & > span:nth-child(6) {
+          text-align: center;
+        }
+        & > span:last-child {
+          position: sticky;
+          right: 0;
+          width: 100px;
+          background: @background-color;
+          & > span + span {
+            margin-left: 5px;
+          }
+        }
+      }
+      &-content {
+        height: calc(100% - 21px);
+      }
+    }
+  }
+  &-detail {
+    padding: 10px;
+    &-opt {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      & > span:first-child {
+        font-weight: bold;
+        font-size: 12px;
+        position: relative;
+        padding-left: 5px;
+        &:before {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          content: " ";
+          width: 3px;
+          background: @primary-color;
+        }
+      }
+      & > span:last-child {
+        margin-right: 5px;
+        cursor: pointer;
+        color: @primary-color;
+        & > i {
+          margin-right: 3px;
+        }
+      }
+    }
+    &-title {
+      border-bottom: 1px solid @primary-border-color;
+      font-weight: bold;
+      font-size: 15px;
+      margin-top: 10px;
+      padding-bottom: 10px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      & > span:nth-child(1), & > span:nth-child(2) {
+        width: calc(50% - 55px);
+      }
+      & > span:nth-child(3) {
+        width: 110px;
+      }
+      & > span {
+        & > span {
+          line-height: 22px;
+        }
+        line-height: 22px;
+        display: inline-block;
+        flex-direction: row;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: keep-all;
+        margin-right: 10px;
+        & > span:nth-child(2) {
+          font-weight: bold;
+          margin-left: 5px;
+          font-size: 12px;
+        }
+      }
+    }
+    &-result {
+      height: calc(100% - 60px);
+      overflow: auto;
+      &-empty {
+        justify-content: center;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        height: calc(100% - 50px);
+        & > span {
+          padding: 10px 20px;
+          height: auto;
+        }
+      }
+      &-item {
+        margin-top: 10px;
+        &-type {
+          font-weight: bold;
+        }
+        &-type + &-row {
+          background: @primary-border-color-simple;
+          font-weight: bold;
+          margin-top: 2px;
+          margin-bottom: 5px;
+          & > span:last-child {
+            color: @font-color;
+            cursor: default;
+          }
+        }
+        &-row {
+          &-list {
+            margin: 5px 20px;
+            border: 1px solid @primary-border-color;
+            & > div:first-child {
+              background: @primary-border-color;
+              & > span:last-child {
+                color: @font-color !important;
+              }
+            }
+            & > div {
+              padding: 2px 5px;
+              & > span {
+                word-break: break-all;
+                display: inline-block;
+                width: calc(50% - 40px);
+              }
+              & > span:last-child {
+                text-align: center;
+                cursor: pointer;
+                color: @primary-color;
+                width: 80px !important;
+              }
+            }
+          }
+          &-status {
+            &-fail {
+              color: @danger-color
+            }
+            &-warring {
+              color: @warring-color
+            }
+            &-pass {
+              color: @success-color;
+            }
+          }
+          padding: 5px;
+          font-size: 13px;
+          & > span {
+            display: inline-block;
+          }
+          & > span:first-child {
+            width: 60%;
+          }
+          & > span:nth-child(2), & > span:nth-child(3), & > span:nth-child(4) {
+            width: 13%;
+            text-align: center;
+          }
+          & > span:last-child {
+            color: @primary-color;
+            cursor: pointer;
+          }
+        }
+      }
+    }
+  }
+  &-edit {
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    background: @background-color;
+    margin: 5px;
+    padding: 10px;
+    &-buttons {
+      &-icon {
+        float: right;
+        & > span {
+          color: @primary-color;
+          & > i {
+            margin-right: 3px;
+          }
+          cursor: pointer;
+        }
+        & > span + span {
+          margin-left: 10px;
+        }
+      }
+     border-bottom: 1px solid @primary-border-color;
+     padding-bottom: 10px;
+     & > span:first-child {
+       margin-right: 20px;
+     }
+   }
+    &-content {
+      height: calc(100% - 39px);
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      & > div {
+        width: calc(50% - 5px);
+      }
+    }
+    &-list {
+      overflow: scroll;
+      &-opt {
+        & > div {
+          font-weight: bold;
+          position: relative;
+          padding-left: 8px;
+          &:before {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            content: " ";
+            width: 3px;
+            background: @primary-color;
+          }
+        }
+      }
+      &-item {
+        margin-top: 5px;
+        &-name {
+          display: inline-block;
+          width: 50%;
+          text-align: left;
+          font-weight: bold;
+        }
+        &-opt {
+          padding-right: 5px;
+          display: inline-block;
+          width: 50%;
+          text-align: right;
+          color: @primary-color;
+          user-select: none;
+          &-disable {
+            & > span:not(:first-child) {
+              color: @primary-border-color;
+              cursor: not-allowed !important;
+            }
+          }
+          & > span:nth-child(1) {
+            cursor: pointer;
+            margin-right: 5px;
+            i {
+              margin-right: 2px;
+            }
+          }
+          & > span:nth-child(2) {
+            cursor: pointer;
+            margin-right: 20px;
+            i {
+              margin-right: 2px;
+            }
+          }
+          &-move {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+          }
+          &-item {
+            cursor: pointer;
+          }
+          &-border {
+            margin: 0 5px;
+            display: inline-block;
+            width: 1px;
+            background: @primary-border-color;
+            height: 13px;
+          }
+        }
+        &-header {
+          background: @primary-border-color;
+          font-weight: bold;
+          text-align: center;
+        }
+        &-row-selected {
+          background:  @third-primary-color;
+          & > span:first-child {
+            & > span:first-child {
+              color: @font-color !important;
+            }
+          }
+        }
+        &-row {
+          margin-top: 2px;
+          &-force {
+            font-weight: bold;
+          }
+          &-disable {
+            color: @third-font-color;
+          }
+        }
+        &-row, &-header {
+          &-empty {
+            padding: 2px 5px;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+            font-size: 12px;
+            color: @fourth-primary-color;
+          }
+          padding: 2px 5px;
+          & > span {
+            display: inline-block;
+          }
+          & > span:first-child {
+            & > span:first-child {
+              display: inline-block;
+              width: 40px;
+              text-align: center;
+              color: @primary-border-color
+            }
+            & > span:last-child {
+              color: @primary-color;
+              cursor: pointer;
+            }
+            width: calc(100% - 200px);
+          }
+          & > span:nth-child(2) {
+            width: 100px;
+            text-align: center;
+          }
+          & > span:last-child {
+            width: 100px;
+            text-align: center;
+          }
+        }
+      }
+    }
+    &-detail {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: auto;
+      &-disable {
+        overflow: hidden;
+      }
+      &-readonly {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: @modal-color;
+        z-index: 8;
+        color: @background-color;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+      }
+      overflow: auto;
+      &-title {
+        font-weight: bold;
+        position: relative;
+        padding-left: 8px;
+        &:before {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          content: " ";
+          width: 3px;
+          background: @primary-color;
+        }
+      }
+      &-content {
+        position: relative;
+        &-resize {
+          border-radius: 5px;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 6px;
+          background: transparent;
+          border-top: 1px dashed @primary-color;
+          cursor: row-resize;
+        }
+        &-code {
+          height: calc(100% - 105px);
+          & > div {
+            height: 100%;
+          }
+        }
+        &-container {
+          flex-grow: 1;
+        }
+        background: @primary-border-color;
+        border-radius: 5px;
+        margin-top: 10px;
+        padding: 10px;
+        &-title {
+          margin-bottom: 10px;
+          font-weight: bold;
+        }
+        &-item {
+          &-inline {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            & > div {
+              white-space: nowrap;
+            }
+          }
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          margin-bottom: 5px;
+          & > div > span:last-child {
+            margin-left: 5px;
+          }
+          & > div > span:first-child {
+            width: 70px;
+            display: inline-block;
+            text-align: right;
+          }
+          & > span:last-child {
+            flex-grow: 1;
+            margin-left: 5px;
+          }
+          & > span:first-child {
+            width: 70px;
+            display: inline-block;
+            text-align: right;
+          }
+          .@{prefix}-textarea {
+            width: 100%;
+          }
+          .@{prefix}-input {
+            input {
+              border-top-right-radius: 0 !important;
+              border-bottom-right-radius: 0 !important;
+            }
+          }
+          .@{prefix}-input-count {
+            line-height: 23px;
+            background: @background-color;
+            margin-right: 0;
+            text-align: center;
+            height: 100%;
+            padding-right: 5px;
+          }
+          &-require {
+            position: relative;
+            padding-left: 5px;
+            &:before {
+              content: "*";
+              color: @danger-color;
+              position: absolute;
+              left: 0;
+              top: 0;
+            }
+          }
+        }
+        &-test {
+          display: flex;
+          flex-direction: row;
+          margin-top: 5px;
+          & > span + span {
+            margin-left: 5px;
+          }
+          & > span:last-child {
+            padding: 2px 8px;
+            flex-grow: 1;
+            display: inline-block;
+            background: @code-background;
+            color: @background-color;
+          }
+        }
+      }
+      &-content:nth-child(3) {
+        user-select: none;
+        & > div:nth-child(2) {
+          height: calc(100% - 30px);
+        }
+      }
+      &-content:nth-child(2), &-content:nth-child(3) {
+        min-height: 200px;
+        height: calc(50% - 100px);
+      }
+    }
+  }
+}

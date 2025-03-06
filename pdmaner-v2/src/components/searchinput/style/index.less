@@ -1,0 +1,48 @@
+@import "~style";
+
+.@{prefix}-search-input {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 2px 4px;
+  background: @four-font-color;
+  color: @third-font-color;
+  border: none;
+  border-radius: 10px;
+  &-icon {
+    font-size: 16px;
+  }
+  &-loading {
+    i:last-child {
+      animation: remote-change 1s infinite linear;
+    }
+  }
+  .chiner-input {
+    flex-grow: 1;
+    & > span {
+      border: none !important;
+    }
+  }
+  .chiner-input-focus {
+    box-shadow: none !important;
+  }
+  input {
+    font-size: 11px;
+    padding-left: 8px;
+    border: 1px solid transparent;
+    width: 100%;
+    &:hover {
+      border: none;
+    }
+    &:focus {
+      border: none;
+      box-shadow: none;
+    }
+    &::placeholder {
+      color: @second-font-color;
+    }
+    background: transparent;
+    outline: none;
+    color: @font-color;
+  }
+}

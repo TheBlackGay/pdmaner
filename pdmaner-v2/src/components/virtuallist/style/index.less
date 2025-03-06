@@ -1,0 +1,19 @@
+@import "~style";
+
+.@{prefix}-virtuallist {
+  &-container {
+    position: relative;
+   &-children {
+     position: absolute;
+     left: 0;
+     & > div {
+       overflow: hidden;
+       height: 100%;
+     }
+   }
+  }
+  &-scoll {
+    height: 100%;
+    overflow: auto
+  }
+}
