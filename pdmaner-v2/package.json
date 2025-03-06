@@ -101,13 +101,17 @@
     "worker-loader": "3.0.8"
   },
   "build": {
+    "electronDownload": {
+      "mirror": "https://github.com/electron/electron/releases/download/"
+    },
+    "electronDist": "cache",
     "publish": {
       "provider": "generic",
       "url": "http://chiner-release.httpchk.com"
     },
     "appId": "PDManer",
     "productName": "PDManer",
-    "artifactName": "${productName}-${os}_v${version}.${ext}",
+    "artifactName": "${productName}-${os}_${arch}_v${version}.${ext}",
     "directories": {
       "buildResources": "app/build",
       "output": "dist"
@@ -123,7 +127,7 @@
       "build/template/"
     ],
     "dmg": {
-      "icon": "icon.icns",
+      "icon": "public/icon.icns",
       "contents": [
         {
           "x": 410,
@@ -166,7 +170,7 @@
       }
     },
     "mac": {
-      "artifactName": "${productName}-${os}_${arch}_v${version}.${ext}",
+      "icon": "public/icon.icns",
       "target": {
         "target": "dmg",
         "arch": [

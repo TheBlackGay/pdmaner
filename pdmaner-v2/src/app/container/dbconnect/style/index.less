@@ -1,10 +1,12 @@
 @import "~style";
 
 .@{prefix}-dbconnect {
-  height: 260px;
+  height: auto;
+  min-height: 260px;
   padding: 10px;
   display: flex;
   flex-direction: row;
+  min-width: 800px;
   &-opt {
     padding: 0 10px;
   }
@@ -93,36 +95,35 @@
     }
   }
   &-right {
-    overflow: hidden;
+    overflow: auto;
     width: 50%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    .@{prefix}-form-item-label {
-      margin: unset;
-    }
+    padding-left: 10px;
     &-button {
-      text-align: center;
-      padding-top: 5px
+      margin-top: 10px;
+      text-align: right;
     }
   }
-  &-example-config {
-    max-height:80vh;
-    overflow: auto;
-    &-item {
-      border: solid 1px @success-color;
-      padding: 5px;
-      margin: 5px;
-      &-header {
-        color: @background-hl;
-      };
-      &-content {
-        &-label {
-          color: @success-color;
+  &-example {
+    &-config {
+      max-height: 300px;
+      overflow: auto;
+      &-item {
+        margin-bottom: 10px;
+        &-header {
+          font-weight: bold;
+          margin-bottom: 5px;
         }
-        &-value {
-          color: @danger-color;
-          user-select: auto;
+        &-content {
+          &-label {
+            display: block;
+            margin-bottom: 5px;
+          }
+          &-value {
+            margin-left: 10px;
+            word-break: break-all;
+          }
         }
       }
     }

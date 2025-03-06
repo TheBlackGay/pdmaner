@@ -33,18 +33,22 @@ Dual licensed under the MIT and GPL licenses.
  */
 (function() {
   // Private array of chars to use
-  var CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+  const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
 
-  Math.uuid = function (len, radix) {
-    var chars = CHARS, uuid = [], i;
-    radix = radix || chars.length;
+  Math.uuid = function(len, radix) {
+    const chars = CHARS;
+    const uuid = [];
+    let i;
+    const finalRadix = radix || chars.length;
 
     if (len) {
       // Compact form
-      for (i = 0; i < len; i++) uuid[i] = chars[0 | Math.random()*radix];
+      for (i = 0; i < len; i++) {
+        uuid[i] = chars[Math.floor(Math.random() * finalRadix)];
+      }
     } else {
       // rfc4122, version 4 form
-      var r;
+      let r;
 
       // rfc4122 requires these characters
       uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
@@ -54,8 +58,8 @@ Dual licensed under the MIT and GPL licenses.
       // per rfc4122, sec. 4.1.5
       for (i = 0; i < 36; i++) {
         if (!uuid[i]) {
-          r = 0 | Math.random()*16;
-          uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+          r = Math.floor(Math.random() * 16);
+          uuid[i] = chars[(i === 19) ? (r & 0x3) | 0x8 : r];
         }
       }
     }
@@ -63,22 +67,26 @@ Dual licensed under the MIT and GPL licenses.
     return uuid.join('');
   };
 
-  Math.uuid
-
   // A more performant, but slightly bulkier, RFC4122v4 solution.  We boost performance
   // by minimizing calls to random()
   Math.uuidFast = function() {
-    var chars = CHARS, uuid = new Array(36), rnd=0, r;
-    for (var i = 0; i < 36; i++) {
-      if (i==8 || i==13 ||  i==18 || i==23) {
+    const chars = CHARS;
+    const uuid = new Array(36);
+    let rnd = 0;
+    let r;
+    
+    for (let i = 0; i < 36; i++) {
+      if (i === 8 || i === 13 || i === 18 || i === 23) {
         uuid[i] = '-';
-      } else if (i==14) {
+      } else if (i === 14) {
         uuid[i] = '4';
       } else {
-        if (rnd <= 0x02) rnd = 0x2000000 + (Math.random()*0x1000000)|0;
+        if (rnd <= 0x02) {
+          rnd = 0x2000000 + Math.floor(Math.random() * 0x1000000);
+        }
         r = rnd & 0xf;
         rnd = rnd >> 4;
-        uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+        uuid[i] = chars[(i === 19) ? (r & 0x3) | 0x8 : r];
       }
     }
     return uuid.join('');
@@ -86,27 +94,31 @@ Dual licensed under the MIT and GPL licenses.
 
   // A more compact, but less performant, RFC4122v4 solution:
   Math.uuidCompact = function() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.floor(Math.random() * 16);
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
   };
 
   //Number 四舍五入
   // 避免跟Math.round重复和覆盖
-  Math.rounding = function (input, radix) {
-    if(radix < 0 || radix > 100) return input;
-      if(+input === +input){
-          radix = parseInt(radix);
-          var base = 1;
-          while(radix){
-              base *= 10;
-              radix --;
-          }
-          return Math.round(input * base) / base;
-      }else{
-        return input;
+  Math.rounding = function(input, initialRadix) {
+    if (initialRadix < 0 || initialRadix > 100) {
+      return input;
+    }
+    
+    if (+input === +input) {
+      let radix = parseInt(initialRadix, 10);
+      let base = 1;
+      while (radix) {
+        base *= 10;
+        radix -= 1;
       }
-  }
+      return Math.round(input * base) / base;
+    } else {
+      return input;
+    }
+  };
 
 })();

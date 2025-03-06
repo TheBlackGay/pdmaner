@@ -1,49 +1,129 @@
-@prefix: chiner; // 定义全局样式前缀
+// 主题配置
+:root {
+  // 布局尺寸
+  --toolbar-opt-height: 32px;
+  --toolbar-height: 60px;
+  --menu-width: 240px;
+  --menu-header: 38px;
+  --tab-item-header: 28px;
+  --top-tab-width: 100px;
+  --top-tab-header: 45px;
+  --top-tab-padding: 5px;
+  --left-tab-width: 50px;
+  --modal-width: 520px;
+  --drawer-width: 256px;
+  --modal-height: 300px;
+  --modal-min-width: 416px;
+  --modal-min-height: 96px;
+
+  // 字体
+  --header-font-size: 12px;
+  --left-tab-font-size: 12px;
+
+  // 滚动条
+  --scrollbar-width: 6px;
+  --scrollbar-color: #E2E8F0;
+
+  // 主题色
+  --primary-color: #6366F1;
+  --primary-light: #818CF8;
+  --primary-lighter: #E0E7FF;
+  --primary-lightest: #EEF2FF;
+
+  // 背景色
+  --bg-base: #ffffff;
+  --bg-secondary: #F8FAFC;
+  --bg-dark: #1E293B;
+  --bg-darker: #0F172A;
+  --bg-highlight: rgba(255,255,255,0.12);
+
+  // 文字颜色
+  --text-primary: #1E293B;
+  --text-secondary: #334155;
+  --text-tertiary: #475569;
+  --text-quaternary: #94A3B8;
+  --text-light: #F1F5F9;
+
+  // 边框颜色
+  --border-base: #E2E8F0;
+  --border-light: #F1F5F9;
+
+  // 功能色
+  --danger: #EF4444;
+  --success: #22C55E;
+  --warning: #F97316;
+  --warning-light: #FCD34D;
+  --note: #FEF9C3;
+  --modal-overlay: rgba(15,23,42,0.45);
+}
+
+// 暗色主题
+[data-theme='dark'] {
+  --bg-base: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-dark: #334155;
+  --bg-darker: #1E293B;
+  --bg-highlight: rgba(255,255,255,0.08);
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #E2E8F0;
+  --text-tertiary: #CBD5E1;
+  --text-quaternary: #94A3B8;
+  --text-light: #1E293B;
+
+  --border-base: #334155;
+  --border-light: #475569;
+
+  --scrollbar-color: #475569;
+}
+
+// 兼容旧变量
+@prefix: chiner;
 @toolbar-opt-height: 32px;
-@toolbar-height: 60px; // 定义头部导航栏高度
-@menu-width: 240px; // 定义菜单宽度
-@menu-header: 38px; // 定义菜单头部
-@tab-item-header: 26px; // 定义tab高度
-@menu-select: #FEC685; // 菜单选中色
-@header-font-size: 11px; // 定义头部菜单的字体大小
-@scrollbar-width: 6px; // 定义滚动条的宽度
-@scrollbar-color: #DFE3EB; // 定义滚动条背景色
-@top-tab-width: 100px; // 定义横向tab标题的宽度
-@top-tab-header: 45px; // 定义横向tab标题的高度
-@top-tab-padding: 5px; // 定义横向tab内容padding
-@left-tab-width: 50px; // 定义纵向的tab宽度
-@left-tab-font-size: 12px; // 定义纵向的tab标题字体大小
-@left-tab-bg-color: #3B3B45; // 定义纵向的tab页的背景色
-@left-tab-bg-select-color: #1B1B24; // 定义纵向的tab页选中色
-@left-tab-bg-select-border-color: #8E39DB; // 定义纵向的tab页选中边框色
-@primary-color: #4e75fd; // 定义主色
-@second-primary-color: #577EFD; // 定义次级主色
-@third-primary-color: #DDE5FF;
-@fourth-primary-color: #DDE5F2;
-@search-bg-color: rgba(255,255,255,0.10); // 定义toolbar搜索框背景色
-@primary-bg: #7F7F7F; // 定义背景主色
-@primary-border-color: #DFE3EB; // 定义边框主色
-@primary-border-color-simple: #EBEBEB; // 定义边框主色
-@background-color-simple: #000000; // 定义系统背景色
-@background-color-black: #1B1B24; // 定义系统背景色
-@background-color: #fff; // 定义系统背景色
-@background-hl: #22221b; // 定义代码高亮背景
-@font-color: rgba(0,0,0,.65); // 定义系统字体颜色
-@main-font-color: #000000; // 定义系统字体颜色
-@second-font-color: #5B6B73; // 次级字体颜色
-@third-font-color: #9999AA; // 浅色字体颜色
-@four-font-color: #EDEDED; // 浅色字体颜色
-@modal-color: rgba(0,0,0,0.45); // 定义弹窗背景色
-@danger-color: #FF4454; // 定义危险操作色
-@success-color: green; // 定义操作成功颜色
-@warring-color: #FF7C1E; // 定义操作提示颜色
-@warring-color-under: #FFE500; // 定义操作提示颜色
-@note-color: #ffea80;
-@modal-width: 520px; // 定义弹窗默认宽度
-@drawer-width: 256px; // 定义抽屉默认宽度
-@modal-height: 300px; // 定义弹窗默认高度
-@modal-min-width: 416px; // 定义弹窗提示宽度
-@modal-min-height: 96px; // 定义弹窗提示高度
-@home-background: #F2F5F6; // 欢迎页背景色
-@tr-background: #F3F4F5; // 列表行背景色
-@code-background: #2F3129; // 代码编辑器背景色
+@toolbar-height: 60px;
+@menu-width: 240px;
+@menu-header: 38px;
+@tab-item-header: 28px;
+@menu-select: var(--primary-color);
+@header-font-size: 12px;
+@scrollbar-width: 6px;
+@scrollbar-color: #E2E8F0;
+@top-tab-width: 100px;
+@top-tab-header: 45px;
+@top-tab-padding: 5px;
+@left-tab-width: 50px;
+@left-tab-font-size: var(--left-tab-font-size);
+@left-tab-bg-color: var(--bg-dark);
+@left-tab-bg-select-color: var(--bg-darker);
+@left-tab-bg-select-border-color: var(--primary-color);
+@primary-color: var(--primary-color);
+@second-primary-color: var(--primary-light);
+@third-primary-color: var(--primary-lighter);
+@fourth-primary-color: var(--primary-lightest);
+@search-bg-color: var(--bg-highlight);
+@primary-bg: var(--bg-dark);
+@primary-border-color: var(--border-base);
+@primary-border-color-simple: var(--border-light);
+@background-color-simple: var(--bg-darker);
+@background-color-black: var(--bg-darker);
+@background-color: var(--bg-base);
+@background-hl: var(--bg-dark);
+@font-color: var(--text-secondary);
+@main-font-color: var(--text-primary);
+@second-font-color: var(--text-tertiary);
+@third-font-color: var(--text-quaternary);
+@four-font-color: var(--text-light);
+@modal-color: var(--modal-overlay);
+@danger-color: var(--danger);
+@success-color: var(--success);
+@warring-color: var(--warning);
+@warring-color-under: var(--warning-light);
+@note-color: var(--note);
+@modal-width: var(--modal-width);
+@drawer-width: var(--drawer-width);
+@modal-height: var(--modal-height);
+@modal-min-width: var(--modal-min-width);
+@modal-min-height: var(--modal-min-height);
+@home-background: var(--bg-secondary);
+@tr-background: var(--bg-secondary);
+@code-background: var(--bg-dark);
