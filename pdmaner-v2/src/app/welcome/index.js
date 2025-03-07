@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
 
-import {Progressbar, Modal, UpdateMessage, FormatMessage, Live2d} from 'components';
+import {Progressbar, Modal, UpdateMessage, FormatMessage} from 'components';
 import { fail, success, pageType, CONFIG } from '../../lib/variable';
 import './style/index.less';
 import {
@@ -134,16 +134,6 @@ const Welcome = React.memo(({ prefix, getUserData, config, ...restProps }) => {
         </div>
       </div>
     </div>
-    <Live2d 
-      prefix={currentPrefix} 
-      config={{
-        modelId: Math.floor(Math.random() * 6) + 1,
-        modelTexturesId: Math.floor(Math.random() * 3) + 1,
-        canCloseLive2d: true,
-        canSwitchModel: true,
-        canSwitchTextures: true
-      }} 
-    />
     {/* eslint-disable-next-line max-len */}
     {/*<Progressbar title={title} percent={percent} className={`${currentPrefix}-welcome-progressbar`} showPercent/>*/}
   </div>;

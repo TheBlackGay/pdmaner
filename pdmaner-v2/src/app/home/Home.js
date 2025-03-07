@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import _ from 'lodash/object';
 
-import {Icon, Modal, openModal, Button, FormatMessage, SearchInput, Tooltip, Live2d } from 'components';
+import {Icon, Modal, openModal, Button, FormatMessage, SearchInput, Tooltip } from 'components';
 // eslint-disable-next-line import/extensions,import/named
 
 // eslint-disable-next-line import/named
@@ -348,16 +348,5 @@ export default React.memo(({prefix, importProject, createProject, openTemplate,
         </div>
       </div>
     </div>
-    {/* 添加看板娘组件 */}
-    <Live2d 
-      prefix={currentPrefix} 
-      config={{
-        modelId: Math.floor(Math.random() * 6) + 1,
-        modelTexturesId: Math.floor(Math.random() * 3) + 1,
-        canCloseLive2d: true,
-        canSwitchModel: true,
-        canSwitchTextures: true
-      }} 
-    />
   </div>;
 });
