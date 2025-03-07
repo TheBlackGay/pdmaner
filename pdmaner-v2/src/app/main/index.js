@@ -14,6 +14,8 @@ import {
   Checkbox, Tooltip, Upload, Terminal, Download,
   VersionListBar,
   VersionInfoBar, List, CompareList,
+  Tree, SimpleTab, Select, SearchInput, MultipleSelect,
+  ContextMenu, Input, Slider, DropButton, Live2d, Live2dConfig
 } from 'components';
 import Dict from '../container/dict';
 import Entity from '../container/entity';
@@ -130,6 +132,13 @@ const Index = React.memo(({getUserData, mode, isChildWindow,
   const currentMetaRef = useRef(null);
   const projectInfoRef = useRef(projectInfo);
   projectInfoRef.current = projectInfo;
+  const [live2dConfig, setLive2dConfig] = useState({
+    modelId: Math.floor(Math.random() * 6) + 1, // 随机选择一个模型 1-6
+    modelTexturesId: Math.floor(Math.random() * 3) + 1, // 随机选择一个装扮 1-3
+    canCloseLive2d: true,
+    canSwitchModel: true,
+    canSwitchTextures: true
+  });
   const refreshProject = () => {
     Modal.confirm({
       title: FormatMessage.string({id: 'refreshConfirmTitle'}),
@@ -1739,17 +1748,62 @@ const Index = React.memo(({getUserData, mode, isChildWindow,
     {key: 'closeAll', name: FormatMessage.string({id: 'closeAll'})},
   ]),[]);
   const dropDownMenuClick = (m, e, c) => {
-    switch (m.key){
-      case 'closeCurrent':
-        _tabClose(c.key);
-        break;
-      case 'closeOthers':
-        _tabCloseOther(c.key);
-        break;
-      case 'closeAll':
-        _tabCloseAll();
-        break;
-      default: break;
+    let modal = null;
+    if (m.key === 'clear') {
+      e && e.stopPropagation();
+      Modal.confirm({
+        title: FormatMessage.string({id: 'resetConfirmTitle'}),
+        message: FormatMessage.string({id: 'resetConfirm'}),
+        onOk:() => {
+          localStorage.clear();
+          window.location.reload();
+        },
+      });
+    } else if (m.key === 'jsonzip') {
+      modal = Modal.info({
+        bodyStyle: {width: '80%'},
+        title: FormatMessage.string({id: 'appSetting.importExportConfig'}),
+        message: <div>
+          <div className={`${currentPrefix}-setting-export-json`}>
+            <span>{FormatMessage.string({id: 'appSetting.importJsonTip'})}</span>
+            <DropButton
+              position="top"
+              onClick={dropType => importConfig(dropType)}
+              menuClick={dropType => importConfig(dropType)}
+              dropDownMenus={[
+                  {key: 'file', name: FormatMessage.string({id: 'appSetting.selectFile'})},
+                  {key: 'text', name: FormatMessage.string({id: 'appSetting.pasteJson'})},
+                ]}
+              >{FormatMessage.string({id: 'import'})}</DropButton>
+          </div>
+          <div className={`${currentPrefix}-setting-export-json`}>
+            <span>{FormatMessage.string({id: 'appSetting.exportJsonTip'})}</span>
+            <Button onClick={exportConfig}>{FormatMessage.string({id: 'export'})}</Button>
+          </div>
+        </div>
+      });
+    } else if (m.key === 'live2dConfig') {
+      // 添加看板娘配置选项
+      modal = Modal.info({
+        title: '看板娘设置',
+        closeable: true,
+        message: <Live2dConfig
+          prefix={prefix}
+          defaultConfig={live2dConfig}
+          onOk={(config) => {
+            setLive2dConfig(config);
+            modal && modal.close();
+          }}
+          onClose={() => modal && modal.close()}
+        />,
+        buttons: [],
+      });
+    } else if (m.key === 'closeCurrent') {
+      _tabClose(c.key);
+    } else if (m.key === 'closeOthers') {
+      _tabCloseOther(c.key);
+    } else if (m.key === 'closeAll') {
+      _tabCloseAll();
     }
   };
   const _menuTypeChange = (key) => {
@@ -1925,7 +1979,7 @@ const Index = React.memo(({getUserData, mode, isChildWindow,
           dataSource={restProps.dataSource}
           ref={appCodeRef}
           style={{display: menuType === '3' ? 'block' : 'none'}}
-          />
+         />
         <Tab
           style={{display: (menuType === '1' || menuType === '2') ? 'block' : 'none'}}
           key={mainId}
@@ -1940,7 +1994,7 @@ const Index = React.memo(({getUserData, mode, isChildWindow,
           >
           {tabs.map((t) => {
               const title = getTabTitle(t);
-              return (
+           return (
                 <TabItem
                   style={t.style}
                   key={t.tabKey}
@@ -1948,10 +2002,10 @@ const Index = React.memo(({getUserData, mode, isChildWindow,
                   tooltip={title.tooltip}
                   icon={t.icon}
                   >
-                  {getTabComponent(t)}
-                </TabItem>
+                   {getTabComponent(t)}
+             </TabItem>
               );
-            })}
+         })}
         </Tab>
       </>
     );
@@ -1985,230 +2039,220 @@ const Index = React.memo(({getUserData, mode, isChildWindow,
   if(menuType === '5') {
     resizeContainerStyle.minWidth = '50px';
   }
-  return <Loading visible={common.loading} title={common.title}>
-    <HeaderTool
-      menuType={menuType}
-      isChildWindow={isChildWindow}
-      mode={mode}
-      dataSource={restProps.dataSource}
-      ref={headerToolRef}
-      currentPrefix={currentPrefix}
-      close={restProps.close}
-      iconClick={iconClick}
-      activeTab={activeTab}
-      resize={resize}
-      openModal={_openModal}
-      jumpPosition={_jumpPosition}
-      jumpDetail={_jumpDetail}
-    />
-    <div className={`${currentPrefix}-home`}>
-      <div
-        className={`${currentPrefix}-home-resize-container`}
-        ref={resizeContainer}
-        style={resizeContainerStyle}>
-        {menuType !== '5' && <span
-          onClick={fold}
-          className={`${currentPrefix}-home-fold`}
-        >
-          <Icon type='fa-angle-double-left '/>
-        </span>}
-        <Tab activeKey={menuType} onChange={_menuTypeChange}>
-          <TabItem key='1' title={FormatMessage.string({id: 'modelTab'})} icon='model.svg'>
-            <div
-              ref={menuContainerModel}
-              className={`${currentPrefix}-home-menu-container`}
-            >
-              <div className={`${currentPrefix}-home-menu-header`}>
-                <span className={`${currentPrefix}-home-menu-header-title`}>
-                  <FormatMessage id='moduleList'/>
-                </span>
-                <span className={`${currentPrefix}-home-menu-header-opt`}>
-                  {activeKey && <div className={`${currentPrefix}-home-menu-header-opt-position`} onClick={onLocation}>
-                    <Tooltip
-                      title={<div
-                        className={`${currentPrefix}-home-menu-header-opt-title`}
+  return (
+    <Loading
+      visible={common.loading.status}
+      title={common.loading.title}
+      className={`${currentPrefix}-database-loading`}
+    >
+      <div className={`${currentPrefix}-database-main-${dataSourceRef.current?.profile?.style || 'dark'}`}>
+        <div className={`${currentPrefix}-database-main`}>
+          <div
+            style={{width: `${menuNorWidth + menuMinWidth}px`}}
+            className={`${currentPrefix}-home-resize-container`}
+            ref={resizeContainer}
+          >
+            <Tab defaultActiveKey="1" activeKey={menuType || '1'} className={`${currentPrefix}-body-tab`} onChange={_menuTypeChange}>
+              <TabItem key='1' title={FormatMessage.string({id: 'modelTab'})} icon='model.svg'>
+                <div
+                  ref={menuContainerModel}
+                  className={`${currentPrefix}-home-menu-container`}
+                >
+                  <div className={`${currentPrefix}-home-menu-header`}>
+                    <span className={`${currentPrefix}-home-menu-header-title`}>
+                      <FormatMessage id='moduleList'/>
+                    </span>
+                    <span className={`${currentPrefix}-home-menu-header-opt`}>
+                      {activeKey && <div className={`${currentPrefix}-home-menu-header-opt-position`} onClick={onLocation}>
+                        <Tooltip
+                          title={<div
+                            className={`${currentPrefix}-home-menu-header-opt-title`}
+                            >
+                            <FormatMessage id='location'/>
+                          </div>}
+                          force
+                          placement='top'
                         >
-                        <FormatMessage id='location'/>
+                          <Icon type='fa-crosshairs'/>
+                        </Tooltip>
                       </div>}
-                      force
-                      placement='top'
-                    >
-                      <Icon type='fa-crosshairs'/>
-                    </Tooltip>
-                  </div>}
-                  <div
-                    className={`${currentPrefix}-home-menu-header-opt-position`}
-                    onClick={() => updateNavEmptyHide(!navEmptyHide)}
-                  >
-                    <Tooltip
-                      title={<div
-                        className={`${currentPrefix}-home-menu-header-opt-title`}
+                      <div
+                        className={`${currentPrefix}-home-menu-header-opt-position`}
+                        onClick={() => updateNavEmptyHide(!navEmptyHide)}
+                      >
+                        <Tooltip
+                          title={<div
+                            className={`${currentPrefix}-home-menu-header-opt-title`}
+                            >
+                            <FormatMessage id='navEmptyHide'/>
+                          </div>}
+                          force
+                          placement='top'
                         >
-                        <FormatMessage id='navEmptyHide'/>
-                      </div>}
-                      force
-                      placement='top'
+                          <Icon type={`fa-eye${navEmptyHide ? '-slash' : ''}`}/>
+                        </Tooltip>
+                      </div>
+                      <span onClick={_groupMenuChange}>
+                        <FormatMessage id='showGroup'/>
+                      </span>
+                      <span>
+                        <Checkbox onChange={_groupMenuChange} checked={groupType === 'modalGroup'}/>
+                      </span>
+                    </span>
+                  </div>
+                  <Menu
+                    mode={mode}
+                    ref={menuModelRef}
+                    prefix={prefix}
+                    {...restProps}
+                    menus={tempMenu}
+                    doubleMenuClick={_onMenuClick}
+                    onContextMenu={_onContextMenu}
+                    contextMenus={contextMenus}
+                    contextMenuClick={_contextMenuClick}
+                    draggable={draggable}
+                    getName={getName}
+                    dragTable={createEmptyTable}
+                    groupType={groupType}
+                    header={<span
+                      onContextMenu={e => e.stopPropagation()}
+                      onClick={openHome}
+                      className={`${currentPrefix}-home-cover`}
                     >
-                      <Icon type={`fa-eye${navEmptyHide ? '-slash' : ''}`}/>
-                    </Tooltip>
-                  </div>
-                  <span onClick={_groupMenuChange}>
-                    <FormatMessage id='showGroup'/>
-                  </span>
-                  <span>
-                    <Checkbox onChange={_groupMenuChange} checked={groupType === 'modalGroup'}/>
-                  </span>
-                </span>
-              </div>
-              <Menu
-                mode={mode}
-                ref={menuModelRef}
-                prefix={prefix}
-                {...restProps}
-                menus={tempMenu}
-                doubleMenuClick={_onMenuClick}
-                onContextMenu={_onContextMenu}
-                contextMenus={contextMenus}
-                contextMenuClick={_contextMenuClick}
-                draggable={draggable}
-                getName={getName}
-                dragTable={createEmptyTable}
-                groupType={groupType}
-                header={<span
-                  onContextMenu={e => e.stopPropagation()}
-                  onClick={openHome}
-                  className={`${currentPrefix}-home-cover`}
+                      <Icon type='fa-home'/>
+                      <span>{FormatMessage.string({id: 'project.homeCover'})}</span>
+                    </span>}
+                    emptyData={<div
+                      className={`${currentPrefix}-home-menu-empty`}
+                      >
+                      <div>
+                        <FormatMessage id='emptyGroup'/>
+                      </div>
+                      <div>
+                        <FormatMessage id='click'/>[<a onClick={() => _contextMenuClick(null, createGroupMenu)}><FormatMessage id='createGroup'/></a>]
+                      </div>
+                    </div>}
+                  />
+                </div>
+              </TabItem>
+              <TabItem key='2' title={FormatMessage.string({id: 'domainTab'})} icon='data_type.svg'>
+                <div
+                  ref={menuContainerDataType}
+                  className={`${currentPrefix}-home-menu-container`}
                 >
-                  <Icon type='fa-home'/>
-                  <span>{FormatMessage.string({id: 'project.homeCover'})}</span>
-                </span>}
-                emptyData={<div
-                  className={`${currentPrefix}-home-menu-empty`}
-                  >
-                  <div>
-                    <FormatMessage id='emptyGroup'/>
+                  <div className={`${currentPrefix}-home-menu-header`}>
+                    <span className={`${currentPrefix}-home-menu-header-title`}>
+                      <FormatMessage id='project.dataType'/>
+                    </span>
                   </div>
-                  <div>
-                    <FormatMessage id='click'/>[<a onClick={() => _contextMenuClick(null, createGroupMenu)}><FormatMessage id='createGroup'/></a>]
-                  </div>
-                </div>}
-              />
-            </div>
-          </TabItem>
-          <TabItem key='2' title={FormatMessage.string({id: 'domainTab'})} icon='data_type.svg'>
-            <div
-              ref={menuContainerDataType}
-              className={`${currentPrefix}-home-menu-container`}
-            >
-              <div className={`${currentPrefix}-home-menu-header`}>
-                <span className={`${currentPrefix}-home-menu-header-title`}>
-                  <FormatMessage id='project.dataType'/>
-                </span>
-              </div>
-              <Menu
-                mode={mode}
-                ref={menuDomainRef}
-                prefix={prefix}
-                {...restProps}
-                onContextMenu={_onContextMenu}
-                contextMenus={contextMenus}
-                contextMenuClick={_contextMenuClick}
-                menus={domainMenu}
-                getName={domainGetName}
-                draggable={draggable}
-                dragTable={createEmptyTable}
-                doubleMenuClick={(key, type, parentKey) => _contextMenuClick(null,
-                      getMenu('edit', key, type, [], groupTypeRef.current, parentKey))}
-              />
-            </div>
-          </TabItem>
-          <TabItem key='3' title={FormatMessage.string({id: 'appCode'})} icon='fa-code'>
-            <div
-              ref={menuContainerCode}
-              className={`${currentPrefix}-home-menu-container`}
-            >
-              <div className={`${currentPrefix}-home-menu-header`}>
-                <span className={`${currentPrefix}-home-menu-header-title`}>
-                  <FormatMessage id='project.appCode'/>
-                </span>
-              </div>
-              <List
-                mode={mode}
-                onDoubleClick={onDoubleClick}
-                onDrop={onListDrop}
-                ref={menuDomainRef}
-                draggable
-                prefix={prefix}
-                {...restProps}
-                onContextMenu={_onContextMenu}
-                contextMenus={contextMenus}
-                contextMenuClick={_contextMenuClick}
-                data={appCodeMenu}
-                emptyData={<div
-                  className={`${currentPrefix}-home-menu-empty`}
+                  <Menu
+                    mode={mode}
+                    ref={menuDomainRef}
+                    prefix={prefix}
+                    {...restProps}
+                    onContextMenu={_onContextMenu}
+                    contextMenus={contextMenus}
+                    contextMenuClick={_contextMenuClick}
+                    menus={domainMenu}
+                    getName={domainGetName}
+                    draggable={draggable}
+                    dragTable={createEmptyTable}
+                    doubleMenuClick={(key, type, parentKey) => _contextMenuClick(null,
+                          getMenu('edit', key, type, [], groupTypeRef.current, parentKey))}
+                  />
+                </div>
+              </TabItem>
+              <TabItem key='3' title={FormatMessage.string({id: 'appCode'})} icon='fa-code'>
+                <div
+                  ref={menuContainerCode}
+                  className={`${currentPrefix}-home-menu-container`}
                 >
-                  <div>
-                    <FormatMessage id='emptyAppCode'/>
+                  <div className={`${currentPrefix}-home-menu-header`}>
+                    <span className={`${currentPrefix}-home-menu-header-title`}>
+                      <FormatMessage id='project.appCode'/>
+                    </span>
                   </div>
-                  <div>
-                    <FormatMessage id='click'/>[<a onClick={() => _contextMenuClick(null, createAppCodeMenu)}><FormatMessage id='createAppCode'/></a>]
-                  </div>
-                </div>}
-              />
-            </div>
-          </TabItem>
-          <TabItem hidden={mode === READING} key='4' title={FormatMessage.string({id: 'versionTab'})} icon='fa-history'>
-            <div
-              ref={menuContainerCode}
-              className={`${currentPrefix}-home-menu-container`}
-            >
-              <div className={`${currentPrefix}-home-menu-header`}>
-                <span className={`${currentPrefix}-home-menu-header-version`}>
-                  <span
-                    className={`${currentPrefix}-home-menu-header-version-${versionType === '1' ? 'checked' : 'normal'}`}
-                    onClick={() => setVersionType('1')}
-                 >
-                    <FormatMessage id='versionData.modelVersion'/>
-                  </span>
-                  <span
-                    className={`${currentPrefix}-home-menu-header-version-${versionType === '2' ? 'checked' : 'normal'}`}
-                    onClick={() => setVersionType('2')}
+                  <List
+                    mode={mode}
+                    onDoubleClick={onDoubleClick}
+                    onDrop={onListDrop}
+                    ref={menuDomainRef}
+                    draggable
+                    prefix={prefix}
+                    {...restProps}
+                    onContextMenu={_onContextMenu}
+                    contextMenus={contextMenus}
+                    contextMenuClick={_contextMenuClick}
+                    data={appCodeMenu}
+                    emptyData={<div
+                      className={`${currentPrefix}-home-menu-empty`}
+                    >
+                      <div>
+                        <FormatMessage id='emptyAppCode'/>
+                      </div>
+                      <div>
+                        <FormatMessage id='click'/>[<a onClick={() => _contextMenuClick(null, createAppCodeMenu)}><FormatMessage id='createAppCode'/></a>]
+                      </div>
+                    </div>}
+                  />
+                </div>
+              </TabItem>
+              <TabItem hidden={mode === READING} key='4' title={FormatMessage.string({id: 'versionTab'})} icon='fa-history'>
+                <div
+                  ref={menuContainerCode}
+                  className={`${currentPrefix}-home-menu-container`}
                 >
-                    <FormatMessage id='versionData.dbDiff'/>
-                  </span>
-                </span>
-              </div>
-              <VersionListBar
-                versionType={versionType}
-                menuType={menuType}
-                openLoading={restProps.openLoading}
-                closeLoading={restProps.closeLoading}
-                projectInfo={projectInfo}
-                getLatelyDataSource={getLatelyDataSource}
-                dataSource={restProps.dataSource}
-                updateDataSource={restProps.update}
-                onSelected={versionType === '1' ? setCurrentVersion : setCurrentMeta}
-              />
+                  <div className={`${currentPrefix}-home-menu-header`}>
+                    <span className={`${currentPrefix}-home-menu-header-version`}>
+                      <span
+                        className={`${currentPrefix}-home-menu-header-version-${versionType === '1' ? 'checked' : 'normal'}`}
+                        onClick={() => setVersionType('1')}
+                     >
+                        <FormatMessage id='versionData.modelVersion'/>
+                      </span>
+                      <span
+                        className={`${currentPrefix}-home-menu-header-version-${versionType === '2' ? 'checked' : 'normal'}`}
+                        onClick={() => setVersionType('2')}
+                    >
+                        <FormatMessage id='versionData.dbDiff'/>
+                      </span>
+                    </span>
+                  </div>
+                  <VersionListBar
+                    versionType={versionType}
+                    menuType={menuType}
+                    openLoading={restProps.openLoading}
+                    closeLoading={restProps.closeLoading}
+                    projectInfo={projectInfo}
+                    getLatelyDataSource={getLatelyDataSource}
+                    dataSource={restProps.dataSource}
+                    updateDataSource={restProps.update}
+                    onSelected={versionType === '1' ? setCurrentVersion : setCurrentMeta}
+                  />
+                </div>
+              </TabItem>
+              <TabItem key='5' title={FormatMessage.string({id: 'project.checkRule'})} icon='fa-flag-checkered' />
+            </Tab>
+            <div
+              onMouseDown={onMouseDown}
+              className={`${currentPrefix}-home-resize-container-line`}
+            >
+              {}
             </div>
-          </TabItem>
-          <TabItem key='5' title={FormatMessage.string({id: 'project.checkRule'})} icon='fa-flag-checkered' />
-        </Tab>
-        <div
-          onMouseDown={onMouseDown}
-          className={`${currentPrefix}-home-resize-container-line`}
-        >
-          {}
+          </div>
+          <div
+            className={`${currentPrefix}-home-resize-other`}
+            ref={resizeOther}
+            style={{width: `calc(100% - ${menuNorWidth + menuMinWidth}px)`}}
+          >
+            {renderOperatingFloor()}
+          </div>
         </div>
+        {/* 添加看板娘组件 */}
+        <Live2d prefix={prefix} config={live2dConfig} />
       </div>
-      <div
-        className={`${currentPrefix}-home-resize-other`}
-        ref={resizeOther}
-        style={{width: `calc(100% - ${menuNorWidth + menuMinWidth}px)`}}
-      >
-        {renderOperatingFloor()}
-      </div>
-    </div>
-  </Loading>;
+    </Loading>
+  );
 });
 
 export default Index;

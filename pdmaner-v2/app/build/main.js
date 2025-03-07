@@ -31,7 +31,7 @@ function createWindow() {
 
   // 然后加载应用的 index.html。
   if (process.env.CHINER_NODE_ENV === 'development') {
-    var profile = require('../profile');
+    const profile = require('../profile');
     win.loadURL(`http://${profile.host}:${profile.port}/index.html`);
     // 打开开发者工具。
     win.setIcon(

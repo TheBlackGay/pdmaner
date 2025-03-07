@@ -200,6 +200,12 @@ featureManager.registerFeatures({
     name: '云同步',
     offlineAvailable: false,
     priority: 50
+  },
+  'live2d': {
+    name: '看板娘',
+    offlineAvailable: true,
+    priority: 40,
+    platforms: ['json', 'fetch'] // 两个平台都支持
   }
 });
 
