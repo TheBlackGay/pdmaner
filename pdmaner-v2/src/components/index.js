@@ -1,4 +1,3 @@
-
 export { default as FormatMessage } from './formatmessage';
 export { default as Slider } from './slider';
 export { default as Icon } from './icon';
@@ -50,3 +49,5 @@ export { default as Compare } from './compare';
 export { default as CompareList } from './compare/CompareList';
 export { default as VirtualList } from './virtuallist';
 export { default as Sheet } from './sheet';
+export { default as Live2d } from './live2d';
+export { default as LiveWrapper } from './live2d/LiveWrapper';

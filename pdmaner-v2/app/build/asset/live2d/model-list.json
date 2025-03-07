@@ -1,0 +1,14 @@
+{
+  "models": [
+    {
+      "id": "shizuku",
+      "name": "Shizuku",
+      "path": "models/shizuku/shizuku.model.json"
+    },
+    {
+      "id": "haru",
+      "name": "Haru",
+      "path": "models/haru/haru_greeter_t03.model3.json"
+    }
+  ]
+} 

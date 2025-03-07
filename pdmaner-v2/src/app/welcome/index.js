@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
 
-import {Progressbar, Modal, UpdateMessage, FormatMessage} from 'components';
+import {Progressbar, Modal, UpdateMessage, FormatMessage, LiveWrapper} from 'components';
 import { fail, success, pageType, CONFIG } from '../../lib/variable';
 import './style/index.less';
 import {
@@ -96,6 +96,7 @@ const Welcome = React.memo(({ prefix, getUserData, config, ...restProps }) => {
   if (percent === 100) {
     return <ConfigContent.Provider value={config}>
       <Home config={config} {...restProps}/>
+      <LiveWrapper prefix={currentPrefix} />
     </ConfigContent.Provider>;
   }
   return <div className={`${currentPrefix}-welcome`}
@@ -136,6 +137,7 @@ const Welcome = React.memo(({ prefix, getUserData, config, ...restProps }) => {
     </div>
     {/* eslint-disable-next-line max-len */}
     {/*<Progressbar title={title} percent={percent} className={`${currentPrefix}-welcome-progressbar`} showPercent/>*/}
+    <LiveWrapper prefix={currentPrefix} />
   </div>;
 });
 

@@ -1,0 +1,59 @@
+name: Test CI
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - "docs/**"
+      - "playground/**"
+      - "*.md"
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+          cache: "npm"
+
+      - name: Cache core files
+        uses: actions/cache@v3
+        id: cache-core
+        with:
+          path: |
+            core/*
+            !core/live2d.d.ts
+          key: ${{ hashFiles('scripts/setup.js') }}
+
+      - run: npm ci
+
+      - name: Set up core files
+        if: steps.cache-core.outputs.cache-hit != 'true'
+        run: |
+          echo Cache miss: ${{ hashFiles('scripts/setup.js') }}
+          npm run setup
+
+      - run: npm run type
+      - run: npm run build
+
+      - name: Run tests
+        uses: GabrielBB/xvfb-action@v1.0
+        with:
+          run: npm test
+
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: diff-images
+          path: test/**/__image_snapshots__/__diff_output__/*
+          if-no-files-found: ignore

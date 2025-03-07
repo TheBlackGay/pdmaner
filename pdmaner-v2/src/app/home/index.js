@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 
-import { Loading, Modal, FormatMessage, ToolBar } from 'components';
+import { Loading, Modal, FormatMessage, ToolBar, LiveWrapper } from 'components';
 import './style/index.less';
 import { fail, pageType, READING} from '../../lib/variable';
 import Main from '../main';
@@ -62,5 +62,6 @@ export default React.memo(({prefix, open, create, rename, updateHistory, openTem
       prefix={currentPrefix}
       open={open}
     />}
+    <LiveWrapper prefix={currentPrefix} />
   </Loading>;
 });

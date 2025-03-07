@@ -1,0 +1,15 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Textures": ["haru.png"],
+    "Physics": "haru.physics3.json",
+    "Expressions": []
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": []
+    }
+  ]
+} 
