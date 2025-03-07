@@ -4,37 +4,18 @@ import { getPrefix } from '../../lib/prefixUtil';
 
 // 看板娘配置 - 现在不直接使用这些配置，而是通过init-live2d.js初始化
 const defaultConfig = {
-  // 配置已移至init-live2d.js
+  width: 200,         // 宽度
+  height: 200,        // 高度
+  right: 20,          // 右边距
+  bottom: 20,         // 下边距
+  zIndex: 9999,       // z-index
+  mobileHide: true    // 在移动设备上隐藏
 };
 
-// 简化版组件 - 只负责注入脚本，实际功能由完整的Live2D库提供
+// 简化版组件 - 不再加载任何脚本，因为index.html中已经加载了simple-live2d.js
 const Live2d = React.memo(({ prefix, config = {} }) => {
-  const currentPrefix = getPrefix(prefix);
-  const initedRef = useRef(false);
-
-  useEffect(() => {
-    // 只初始化一次
-    if (!initedRef.current) {
-      // 加载完整版Live2D初始化脚本
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = './asset/live2d/init-live2d.js';
-      script.onload = () => {
-        console.log('Live2D initialization script loaded');
-        initedRef.current = true;
-      };
-      script.onerror = () => {
-        console.error('Failed to load Live2D initialization script');
-      };
-      document.head.appendChild(script);
-    }
-    
-    return () => {
-      // 清理资源 - Live2D元素在页面存在期间保持显示
-    };
-  }, []);
-  
-  return null; // 不渲染任何内容，Live2D元素由脚本创建
+  // 这个组件现在不做任何事情，仅作为占位符
+  return null;
 });
 
 export default Live2d; 

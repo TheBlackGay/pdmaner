@@ -56,6 +56,24 @@
         return waifu;
     }
     
+    // 直接渲染一个静态图片作为替代
+    function renderStaticImage() {
+        // 获取Canvas元素
+        const canvas = document.getElementById("live2d");
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            console.log("Static image loaded as fallback");
+        };
+        img.onerror = function() {
+            console.error("Failed to load static image");
+        };
+        img.src = live2d_path + "models/shizuku/shizuku.png";
+    }
+    
     // 主函数，加载并初始化看板娘
     function initLive2d() {
         // 只在桌面设备上显示
@@ -73,6 +91,10 @@
                 
                 // 手动初始化看板娘 - live2d_widget是waifu-tips.js中定义的变量
                 if (typeof window.live2d_widget === "function") {
+                    // 设置localStorage中的模型和材质ID
+                    localStorage.setItem("modelId", "1");   // 设置为有效的模型ID
+                    localStorage.setItem("modelTexturesId", "1");  // 设置为有效的材质ID
+                    
                     // 直接调用factory函数
                     console.log("Using live2d_widget function...");
                     window.live2d_widget({
@@ -81,13 +103,42 @@
                         cdnPath: live2d_path,
                         tools: ["hitokoto", "switch-model", "switch-texture", "photo", "info", "quit"]
                     });
+                    
+                    // 确保模型加载，如果失败则降级为静态图片
+                    setTimeout(() => {
+                        const canvas = document.getElementById("live2d");
+                        if (canvas) {
+                            // 检查canvas是否为空
+                            const ctx = canvas.getContext("2d");
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const data = imageData.data;
+                            let isEmpty = true;
+                            for (let i = 0; i < data.length; i += 4) {
+                                if (data[i+3] !== 0) {
+                                    isEmpty = false;
+                                    break;
+                                }
+                            }
+                            
+                            if (isEmpty) {
+                                console.log("Canvas is empty, loading static image...");
+                                renderStaticImage();
+                            }
+                        }
+                    }, 3000); // 3秒后检查
+                    
                     console.log("Live2D initialized successfully using live2d_widget function.");
                 } else {
                     console.error("live2d_widget function not found. Make sure waifu-tips.js is loaded correctly.");
                     console.log("Global window keys:", Object.keys(window).filter(key => key.includes('live2d')));
+                    
+                    // 如果找不到live2d_widget函数，则使用静态图片
+                    renderStaticImage();
                 }
             }).catch(error => {
                 console.error("Failed to load Live2D resources:", error);
+                // 加载资源失败时，渲染静态图片
+                renderStaticImage();
             });
         }
     }
